@@ -30,6 +30,8 @@
     })();
   </script>
   <style>
+    /* Prevent flash of wrong tab on initial load */
+    .page { display: none; }
     html[data-tab="dashboard"] #dashboard,
     html[data-tab="inventory"] #inventory,
     html[data-tab="stores"] #stores,
