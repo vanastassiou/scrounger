@@ -441,9 +441,3 @@ async function updateItemStatus(itemId, newStatus) {
     showToast('Failed to update status', 'error');
   }
 }
-
-// =============================================================================
-// EXPORTS
-// =============================================================================
-
-export { openMarkAsSoldModal };
