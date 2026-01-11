@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Debug - Thrift Inventory</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { padding: 20px; }
+    .debug-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+    .debug-section h3 { margin-top: 0; }
+    .error { color: red; }
+    .success { color: green; }
+  </style>
+</head>
+<body>
+  <h1>Thrift Inventory - Debug Page</h1>
+
+  <div class="debug-section">
+    <h3>Module Loading Test</h3>
+    <div id="module-test">Testing...</div>
+  </div>
+
+  <div class="debug-section">
+    <h3>Tab Test</h3>
+    <nav class="tabs">
+      <button class="tab" data-tab="test1">Tab 1</button>
+      <button class="tab" data-tab="test2">Tab 2</button>
+      <button class="tab" data-tab="test3">Tab 3</button>
+    </nav>
+    <div class="page active" id="test1">Page 1 Content</div>
+    <div class="page" id="test2">Page 2 Content</div>
+    <div class="page" id="test3">Page 3 Content</div>
+    <div id="tab-test-result"></div>
+  </div>
+
+  <script type="module">
+    import { createTabController } from './js/ui.js';
+    import { initSelling } from './js/selling.js';
+    import { initDashboardActions } from './js/dashboard-actions.js';
+
+    async function test() {
+      const result = document.getElementById('module-test');
+      const tabResult = document.getElementById('tab-test-result');
+
+      try {
+        // Test module imports
+        result.innerHTML = '<p class="success">✓ All modules loaded successfully</p>';
+
+        // Test tab controller
+        const controller = createTabController('.tab', '.page', {
+          storageKey: 'debug-tab',
+          onActivate: (tabId) => {
+            tabResult.innerHTML = `<p class="success">✓ Tab activated: ${tabId}</p>`;
+          }
+        });
+
+        result.innerHTML += '<p class="success">✓ Tab controller created</p>';
+
+        // Test selling module
+        result.innerHTML += '<p>Testing selling module...</p>';
+        // Note: This will fail without proper DB, but we can see if it loads
+
+      } catch (err) {
+        result.innerHTML = `<p class="error">✗ Error: ${err.message}</p><pre>${err.stack}</pre>`;
+      }
+    }
+
+    test();
+  </script>
+</body>
+</html>
