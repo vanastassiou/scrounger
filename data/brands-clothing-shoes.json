@@ -1,0 +1,244 @@
+{
+  "meta": {
+    "document_type": "reference_data",
+    "domain": "thrift_store_sourcing",
+    "version": "1.0",
+    "created": "2026-01-03",
+    "purpose": "Brand valuation guide for vintage clothing and shoes",
+    "pricing_notes": {
+      "brand_premium_multiplier": "Multiply base resale by this factor for branded items",
+      "base_resale_ranges_cad": {
+        "dress": [25, 60],
+        "blouse": [15, 40],
+        "sweater": [20, 50],
+        "jacket": [40, 100],
+        "coat": [60, 150],
+        "pants": [20, 45],
+        "skirt": [15, 40],
+        "shoes": [25, 75]
+      }
+    }
+  },
+
+  "clothing_brands": {
+    "tier_S": {
+      "description": "Luxury designer — always purchase if reasonably priced",
+      "multiplier_range": [3.0, 10.0],
+      "brands": {
+        "chanel": {"m": 8.0, "tips": "Jackets, bags iconic. Verify via chain weight, stitching."},
+        "hermes": {"m": 10.0, "tips": "Scarves, ties valuable. Check blind stamp dates."},
+        "louis_vuitton": {"m": 5.0, "tips": "Check date codes, canvas alignment."},
+        "gucci": {"m": 4.0, "tips": "Tom Ford era (1994-2004) most sought."},
+        "prada": {"m": 4.0, "tips": "1990s nylon, Linea Rossa collectible."},
+        "yves_saint_laurent": {"m": 5.0, "alt": ["YSL Rive Gauche", "Saint Laurent Paris"]},
+        "christian_dior": {"m": 5.0, "tips": "Galliano era (1997-2011). Watch for licensed vs mainline."},
+        "burberry": {"m": 3.5, "tips": "Burberrys' (apostrophe) = vintage, more valuable."},
+        "givenchy": {"m": 4.0},
+        "balenciaga": {"m": 4.5},
+        "versace": {"m": 4.0, "tips": "Gianni era pre-1997 most collectible."},
+        "valentino": {"m": 4.0, "tips": "Garavani mainline highest."},
+        "armani_mainline": {"m": 3.0, "tips": "Giorgio > Emporio (2.0) > A|X (1.3)."},
+        "dolce_gabbana": {"m": 3.0},
+        "celine": {"m": 4.0, "tips": "Phoebe Philo era (2008-2018) sought."},
+        "bottega_veneta": {"m": 4.0, "tips": "Intrecciato weave signature."},
+        "loewe": {"m": 3.5},
+        "ferragamo": {"m": 3.0},
+        "fendi": {"m": 3.5},
+        "missoni": {"m": 3.0, "tips": "Zigzag knits."},
+        "emilio_pucci": {"m": 3.5, "tips": "1960s-70s prints highly collectible."},
+        "oscar_de_la_renta": {"m": 3.0},
+        "carolina_herrera": {"m": 2.5},
+        "issey_miyake": {"m": 4.0, "tips": "Pleats Please line collectible."},
+        "comme_des_garcons": {"m": 4.5, "tips": "Play (heart) less valuable than mainline."},
+        "yohji_yamamoto": {"m": 4.5},
+        "jean_paul_gaultier": {"m": 4.0, "tips": "1990s mesh tops iconic."},
+        "thierry_mugler": {"m": 5.0, "tips": "Power suits extremely collectible."},
+        "vivienne_westwood": {"m": 3.5, "tips": "Orb logo, vintage punk era valuable."},
+        "alexander_mcqueen": {"m": 4.5, "tips": "McQueen era (pre-2010) highest value."},
+        "marc_jacobs": {"m": 2.5, "tips": "Marc by Marc diffusion less valuable."},
+        "ralph_lauren_purple": {"m": 4.0, "tips": "Purple Label only. Other lines tier A/B."}
+      }
+    },
+
+    "tier_A": {
+      "description": "Quality contemporary with good resale",
+      "multiplier_range": [1.5, 3.0],
+      "brands": {
+        "max_mara": {"m": 2.5, "tips": "Coats valuable. Weekend line less so."},
+        "theory": {"m": 2.0},
+        "vince": {"m": 2.0, "tips": "Cashmere pieces."},
+        "equipment": {"m": 2.0, "tips": "Silk blouses."},
+        "sandro": {"m": 2.0},
+        "maje": {"m": 2.0},
+        "claudie_pierlot": {"m": 2.0},
+        "reiss": {"m": 1.8},
+        "ted_baker": {"m": 1.7},
+        "hugo_boss": {"m": 2.0, "tips": "Boss > Hugo > Orange > Green."},
+        "ralph_lauren_polo": {"m": 1.8, "tips": "RRL and Polo Sport vintage can be tier S."},
+        "brooks_brothers": {"m": 1.7, "tips": "Golden Fleece line highest."},
+        "j_crew": {"m": 1.3, "tips": "Collection line more valuable."},
+        "eileen_fisher": {"m": 1.8, "tips": "Good plus-size demand."},
+        "st_john": {"m": 2.5, "tips": "Knit suits. USA made more valuable."},
+        "escada": {"m": 2.5, "tips": "1980s-90s power suits."},
+        "akris": {"m": 3.0},
+        "lafayette_148": {"m": 2.0},
+        "dvf": {"m": 2.0, "tips": "Wrap dresses. 1970s vintage very valuable."},
+        "tory_burch": {"m": 1.8},
+        "kate_spade": {"m": 1.7},
+        "coach": {"m": 1.5, "tips": "Pre-2000 USA made = tier A."},
+        "all_saints": {"m": 1.8, "tips": "Leather jackets."},
+        "rag_bone": {"m": 2.0},
+        "acne_studios": {"m": 2.5},
+        "cos": {"m": 1.8},
+        "aritzia": {"m": 1.5, "alt": ["Wilfred", "Babaton", "TNA"], "tips": "Strong Canadian demand."}
+      }
+    },
+
+    "tier_vintage": {
+      "description": "Vintage labels with collector value",
+      "multiplier_range": [2.0, 8.0],
+      "brands": {
+        "courreges": {"m": 5.0, "era": "1960s-70s", "tips": "Space age."},
+        "pierre_cardin_vintage": {"m": 3.0, "era": "1960s-70s", "tips": "Only vintage valuable."},
+        "ossie_clark": {"m": 6.0, "era": "1960s-70s", "tips": "Often Celia Birtwell prints."},
+        "biba": {"m": 5.0, "era": "1960s-70s"},
+        "halston": {"m": 4.0, "era": "1970s", "tips": "Original only, not licensed."},
+        "pauline_trigere": {"m": 4.0, "era": "1950s-80s"},
+        "ceil_chapman": {"m": 5.0, "era": "1940s-60s"},
+        "lilli_ann": {"m": 4.0, "era": "1940s-70s", "tips": "SF label, suits and coats."},
+        "pendleton": {"m": 2.5, "tips": "Wool shirts, blankets."},
+        "gunne_sax": {"m": 3.0, "era": "1970s-80s", "tips": "Prairie dresses."},
+        "laura_ashley_vintage": {"m": 2.5, "era": "1970s-90s", "tips": "UK/Wales made most valuable."},
+        "cacharel": {"m": 2.5, "era": "1970s-80s"},
+        "norma_kamali": {"m": 3.5, "era": "1980s", "tips": "Sweatshirt gowns, sleeping bag coat."},
+        "stephen_sprouse": {"m": 5.0, "era": "1980s"},
+        "patrick_kelly": {"m": 6.0, "era": "1980s", "tips": "Rare."},
+        "kenzo_vintage": {"m": 3.5, "era": "1970s-90s"},
+        "krizia": {"m": 3.0, "era": "1970s-90s"},
+        "moschino_vintage": {"m": 4.0, "era": "1980s-90s", "tips": "Franco era."},
+        "claude_montana": {"m": 4.0, "era": "1980s"},
+        "azzedine_alaia": {"m": 5.0, "tips": "Body-con."},
+        "romeo_gigli": {"m": 4.0, "era": "1980s-90s"}
+      }
+    },
+
+    "tier_B": {
+      "description": "Reliable modest resale",
+      "multiplier_range": [1.1, 1.5],
+      "brands": {
+        "ann_taylor": {"m": 1.2},
+        "loft": {"m": 1.1},
+        "gap": {"m": 1.1, "tips": "1990s vintage higher."},
+        "zara": {"m": 1.2},
+        "uniqlo": {"m": 1.3, "tips": "+J collabs higher."},
+        "topshop": {"m": 1.3, "tips": "Discontinued, nostalgia value."},
+        "mango": {"m": 1.2},
+        "massimo_dutti": {"m": 1.5},
+        "club_monaco": {"m": 1.4},
+        "bcbg": {"m": 1.4},
+        "anthropologie": {"m": 1.6, "alt": ["Maeve", "Pilcro", "Moulinette Soeurs"]},
+        "free_people": {"m": 1.5}
+      }
+    },
+
+    "denim": {
+      "vintage_premium": {
+        "levis_vintage": {"m": 4.0, "tips": "Big E, redline selvedge. Pre-1971 highest."},
+        "lee_vintage": {"m": 2.5, "tips": "Union made, storm rider."},
+        "wrangler_vintage": {"m": 2.0, "tips": "USA made, western."}
+      },
+      "contemporary": {
+        "agolde": {"m": 2.0},
+        "citizens_of_humanity": {"m": 2.0},
+        "mother": {"m": 2.0},
+        "frame": {"m": 2.0},
+        "rag_bone": {"m": 2.0},
+        "j_brand": {"m": 1.8},
+        "paige": {"m": 1.8},
+        "seven_mankind": {"m": 1.5}
+      },
+      "japanese_selvedge": {
+        "m": 3.0,
+        "brands": ["momotaro", "pure_blue_japan", "samurai", "iron_heart", "flat_head", "fullcount", "sugar_cane"]
+      }
+    },
+
+    "athletic_streetwear": {
+      "vintage": {
+        "nike_vintage": {"m": 3.0, "tips": "Grey/silver/orange tag. ACG, Cortez."},
+        "adidas_vintage": {"m": 2.5, "tips": "Trefoil era, Made in W Germany/France."},
+        "champion_reverse_weave": {"m": 2.0, "tips": "USA made, college pieces."},
+        "starter_jackets": {"m": 2.5, "era": "1990s"},
+        "patagonia": {"m": 2.0},
+        "north_face": {"m": 1.8, "tips": "Nuptse, vintage Gore-tex."},
+        "arcteryx": {"m": 2.5},
+        "carhartt": {"m": 1.8, "tips": "USA made, WIP line."}
+      },
+      "streetwear": {
+        "supreme": {"m": 3.0, "tips": "Box logos highest."},
+        "stussy": {"m": 2.0},
+        "bape": {"m": 2.5, "tips": "Verify authenticity."},
+        "palace": {"m": 2.0},
+        "off_white": {"m": 2.5}
+      }
+    }
+  },
+
+  "shoe_brands": {
+    "tier_S": {
+      "multiplier_range": [4.0, 10.0],
+      "brands": {
+        "christian_louboutin": {"m": 5.0, "sig": "Red sole"},
+        "manolo_blahnik": {"m": 5.0},
+        "jimmy_choo": {"m": 4.0},
+        "gucci": {"m": 4.0},
+        "prada": {"m": 4.0},
+        "chanel": {"m": 6.0},
+        "valentino": {"m": 4.0, "tips": "Rockstud."},
+        "roger_vivier": {"m": 5.0},
+        "ferragamo": {"m": 3.5, "tips": "Vara iconic."},
+        "tods": {"m": 3.0},
+        "bottega_veneta": {"m": 4.0}
+      }
+    },
+
+    "tier_A": {
+      "multiplier_range": [2.0, 4.0],
+      "brands": {
+        "stuart_weitzman": {"m": 2.5},
+        "aquazzura": {"m": 3.0},
+        "gianvito_rossi": {"m": 3.0},
+        "cole_haan": {"m": 1.8},
+        "frye": {"m": 2.5, "tips": "Boots."},
+        "allen_edmonds": {"m": 2.5},
+        "alden": {"m": 3.5, "tips": "Shell cordovan highest."},
+        "crockett_jones": {"m": 3.0},
+        "churchs": {"m": 3.0},
+        "grenson": {"m": 2.5},
+        "loake": {"m": 2.0},
+        "florsheim_vintage": {"m": 2.0, "tips": "Imperial line, USA made."},
+        "dr_martens": {"m": 2.0, "tips": "Made in England highest."},
+        "red_wing": {"m": 2.5},
+        "wolverine_1000_mile": {"m": 2.5},
+        "birkenstock": {"m": 1.8}
+      }
+    },
+
+    "vintage_collectible": {
+      "multiplier_range": [2.5, 6.0],
+      "brands": {
+        "charles_jourdan": {"m": 3.0, "era": "1970s-80s"},
+        "herbert_levine": {"m": 5.0, "era": "1950s-70s"},
+        "beth_levine": {"m": 5.0, "era": "1950s-70s"},
+        "david_evins": {"m": 4.0},
+        "andrew_geller": {"m": 3.5, "era": "1950s-60s"},
+        "i_miller": {"m": 3.0, "era": "1940s-70s"},
+        "delman": {"m": 3.0},
+        "bruno_magli": {"m": 2.5},
+        "bally": {"m": 2.5, "tips": "Swiss, vintage esp."},
+        "maud_frizon": {"m": 3.5, "era": "1980s"},
+        "andrea_pfister": {"m": 4.0, "era": "1970s-80s"}
+      }
+    }
+  }
+}
