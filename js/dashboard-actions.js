@@ -3,8 +3,7 @@
 // =============================================================================
 
 import { getInventoryInPipeline } from './db.js';
-import { $, formatDate } from './utils.js';
-import { createTabController } from './ui.js';
+import { $, $$ } from './utils.js';
 
 // =============================================================================
 // INITIALIZATION
