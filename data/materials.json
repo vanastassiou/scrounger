@@ -1,0 +1,420 @@
+{
+  "meta": {
+    "document_type": "reference_data",
+    "domain": "thrift_store_sourcing",
+    "version": "1.0",
+    "created": "2026-01-03",
+    "purpose": "Materials identification guide for vintage clothing, shoes, and jewelry"
+  },
+
+  "fabrics": {
+    "premium_natural": {
+      "description": "High-value natural fibers to actively seek",
+      "materials": {
+        "silk": {
+          "label_terms": ["silk", "soie", "seta", "seide", "100% silk", "pure silk", "silk charmeuse", "silk crepe", "silk chiffon", "habotai", "dupioni", "shantung", "silk satin", "silk taffeta", "silk organza", "silk georgette"],
+          "hand_feel": "Smooth, cool to touch, slight texture variation, drapes beautifully",
+          "burn_test": "Burns slowly, smells like burning hair, leaves crushable ash",
+          "quality_indicators": ["Weight (momme count)", "Luster", "No snags", "Fluid drape"],
+          "value_tier": "high",
+          "care_notes": "Dry clean or hand wash cold. Water spots possible."
+        },
+        "cashmere": {
+          "label_terms": ["cashmere", "cachemire", "100% cashmere", "pure cashmere", "kashmir"],
+          "hand_feel": "Extremely soft, lightweight warmth, slight halo",
+          "burn_test": "Burns slowly, smells like burning hair, leaves crushable ash",
+          "quality_indicators": ["Ply count (2-ply minimum)", "No pilling", "Dense knit", "Soft halo"],
+          "value_tier": "high",
+          "care_notes": "Prone to pilling and moth damage. Check carefully."
+        },
+        "wool": {
+          "label_terms": ["wool", "laine", "lana", "wolle", "virgin wool", "merino", "lambswool", "shetland", "tweed", "gabardine", "flannel", "worsted", "boiled wool"],
+          "hand_feel": "Warm, springy, slightly scratchy (varies by type)",
+          "burn_test": "Burns slowly, smells like burning hair, leaves crushable ash",
+          "quality_indicators": ["Tight weave", "No moth holes", "No excessive pilling", "Good recovery when stretched"],
+          "value_tier": "medium-high",
+          "care_notes": "Check for moth damage around seams and underarms."
+        },
+        "linen": {
+          "label_terms": ["linen", "lin", "lino", "leinen", "100% linen", "irish linen", "belgian linen", "flax"],
+          "hand_feel": "Crisp, cool, textured, becomes softer with wear",
+          "burn_test": "Burns quickly with yellow flame, smells like burning paper, leaves gray ash",
+          "quality_indicators": ["Weight", "Slubs (natural, not defects)", "Crispness"],
+          "value_tier": "medium-high",
+          "care_notes": "Wrinkles easily - not a defect. Gets better with age."
+        },
+        "cotton": {
+          "label_terms": ["cotton", "coton", "cotone", "baumwolle", "pima cotton", "egyptian cotton", "supima", "sea island cotton", "broadcloth", "poplin", "chambray", "oxford cloth", "sateen"],
+          "hand_feel": "Soft, breathable, absorbent",
+          "burn_test": "Burns quickly with yellow flame, smells like burning paper, leaves gray ash",
+          "quality_indicators": ["Thread count (for wovens)", "Long staple indicators", "No thinning"],
+          "value_tier": "medium",
+          "care_notes": "Look for premium cotton types. Basic cotton less valuable unless vintage."
+        },
+        "leather": {
+          "label_terms": ["leather", "genuine leather", "cuir", "pelle", "leder", "full grain", "top grain", "nappa", "lambskin", "calfskin", "cowhide", "goatskin", "suede", "nubuck"],
+          "hand_feel": "Supple, warm, natural grain variation",
+          "smell_test": "Distinct leather smell, not chemical",
+          "quality_indicators": ["Full grain (no sanding)", "Suppleness", "Natural variations", "Good patina"],
+          "value_tier": "high",
+          "care_notes": "Check for cracking, peeling, dryness. Suede check for bald spots."
+        }
+      }
+    },
+
+    "quality_synthetics_vintage": {
+      "description": "Vintage synthetics that have collectible value",
+      "materials": {
+        "rayon_viscose": {
+          "label_terms": ["rayon", "viscose", "rayonne", "artificial silk", "art silk", "bemberg"],
+          "hand_feel": "Silk-like drape, cool to touch, can be slippery",
+          "notes": "Vintage rayon (pre-1970s) often higher quality than modern. Look for 1940s-1960s pieces.",
+          "value_tier": "medium",
+          "care_notes": "Weakens when wet. Many vintage pieces dry clean only."
+        },
+        "acetate": {
+          "label_terms": ["acetate", "celanese", "acétate"],
+          "hand_feel": "Smooth, silk-like appearance, less drape than silk",
+          "notes": "Common in vintage linings and evening wear. 1950s-1970s pieces can be valuable.",
+          "value_tier": "low-medium",
+          "care_notes": "Dissolves in acetone (nail polish remover). Dry clean."
+        },
+        "nylon_vintage": {
+          "label_terms": ["nylon", "polyamide", "du pont nylon", "antron"],
+          "hand_feel": "Smooth, slightly slick, lightweight",
+          "notes": "Early nylon (1940s-1960s) has collector value in lingerie and hosiery.",
+          "value_tier": "low-medium",
+          "care_notes": "Heat sensitive. Check for yellowing and brittleness."
+        }
+      }
+    },
+
+    "avoid_unless_designer": {
+      "description": "Low-value materials unless from notable brand",
+      "materials": {
+        "polyester": {
+          "label_terms": ["polyester", "polyester blend", "poly"],
+          "notes": "Generally low value. Exception: 1970s designer polyester, Japanese designer poly.",
+          "value_tier": "low"
+        },
+        "acrylic": {
+          "label_terms": ["acrylic", "acrylique", "orlon", "dralon"],
+          "notes": "Low value. Pills easily. Avoid unless vintage designer.",
+          "value_tier": "low"
+        },
+        "spandex_elastane": {
+          "label_terms": ["spandex", "elastane", "lycra"],
+          "notes": "Degrades over time. Check stretch recovery on vintage.",
+          "value_tier": "low"
+        }
+      }
+    },
+
+    "fabric_quality_tests": {
+      "burn_test": {
+        "warning": "Only perform outside of store on purchased items",
+        "natural_protein": {
+          "fibers": ["silk", "wool", "cashmere"],
+          "behavior": "Burns slowly, self-extinguishes",
+          "smell": "Burning hair",
+          "ash": "Crushable black bead"
+        },
+        "natural_cellulose": {
+          "fibers": ["cotton", "linen", "rayon"],
+          "behavior": "Burns quickly with afterglow",
+          "smell": "Burning paper",
+          "ash": "Soft gray ash"
+        },
+        "synthetic": {
+          "fibers": ["polyester", "nylon", "acrylic"],
+          "behavior": "Melts, drips, may continue burning",
+          "smell": "Chemical/plastic",
+          "ash": "Hard plastic bead"
+        }
+      },
+      "hand_feel_test": {
+        "warmth": "Wool and silk feel warm; synthetics feel room temperature",
+        "moisture": "Natural fibers absorb moisture; synthetics feel clammy",
+        "recovery": "Quality wool springs back; polyester stays compressed",
+        "drape": "Silk and rayon drape fluidly; polyester has stiffer drape"
+      }
+    }
+  },
+
+  "leathers": {
+    "premium_leathers": {
+      "full_grain": {
+        "description": "Highest quality, outermost layer with natural grain intact",
+        "identifying": "Natural variations, pores visible, develops patina",
+        "value_tier": "highest"
+      },
+      "top_grain": {
+        "description": "Sanded and refinished surface, still high quality",
+        "identifying": "More uniform appearance, less natural variation",
+        "value_tier": "high"
+      },
+      "nappa": {
+        "description": "Full grain leather that's been specially treated for softness",
+        "identifying": "Extremely soft and supple, often used in luxury goods",
+        "value_tier": "high"
+      },
+      "cordovan": {
+        "description": "Shell cordovan from horse, extremely durable",
+        "identifying": "Dense, waxy, distinctive rolling rather than creasing",
+        "value_tier": "highest"
+      },
+      "exotic": {
+        "types": ["ostrich", "alligator", "crocodile", "lizard", "snake", "stingray"],
+        "notes": "High value but verify authenticity. Many fakes exist.",
+        "value_tier": "highest"
+      }
+    },
+    "mid_tier_leathers": {
+      "corrected_grain": {
+        "description": "Sanded and embossed to hide imperfections",
+        "identifying": "Very uniform grain, often coated",
+        "value_tier": "medium"
+      },
+      "suede": {
+        "description": "Inner split with napped finish",
+        "identifying": "Soft napped surface, less durable than grain",
+        "value_tier": "medium"
+      },
+      "nubuck": {
+        "description": "Top grain buffed to create nap",
+        "identifying": "Similar to suede but finer grain",
+        "value_tier": "medium-high"
+      }
+    },
+    "low_quality_avoid": {
+      "bonded_leather": {
+        "description": "Leather scraps bonded with polyurethane",
+        "identifying": "Peels and cracks easily, uniform appearance",
+        "value_tier": "avoid"
+      },
+      "genuine_leather": {
+        "description": "Misleading term - often lowest quality real leather",
+        "identifying": "Label says 'genuine leather' without other qualifiers",
+        "value_tier": "low"
+      },
+      "pu_leather": {
+        "description": "Polyurethane synthetic",
+        "identifying": "Plastic smell, perfect uniformity, peels over time",
+        "value_tier": "avoid"
+      },
+      "pleather_pvc": {
+        "description": "Plastic vinyl material",
+        "identifying": "Plastic appearance and smell, cracks when cold",
+        "value_tier": "avoid"
+      }
+    },
+    "leather_quality_tests": {
+      "smell_test": "Real leather has distinctive organic smell; synthetics smell plastic or chemical",
+      "grain_test": "Real leather has natural variations; synthetics are perfectly uniform",
+      "edge_test": "Real leather has fibrous edges; synthetics have smooth/plastic edges",
+      "water_test": "Real leather absorbs water slightly; synthetics bead water",
+      "warmth_test": "Real leather warms to touch quickly; synthetics stay cool"
+    }
+  },
+
+  "metals_jewelry": {
+    "precious_metals": {
+      "gold": {
+        "karats": {
+          "24k": {"purity": "99.9%", "notes": "Pure gold, very soft, rarely used in Western jewelry"},
+          "22k": {"purity": "91.7%", "notes": "Common in Indian/Middle Eastern jewelry"},
+          "18k": {"purity": "75%", "notes": "High quality, good balance of purity and durability"},
+          "14k": {"purity": "58.3%", "notes": "Most common in US/Canada, very durable"},
+          "10k": {"purity": "41.7%", "notes": "Minimum to be called gold in US/Canada"},
+          "9k": {"purity": "37.5%", "notes": "Common in UK, Australia"}
+        },
+        "colors": {
+          "yellow": "Natural gold color",
+          "white": "Alloyed with palladium/nickel, often rhodium plated",
+          "rose": "Alloyed with copper"
+        },
+        "value_tier": "highest"
+      },
+      "platinum": {
+        "purity_marks": ["950 PLAT", "PT950", "PLATINUM", "PLAT"],
+        "notes": "Heavier than gold, naturally white, does not tarnish",
+        "value_tier": "highest"
+      },
+      "palladium": {
+        "purity_marks": ["PD", "PALL", "500PD", "950PD"],
+        "notes": "Similar to platinum but lighter, less expensive",
+        "value_tier": "high"
+      },
+      "sterling_silver": {
+        "purity": "92.5% silver",
+        "marks": ["925", "STERLING", "STER", ".925"],
+        "notes": "Tarnishes naturally, soft for jewelry",
+        "value_tier": "medium"
+      },
+      "coin_silver": {
+        "purity": "90% silver",
+        "marks": ["900", "COIN"],
+        "notes": "Older standard, common in antique pieces",
+        "value_tier": "medium"
+      }
+    },
+    "gold_alternatives": {
+      "gold_filled": {
+        "marks": ["GF", "1/20 14K GF", "1/10 12K GF", "GOLD FILLED"],
+        "description": "Thick layer of gold mechanically bonded to base metal",
+        "notes": "Good value, can last decades. Look for fraction (1/20 = 5% gold by weight)",
+        "value_tier": "medium"
+      },
+      "rolled_gold": {
+        "marks": ["RGP", "ROLLED GOLD", "R.G.P."],
+        "description": "Similar to gold filled but thinner layer",
+        "notes": "Less gold than gold filled, still decent quality",
+        "value_tier": "low-medium"
+      },
+      "gold_plated": {
+        "marks": ["GP", "HGE", "GOLD PLATED", "ELECTROPLATE"],
+        "description": "Very thin gold layer, will wear off",
+        "notes": "Minimal gold value, costume jewelry",
+        "value_tier": "low"
+      },
+      "vermeil": {
+        "marks": ["VERMEIL"],
+        "description": "Gold plating (minimum 2.5 microns) over sterling silver",
+        "notes": "Has silver value even if gold wears. Must be on sterling to be vermeil.",
+        "value_tier": "medium"
+      }
+    },
+    "base_metals": {
+      "brass": {
+        "notes": "Copper-zinc alloy, turns greenish, magnetic",
+        "identifying": "Yellow color, may tarnish green, no precious marks",
+        "value_tier": "low"
+      },
+      "bronze": {
+        "notes": "Copper-tin alloy, used in vintage costume",
+        "value_tier": "low"
+      },
+      "copper": {
+        "notes": "Develops green patina, used in artisan jewelry",
+        "value_tier": "low"
+      },
+      "pewter": {
+        "notes": "Tin alloy, soft, dull gray, used in vintage brooches",
+        "value_tier": "low"
+      },
+      "pot_metal": {
+        "notes": "Cheap alloy, common in vintage costume, can be valuable if designer signed",
+        "value_tier": "very_low"
+      }
+    },
+    "quick_tests": {
+      "magnet_test": {
+        "method": "Strong neodymium magnet",
+        "results": {
+          "no_attraction": "Could be gold, silver, platinum, copper, brass, aluminum",
+          "strong_attraction": "Ferrous metal, plated base metal, not precious",
+          "slight_attraction": "Some white gold alloys have slight magnetic response"
+        }
+      },
+      "weight_test": {
+        "method": "Compare weight to size",
+        "notes": "Gold is heavy (19.3 g/cm³), platinum heavier (21.5), silver lighter (10.5)"
+      },
+      "tarnish_test": {
+        "silver": "Tarnishes black/gray",
+        "gold": "Does not tarnish",
+        "brass": "Tarnishes greenish",
+        "plated": "Wear shows different color underneath"
+      },
+      "acid_test": {
+        "notes": "Definitive but destructive. Use only on purchased items in inconspicuous spot.",
+        "method": "Apply acid to small scratch mark, observe reaction"
+      }
+    }
+  },
+
+  "gemstones": {
+    "precious_stones": {
+      "diamond": {
+        "quick_tests": ["Fog test (clears quickly)", "Light refraction (sparkle pattern)", "Hardness (scratches glass)"],
+        "common_fakes": ["CZ (cubic zirconia)", "Moissanite", "White sapphire", "Glass"],
+        "value_factors": "Cut, Color, Clarity, Carat (4 Cs)",
+        "value_tier": "highest"
+      },
+      "ruby": {
+        "quick_tests": ["Asterism in star rubies", "Fluorescence under UV"],
+        "common_fakes": ["Garnet", "Tourmaline", "Glass", "Synthetic ruby"],
+        "notes": "Many vintage rubies are synthetic - still valuable but less so",
+        "value_tier": "high"
+      },
+      "sapphire": {
+        "quick_tests": ["Natural inclusions (silk)", "Color zoning"],
+        "common_fakes": ["Glass", "Synthetic sapphire", "Treated stones"],
+        "notes": "Comes in many colors beyond blue. Kashmir blue most valuable.",
+        "value_tier": "high"
+      },
+      "emerald": {
+        "quick_tests": ["Jardin (garden) inclusions typical", "Specific green hue"],
+        "common_fakes": ["Green tourmaline", "Tsavorite", "Glass", "Doublets"],
+        "notes": "Almost all emeralds are oiled/treated - expected, not a defect",
+        "value_tier": "high"
+      }
+    },
+    "semi_precious_valuable": {
+      "jade": {
+        "types": {"jadeite": "More valuable", "nephrite": "More common"},
+        "quick_tests": ["Cold to touch", "High density", "Translucency"],
+        "notes": "Highly valued in Asian markets. Color and translucency determine value.",
+        "value_tier": "medium-high"
+      },
+      "opal": {
+        "types": ["Black opal (most valuable)", "White opal", "Fire opal", "Boulder opal"],
+        "quick_tests": ["Play of color", "Pattern assessment"],
+        "notes": "Australian black opal most valuable. Check for doublets/triplets.",
+        "value_tier": "medium-high"
+      },
+      "pearl": {
+        "types": ["Natural (rare/valuable)", "Cultured (common)", "Freshwater", "Saltwater/Akoya", "South Sea", "Tahitian"],
+        "quick_tests": ["Tooth test (gritty = real)", "Surface imperfections natural", "Lustre quality"],
+        "notes": "Natural pearls extremely rare. Vintage cultured still valuable.",
+        "value_tier": "medium-high"
+      },
+      "turquoise": {
+        "quick_tests": ["Matrix patterns", "Color consistency", "Weight"],
+        "notes": "Much fake turquoise exists. Vintage Native American pieces valuable.",
+        "value_tier": "medium"
+      },
+      "amethyst": {
+        "notes": "Common but deep purple specimens and vintage pieces have value",
+        "value_tier": "low-medium"
+      },
+      "garnet": {
+        "types": ["Pyrope", "Almandine", "Rhodolite", "Tsavorite", "Demantoid"],
+        "notes": "Common in Victorian jewelry. Demantoid and tsavorite more valuable.",
+        "value_tier": "low-medium"
+      }
+    },
+    "vintage_costume_stones": {
+      "rhinestones": {
+        "valuable_types": ["Swarovski", "Austrian crystal", "Czech glass"],
+        "quality_indicators": ["Foil backing intact", "High brilliance", "Precision cuts"],
+        "notes": "Vintage signed rhinestone jewelry (Weiss, Eisenberg, etc.) very collectible"
+      },
+      "paste": {
+        "description": "Lead glass cut to imitate gems, used in Georgian/Victorian pieces",
+        "notes": "Antique paste in good condition highly collectible",
+        "value_tier": "medium"
+      },
+      "bakelite": {
+        "tests": ["Simichrome test (yellow residue)", "Hot water smell (formaldehyde)", "Weight (heavier than modern plastic)"],
+        "notes": "Art Deco bakelite jewelry highly collectible. Many fakes exist.",
+        "value_tier": "medium-high"
+      },
+      "lucite": {
+        "description": "Clear acrylic, popular mid-century",
+        "notes": "Vintage lucite with inclusions or designs collectible",
+        "value_tier": "low-medium"
+      }
+    }
+  }
+}
