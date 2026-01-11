@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#1a1a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Thrift Inventory</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+  <!-- Preload JS modules -->
+  <link rel="modulepreload" href="js/app.js">
+  <link rel="modulepreload" href="js/state.js">
+  <link rel="modulepreload" href="js/db.js">
+  <link rel="modulepreload" href="js/ui.js">
+  <link rel="modulepreload" href="js/utils.js">
+  <link rel="modulepreload" href="js/config.js">
+  <link rel="modulepreload" href="js/inventory.js">
+  <link rel="modulepreload" href="js/stores.js">
+  <link rel="modulepreload" href="js/visits.js">
+  <link rel="modulepreload" href="js/sync.js">
+  <!-- Prevent flash of wrong tab -->
+  <script>
+    (function() {
+      var t = localStorage.getItem('activeTab') || 'dashboard';
+      document.documentElement.dataset.tab = t;
+    })();
+  </script>
+  <style>
+    html[data-tab="dashboard"] #dashboard,
+    html[data-tab="inventory"] #inventory,
+    html[data-tab="stores"] #stores,
+    html[data-tab="visits"] #visits { display: block; }
+    html[data-tab="dashboard"] .tab[data-tab="dashboard"],
+    html[data-tab="inventory"] .tab[data-tab="inventory"],
+    html[data-tab="stores"] .tab[data-tab="stores"],
+    html[data-tab="visits"] .tab[data-tab="visits"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1 class="app-title">Thrift Inventory</h1>
+    <span id="sync-status" class="sync-status">Offline</span>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab" data-tab="dashboard">Home</button>
+    <button class="tab" data-tab="inventory">Inventory</button>
+    <button class="tab" data-tab="stores">Stores</button>
+    <button class="tab" data-tab="visits">Visits</button>
+    <button class="tab" data-tab="selling">Selling</button>
+  </nav>
+
+  <main>
+    <!-- Dashboard -->
+    <section id="dashboard" class="page">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total-items">0</div>
+          <div class="stat-label">Items</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total-invested">$0</div>
+          <div class="stat-label">Invested</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total-sold">$0</div>
+          <div class="stat-label">Sold</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-stores-visited">0</div>
+          <div class="stat-label">Stores</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Quick actions</h3>
+        <div class="action-buttons">
+          <button class="btn btn--primary btn--block" id="add-item-btn">Add item</button>
+          <button class="btn btn--block" id="log-visit-btn">Log visit</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Action items</h3>
+        <div id="action-items-container">
+          <div class="action-item-group">
+            <div class="action-item-header">
+              <span class="action-icon">📷</span>
+              <span class="action-label">Needs photographing</span>
+              <span class="action-badge" id="action-badge-photo">0</span>
+            </div>
+            <ul class="action-item-list" id="action-list-photo"></ul>
+          </div>
+
+          <div class="action-item-group">
+            <div class="action-item-header">
+              <span class="action-icon">📝</span>
+              <span class="action-label">Ready to list</span>
+              <span class="action-badge" id="action-badge-list">0</span>
+            </div>
+            <ul class="action-item-list" id="action-list-list"></ul>
+          </div>
+
+          <div class="action-item-group">
+            <div class="action-item-header">
+              <span class="action-icon">📦</span>
+              <span class="action-label">Needs shipping</span>
+              <span class="action-badge" id="action-badge-ship">0</span>
+            </div>
+            <ul class="action-item-list" id="action-list-ship"></ul>
+          </div>
+
+          <div class="action-item-group">
+            <div class="action-item-header">
+              <span class="action-icon">🚚</span>
+              <span class="action-label">Awaiting confirmation</span>
+              <span class="action-badge" id="action-badge-confirm">0</span>
+            </div>
+            <ul class="action-item-list" id="action-list-confirm"></ul>
+          </div>
+
+          <div class="action-item-group">
+            <div class="action-item-header">
+              <span class="action-icon">✅</span>
+              <span class="action-label">Confirm sale complete</span>
+              <span class="action-badge" id="action-badge-complete">0</span>
+            </div>
+            <ul class="action-item-list" id="action-list-complete"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Dev tools</h3>
+        <div class="action-buttons">
+          <button class="btn btn--block" id="seed-data-btn">Seed mock data</button>
+          <button class="btn btn--block" id="clear-data-btn">Clear all data</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Inventory -->
+    <section id="inventory" class="page">
+      <div class="page-header">
+        <h2>Inventory</h2>
+      </div>
+
+      <div class="filter-row">
+        <button class="filter-btn active" data-category="all">All</button>
+        <button class="filter-btn" data-category="clothing">Clothing</button>
+        <button class="filter-btn" data-category="shoes">Shoes</button>
+        <button class="filter-btn" data-category="jewelry">Jewelry</button>
+        <button class="filter-btn" data-category="accessories">Accessories</button>
+      </div>
+
+      <input type="text" class="form-input" id="inventory-search" placeholder="Search items...">
+
+      <div class="table-container">
+        <table class="table" id="inventory-table">
+          <thead>
+            <tr>
+              <th data-sort="title">Title</th>
+              <th data-sort="category">Category</th>
+              <th data-sort="brand">Brand</th>
+              <th data-sort="purchase_price">Cost</th>
+              <th data-sort="status">Status</th>
+              <th data-sort="acquisition_date">Date</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-tbody">
+            <tr><td colspan="6" class="empty-state"><div class="empty-icon">I</div><p>Loading...</p></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="inventory-count" class="text-muted"></div>
+    </section>
+
+    <!-- Stores -->
+    <section id="stores" class="page">
+      <div class="page-header">
+        <h2>Stores</h2>
+        <button class="btn btn--primary" id="add-store-btn">Add store</button>
+      </div>
+
+      <div class="filter-row">
+        <button class="filter-btn active" data-tier="all">All</button>
+        <button class="filter-btn" data-tier="S">S</button>
+        <button class="filter-btn" data-tier="A">A</button>
+        <button class="filter-btn" data-tier="B">B</button>
+        <button class="filter-btn" data-tier="C">C</button>
+      </div>
+
+      <div class="table-container">
+        <table class="table" id="stores-table">
+          <thead>
+            <tr>
+              <th data-sort="name">Name</th>
+              <th data-sort="tier">Tier</th>
+              <th data-sort="visits">Visits</th>
+              <th data-sort="hit_rate">Hit Rate</th>
+            </tr>
+          </thead>
+          <tbody id="stores-tbody">
+            <tr><td colspan="4" class="empty-state"><div class="empty-icon">S</div><p>Loading...</p></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="store-count" class="text-muted"></div>
+    </section>
+
+    <!-- Visits -->
+    <section id="visits" class="page">
+      <div class="page-header">
+        <h2>Visits</h2>
+      </div>
+
+      <div id="visits-list" class="card-list"></div>
+    </section>
+
+    <!-- Selling -->
+    <section id="selling" class="page">
+      <div class="page-header">
+        <h2>Selling</h2>
+      </div>
+
+      <!-- Analytics Dashboard -->
+      <div class="selling-stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="selling-stat-revenue">$0</div>
+          <div class="stat-label">Revenue</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="selling-stat-profit">$0</div>
+          <div class="stat-label">Profit</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="selling-stat-margin">0%</div>
+          <div class="stat-label">Margin</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="selling-stat-sold">0</div>
+          <div class="stat-label">Items sold</div>
+        </div>
+      </div>
+
+      <!-- Pipeline Status Filters -->
+      <div class="filter-row">
+        <button class="filter-btn active" data-status="all">All pipeline</button>
+        <button class="filter-btn" data-status="unlisted">Unlisted</button>
+        <button class="filter-btn" data-status="photographed">Photographed</button>
+        <button class="filter-btn" data-status="listed">Listed</button>
+        <button class="filter-btn" data-status="pending_sale">Pending</button>
+        <button class="filter-btn" data-status="packaged">Packaged</button>
+        <button class="filter-btn" data-status="shipped">Shipped</button>
+        <button class="filter-btn" data-status="confirmed_received">Confirmed</button>
+        <button class="filter-btn" data-status="sold">Sold</button>
+      </div>
+
+      <!-- Additional Filters -->
+      <div class="filter-row">
+        <label class="filter-label">Platform:</label>
+        <select class="filter-select" id="platform-filter">
+          <option value="all">All platforms</option>
+          <option value="poshmark">Poshmark</option>
+          <option value="ebay">eBay</option>
+          <option value="etsy">Etsy</option>
+          <option value="depop">Depop</option>
+          <option value="facebook_marketplace">Facebook Marketplace</option>
+          <option value="local_consignment">Local Consignment</option>
+          <option value="other">Other</option>
+        </select>
+
+        <label class="filter-label">Date:</label>
+        <select class="filter-select" id="date-range-filter">
+          <option value="all">All time</option>
+          <option value="7d">Last 7 days</option>
+          <option value="30d">Last 30 days</option>
+          <option value="90d">Last 90 days</option>
+          <option value="ytd">Year to date</option>
+        </select>
+      </div>
+
+      <!-- Search -->
+      <input type="text" class="form-input" id="selling-search" placeholder="Search items...">
+
+      <!-- Pipeline Table -->
+      <div class="table-container">
+        <table class="table" id="selling-table">
+          <thead>
+            <tr>
+              <th data-sort="title">Item</th>
+              <th data-sort="category">Category</th>
+              <th data-sort="status">Status</th>
+              <th data-sort="purchase_price">Cost</th>
+              <th data-sort="sold_price">Price</th>
+              <th data-sort="profit">Profit</th>
+              <th data-sort="sold_platform">Platform</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="selling-tbody">
+            <tr>
+              <td colspan="8" class="empty-state">
+                <div class="empty-icon">💰</div>
+                <p>No items in sales pipeline</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="selling-count" class="text-muted"></div>
+    </section>
+  </main>
+
+  <!-- Add Item Dialog -->
+  <dialog id="add-item-dialog" class="modal modal--large">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add item</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <form id="item-form">
+        <!-- Basic Info Section -->
+        <fieldset class="form-section">
+          <legend class="form-section-title">Basic info</legend>
+
+          <div class="form-group">
+            <label class="form-label" for="item-title">Title *</label>
+            <input type="text" class="form-input" id="item-title" name="title" required placeholder="e.g., Vintage silk blouse">
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="item-category">Category *</label>
+              <select class="form-select" id="item-category" name="category" required>
+                <option value="">Select...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="item-subcategory">Type</label>
+              <select class="form-select" id="item-subcategory" name="subcategory" disabled>
+                <option value="">Select category first</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="item-brand">Brand</label>
+              <input type="text" class="form-input" id="item-brand" name="brand" placeholder="e.g., Pendleton">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="item-era">Era</label>
+              <select class="form-select" id="item-era" name="era">
+                <option value="">Select...</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Acquisition Section -->
+        <fieldset class="form-section">
+          <legend class="form-section-title">Acquisition</legend>
+
+          <div class="form-group">
+            <label class="form-label" for="item-store">Store *</label>
+            <select class="form-select" id="item-store" name="store_id" required>
+              <option value="">Select store...</option>
+            </select>
+          </div>
+
+          <div class="form-row form-row--3">
+            <div class="form-group">
+              <label class="form-label" for="item-acquisition-date">Date *</label>
+              <input type="date" class="form-input" id="item-acquisition-date" name="acquisition_date" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="item-price">Price *</label>
+              <input type="number" class="form-input" id="item-price" name="purchase_price" step="0.01" min="0" required placeholder="0.00">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="item-tax">Tax</label>
+              <input type="number" class="form-input" id="item-tax" name="tax_paid" step="0.01" min="0" placeholder="0.00">
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Sizing Section (collapsible) -->
+        <details class="form-section form-section--collapsible">
+          <summary class="form-section-title">Sizing</summary>
+          <div class="form-section-content">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="item-labeled-size">Labeled size</label>
+                <input type="text" class="form-input" id="item-labeled-size" name="labeled_size" placeholder="e.g., M, 8, 38">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="item-modern-size">Modern equivalent</label>
+                <input type="text" class="form-input" id="item-modern-size" name="modern_size_equivalent" placeholder="e.g., S, 4, 34">
+              </div>
+            </div>
+
+            <!-- Shoe-specific width -->
+            <div class="form-group" id="shoe-width-group" hidden>
+              <label class="form-label" for="item-width">Width</label>
+              <select class="form-select" id="item-width" name="width">
+                <option value="">Select...</option>
+              </select>
+            </div>
+
+            <!-- Jewelry-specific ring size -->
+            <div class="form-group" id="ring-size-group" hidden>
+              <label class="form-label" for="item-ring-size">Ring size</label>
+              <input type="text" class="form-input" id="item-ring-size" name="ring_size" placeholder="e.g., 6, 7.5">
+            </div>
+
+            <!-- Dynamic measurements grid -->
+            <div id="measurements-grid" class="measurements-grid"></div>
+          </div>
+        </details>
+
+        <!-- Materials Section (collapsible) -->
+        <details class="form-section form-section--collapsible">
+          <summary class="form-section-title">Materials</summary>
+          <div class="form-section-content">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="item-material">Primary material *</label>
+                <input type="text" class="form-input" id="item-material" name="primary_material" placeholder="e.g., Silk, Leather, Sterling silver">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="item-secondary-materials">Secondary</label>
+                <input type="text" class="form-input" id="item-secondary-materials" name="secondary_materials" placeholder="e.g., Lining: polyester">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-checkbox">
+                <input type="checkbox" name="material_verified" id="item-material-verified">
+                <span>Material verified (via label, testing, or hallmark)</span>
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="item-material-notes">Material notes</label>
+              <textarea class="form-textarea" id="item-material-notes" name="material_notes" rows="2" placeholder="Hand feel, weight, testing results..."></textarea>
+            </div>
+          </div>
+        </details>
+
+        <!-- Jewelry-Specific Section (conditional, collapsible) -->
+        <details class="form-section form-section--collapsible" id="jewelry-section" hidden>
+          <summary class="form-section-title">Jewelry details</summary>
+          <div class="form-section-content">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="item-metal-type">Metal type</label>
+                <select class="form-select" id="item-metal-type" name="metal_type">
+                  <option value="">Select...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="item-closure-type">Closure</label>
+                <select class="form-select" id="item-closure-type" name="closure_type">
+                  <option value="">Select...</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="item-hallmarks">Hallmarks</label>
+              <input type="text" class="form-input" id="item-hallmarks" name="hallmarks" placeholder="e.g., 925, 14K, maker's mark">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="item-stones">Stones</label>
+              <input type="text" class="form-input" id="item-stones" name="stones" placeholder="e.g., Garnet cabochon, rhinestones">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Tested with</label>
+              <div class="checkbox-group" id="jewelry-tests-group"></div>
+            </div>
+          </div>
+        </details>
+
+        <!-- Condition Section (collapsible) -->
+        <details class="form-section form-section--collapsible">
+          <summary class="form-section-title">Condition</summary>
+          <div class="form-section-content">
+            <div class="form-group">
+              <label class="form-label" for="item-condition">Overall condition</label>
+              <select class="form-select" id="item-condition" name="condition">
+                <option value="">Select...</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="item-condition-notes">Condition notes</label>
+              <textarea class="form-textarea" id="item-condition-notes" name="condition_notes" rows="2" placeholder="Describe any issues or notable features..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Flaws</label>
+              <div class="flaw-chips" id="flaw-chips"></div>
+              <select class="form-select form-select--inline" id="add-flaw-select">
+                <option value="">+ Add flaw...</option>
+              </select>
+            </div>
+
+            <div id="flaws-list" class="flaws-list"></div>
+          </div>
+        </details>
+
+        <!-- Intent & Pricing Section (collapsible) -->
+        <details class="form-section form-section--collapsible">
+          <summary class="form-section-title">Intent & pricing</summary>
+          <div class="form-section-content">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="item-intent">Intent</label>
+                <select class="form-select" id="item-intent" name="intent">
+                  <option value="">Select...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="item-status">Status</label>
+                <select class="form-select" id="item-status" name="status">
+                  <option value="">Select...</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="resale-platforms-group" class="form-group" hidden>
+              <label class="form-label">Target platforms</label>
+              <div class="checkbox-group" id="platforms-checkboxes"></div>
+            </div>
+
+            <div class="form-row form-row--3">
+              <div class="form-group">
+                <label class="form-label" for="item-estimated-value">Est. value</label>
+                <input type="number" class="form-input" id="item-estimated-value" name="estimated_resale_value" step="0.01" min="0" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="item-min-price">Min. price</label>
+                <input type="number" class="form-input" id="item-min-price" name="minimum_acceptable_price" step="0.01" min="0" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="item-brand-multiplier">Brand mult.</label>
+                <input type="number" class="form-input" id="item-brand-multiplier" name="brand_premium_multiplier" step="0.1" min="0.1" value="1.0">
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <!-- Description Section -->
+        <fieldset class="form-section">
+          <legend class="form-section-title">Description</legend>
+          <div class="form-group">
+            <textarea class="form-textarea" id="item-description" name="description" rows="3" placeholder="Detailed description for listing..."></textarea>
+          </div>
+        </fieldset>
+
+        <div class="form-actions">
+          <button type="button" class="btn" id="item-form-cancel">Cancel</button>
+          <button type="submit" class="btn btn--primary">Save item</button>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- View Item Dialog -->
+  <dialog id="view-item-dialog" class="modal modal--large">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="view-item-title">Item Details</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div id="view-item-content" class="item-details"></div>
+    </div>
+  </dialog>
+
+  <!-- Log Visit Dialog -->
+  <dialog id="log-visit-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Log visit</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <form id="visit-form">
+        <div class="form-group">
+          <label class="form-label" for="visit-store">Store *</label>
+          <select class="form-select" id="visit-store" name="store_id" required>
+            <option value="">Select store...</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="visit-date">Date *</label>
+          <input type="date" class="form-input" id="visit-date" name="date" required>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="visit-purchases">Items purchased</label>
+            <input type="number" class="form-input" id="visit-purchases" name="purchases_count" min="0" value="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="visit-spent">Total spent</label>
+            <input type="number" class="form-input" id="visit-spent" name="total_spent" step="0.01" min="0" value="0">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="visit-notes">Notes</label>
+          <textarea class="form-textarea" id="visit-notes" name="notes" rows="3"></textarea>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block">Save visit</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Visit Items Dialog -->
+  <dialog id="visit-items-dialog" class="modal modal--large">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="visit-items-title">Visit Items</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="table-container">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Category</th>
+              <th>Brand</th>
+              <th>Cost</th>
+            </tr>
+          </thead>
+          <tbody id="visit-items-tbody"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3" class="text-muted">Total</td>
+              <td id="visit-items-total">$0.00</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Add Store Dialog -->
+  <dialog id="add-store-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add store</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <form id="store-form">
+        <div class="form-group">
+          <label class="form-label" for="store-name">Name *</label>
+          <input type="text" class="form-input" id="store-name" name="name" required placeholder="e.g., Goodwill - Main St">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="store-address">Address</label>
+          <input type="text" class="form-input" id="store-address" name="address" placeholder="e.g., 123 Main St, Vancouver, BC">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="store-tier">Tier *</label>
+            <select class="form-select" id="store-tier" name="tier" required>
+              <option value="">Select...</option>
+              <option value="S">S - Top tier</option>
+              <option value="A">A - High quality</option>
+              <option value="B">B - Average</option>
+              <option value="C">C - Lower tier</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="store-phone">Phone</label>
+            <input type="tel" class="form-input" id="store-phone" name="phone" placeholder="e.g., 604-555-1234">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="store-notes">Notes</label>
+          <textarea class="form-textarea" id="store-notes" name="notes" rows="3" placeholder="Hours, specialties, parking info..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block">Save store</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Mark As Sold Dialog -->
+  <dialog id="mark-sold-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Mark item as sold</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <form id="mark-sold-form">
+        <input type="hidden" id="sold-item-id" name="item_id">
+
+        <div class="form-group">
+          <label class="form-label">Item</label>
+          <div id="sold-item-title" class="text-muted"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="sold-date">Sale date *</label>
+            <input type="date" class="form-input" id="sold-date" name="sold_date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="sold-price">Sale price *</label>
+            <input type="number" class="form-input" id="sold-price" name="sold_price" step="0.01" min="0" required placeholder="0.00">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="sold-platform">Platform *</label>
+          <select class="form-select" id="sold-platform" name="sold_platform" required>
+            <option value="">Select...</option>
+            <option value="poshmark">Poshmark</option>
+            <option value="ebay">eBay</option>
+            <option value="etsy">Etsy</option>
+            <option value="depop">Depop</option>
+            <option value="facebook_marketplace">Facebook Marketplace</option>
+            <option value="local_consignment">Local Consignment</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="shipping-cost">Shipping cost</label>
+            <input type="number" class="form-input" id="shipping-cost" name="shipping_cost" step="0.01" min="0" placeholder="0.00">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="platform-fees">Platform fees</label>
+            <input type="number" class="form-input" id="platform-fees" name="platform_fees" step="0.01" min="0" placeholder="0.00">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Profit summary</label>
+          <div class="profit-summary" id="profit-summary">
+            <div class="profit-row">
+              <span>Sale price:</span>
+              <span id="summary-price">$0.00</span>
+            </div>
+            <div class="profit-row">
+              <span>Cost basis:</span>
+              <span id="summary-cost">$0.00</span>
+            </div>
+            <div class="profit-row">
+              <span>Expenses:</span>
+              <span id="summary-expenses">$0.00</span>
+            </div>
+            <div class="profit-row profit-row--total">
+              <span>Net profit:</span>
+              <span id="summary-profit" class="profit--neutral">$0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block">Confirm sale</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Toast -->
+  <div class="toast"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
