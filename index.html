@@ -19,6 +19,8 @@
   <link rel="modulepreload" href="js/inventory.js">
   <link rel="modulepreload" href="js/stores.js">
   <link rel="modulepreload" href="js/visits.js">
+  <link rel="modulepreload" href="js/selling.js">
+  <link rel="modulepreload" href="js/dashboard-actions.js">
   <link rel="modulepreload" href="js/sync.js">
   <!-- Prevent flash of wrong tab -->
   <script>
@@ -31,11 +33,13 @@
     html[data-tab="dashboard"] #dashboard,
     html[data-tab="inventory"] #inventory,
     html[data-tab="stores"] #stores,
-    html[data-tab="visits"] #visits { display: block; }
+    html[data-tab="visits"] #visits,
+    html[data-tab="selling"] #selling { display: block; }
     html[data-tab="dashboard"] .tab[data-tab="dashboard"],
     html[data-tab="inventory"] .tab[data-tab="inventory"],
     html[data-tab="stores"] .tab[data-tab="stores"],
-    html[data-tab="visits"] .tab[data-tab="visits"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+    html[data-tab="visits"] .tab[data-tab="visits"],
+    html[data-tab="selling"] .tab[data-tab="selling"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
   </style>
 </head>
 <body>
