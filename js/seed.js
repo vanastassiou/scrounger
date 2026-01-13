@@ -1,187 +1,660 @@
 // =============================================================================
-// SEED DATA - Run once to populate mock data
+// SEED DATA - Generated from actual inventory CSV
 // =============================================================================
 
 import { createInventoryItem, createVisit } from './db.js';
 
-const MOCK_ITEMS = [
+// Store ID mappings for CSV data
+const STORE_MAPPING = {
+  'Value Village Boutique_Downtown Granville': 'vv_boutique_downtown',
+  'Value Village_Queensborough': 'vv_queensborough',
+  'MCC Center Thrift Shop_Abbotsford': 'mcc_abbotsford_centre',
+  'Private Sale - Leslie_Edmonton': 'private_sale_leslie',
+  'Salvation Army_Edmonton': 'sa_edmonton',
+  'Salvation Army_Coquitlam': 'sa_coquitlam',
+  'RCH Auxiliary Thrift Store_': 'rch_auxiliary',
+  'St Barnabas Thrift Store_': 'st_barnabas',
+  'RAPS Thrift Store_Granville Avenue': 'raps_granville',
+  'Steveston Treasure Cottage_': 'steveston_treasure',
+  'Richmond Hospital Healthcare Auxiliary Thrift Shop_': 'richmond_hospital_aux',
+  'Value Village_Granville Avenue': 'vv_richmond'
+};
+
+// Actual inventory from CSV
+const INVENTORY_ITEMS = [
   {
-    title: 'Vintage Pendleton wool blazer',
+    title: 'Jonathan Simkhai Mustard yellow sweater',
+    category: 'clothing',
+    subcategory: 'sweater',
+    brand: 'Jonathan Simkhai',
+    store_id: 'vv_boutique_downtown',
+    acquisition_date: '2025-11-17',
+    purchase_price: 7.49,
+    labeled_size: 'M',
+    primary_material: '100% cashmere',
+    status: 'unlisted',
+    description: 'Mustard yellow sweater. Recommended shipping: Poly mailer'
+  },
+  {
+    title: 'Lord & Taylor Black turtleneck sweater',
+    category: 'clothing',
+    subcategory: 'sweater',
+    brand: 'Lord & Taylor',
+    store_id: 'vv_boutique_downtown',
+    acquisition_date: '2025-11-17',
+    purchase_price: 10.00,
+    labeled_size: 'XXL',
+    primary_material: 'Cashmere',
+    condition_notes: 'Approximate price. Made in Bangladesh.',
+    status: 'unlisted',
+    description: 'Black turtleneck sweater. Recommended shipping: Poly mailer (large)'
+  },
+  {
+    title: 'Ellen Tracy Aubergine sweater with button collar detail',
+    category: 'clothing',
+    subcategory: 'sweater',
+    brand: 'Ellen Tracy',
+    store_id: 'vv_boutique_downtown',
+    acquisition_date: '2025-11-17',
+    purchase_price: 10.00,
+    labeled_size: 'L',
+    primary_material: '100% Merino wool',
+    condition_notes: 'Approximate price. Made in Cambodia.',
+    status: 'unlisted',
+    description: 'Aubergine sweater with button collar detail. Recommended shipping: Poly mailer'
+  },
+  {
+    title: 'Renee Tener for Jeanne Pierre Magenta cardigan',
+    category: 'clothing',
+    subcategory: 'sweater',
+    brand: 'Renee Tener for Jeanne Pierre',
+    store_id: 'vv_boutique_downtown',
+    acquisition_date: '2025-11-17',
+    purchase_price: 10.00,
+    labeled_size: 'L',
+    primary_material: "Lamb's wool",
+    condition_notes: 'Approximate price. Made in Hong Kong.',
+    status: 'unlisted',
+    description: 'Magenta cardigan. Recommended shipping: Poly mailer'
+  },
+  {
+    title: 'Anne Klein 2 Cream collarless blazer',
     category: 'clothing',
     subcategory: 'jacket',
-    brand: 'Pendleton',
-    era: '1970s',
-    store_id: 'vv_victoria',
-    acquisition_date: '2026-01-05',
-    purchase_price: 18.99,
-    tax_paid: 2.47,
-    labeled_size: '40R',
-    modern_size_equivalent: 'M',
-    measurements: { bust_inches: 42, shoulder_width_inches: 18, sleeve_length_inches: 24, length_inches: 30 },
+    brand: 'Anne Klein 2',
+    store_id: 'vv_queensborough',
+    acquisition_date: '2025-12-18',
+    purchase_price: 12.00,
+    labeled_size: '8',
+    primary_material: '100% silk',
+    status: 'unlisted',
+    description: 'Cream collarless blazer. Recommended shipping: Poly mailer'
+  },
+  {
+    title: 'Aquascutum Cream wool blazer',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Aquascutum',
+    store_id: 'vv_queensborough',
+    acquisition_date: '2025-12-18',
+    purchase_price: 20.00,
+    labeled_size: 'Unspecified',
     primary_material: 'Wool',
-    material_verified: true,
-    material_notes: 'Heavy virgin wool, excellent quality',
-    overall_condition: 'excellent',
-    condition_notes: 'Minor wear on cuffs, easily repairable',
-    flaws: [{ type: 'pilling', severity: 'minor', location: 'cuffs', repairable: true }],
-    intent: 'resale',
-    resale_platform_target: ['ebay', 'poshmark'],
-    estimated_resale_value: 85,
-    minimum_acceptable_price: 55,
-    brand_premium_multiplier: 1.5,
-    status: 'photographed',
-    description: 'Classic 1970s Pendleton wool blazer in forest green. Union label present. Made in USA.'
+    status: 'unlisted',
+    description: 'Cream wool blazer. Recommended shipping: Poly mailer'
   },
   {
-    title: 'Sterling silver Art Deco brooch',
-    category: 'jewelry',
-    subcategory: 'brooch',
-    brand: null,
-    era: '1930s',
-    store_id: 'sa_mount_pleasant',
-    acquisition_date: '2026-01-03',
-    purchase_price: 4.99,
-    tax_paid: 0.65,
-    primary_material: 'Sterling silver',
-    material_verified: true,
-    material_notes: 'Tested with acid, confirmed .925',
-    metal_type: 'sterling_silver',
-    closure_type: 'brooch_pin',
-    hallmarks: '925, unclear maker mark',
-    stones: 'Marcasite accents',
-    tested_with: ['magnet', 'loupe_10x', 'acid_test'],
-    overall_condition: 'very_good',
-    condition_notes: 'Light tarnish, cleaned up nicely',
-    flaws: [{ type: 'tarnish', severity: 'minor', location: 'back', repairable: true }],
-    intent: 'resale',
-    resale_platform_target: ['etsy', 'ebay'],
-    estimated_resale_value: 65,
-    minimum_acceptable_price: 40,
-    status: 'listed',
-    description: 'Beautiful Art Deco geometric brooch with marcasite details. Sterling silver.'
+    title: 'Holt Renfrew Black velvet jacket with satin seam bindings and toggle closures',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Holt Renfrew',
+    store_id: 'vv_queensborough',
+    acquisition_date: '2025-12-18',
+    purchase_price: 10.00,
+    labeled_size: 'M',
+    primary_material: 'Velvet',
+    status: 'unlisted',
+    description: 'Black velvet jacket with satin seam bindings and toggle closures. Recommended shipping: 12" x 10" x 4" box'
   },
   {
-    title: 'Ferragamo leather pumps',
+    title: 'The Alpaca Experience by Du Store Alpaca Aubergine ribbed cardigan',
+    category: 'clothing',
+    subcategory: 'sweater',
+    brand: 'The Alpaca Experience by Du Store Alpaca',
+    store_id: 'mcc_abbotsford_centre',
+    acquisition_date: '2025-12-20',
+    purchase_price: 4.50,
+    labeled_size: 'XS',
+    primary_material: '100% alpaca',
+    status: 'unlisted',
+    description: 'Aubergine ribbed cardigan. Recommended shipping: Poly mailer'
+  },
+  {
+    title: 'Jones New York Separates Aubergine ribbed turtleneck',
+    category: 'clothing',
+    subcategory: 'sweater',
+    brand: 'Jones New York Separates',
+    store_id: 'mcc_abbotsford_centre',
+    acquisition_date: '2025-12-20',
+    purchase_price: 12.00,
+    primary_material: '100% Merino wool',
+    condition_notes: 'Made in China.',
+    status: 'unlisted',
+    description: 'Aubergine ribbed turtleneck. Recommended shipping: Poly mailer'
+  },
+  {
+    title: 'Noelle Rouine Paris Peur Spécifique Burgundy sweater',
+    category: 'clothing',
+    subcategory: 'sweater',
+    brand: 'Noelle Rouine Paris',
+    store_id: 'private_sale_leslie',
+    acquisition_date: '2025-12-26',
+    purchase_price: 5.00,
+    primary_material: '20% cashmere/80% wool',
+    condition_notes: 'Approximate price. Made in Hong Kong.',
+    status: 'unlisted',
+    description: 'Peur Spécifique sweater in burgundy. Recommended shipping: Poly mailer'
+  },
+  {
+    title: 'Russ Signature Wool cardigan',
+    category: 'clothing',
+    subcategory: 'sweater',
+    brand: 'Russ Signature',
+    store_id: 'private_sale_leslie',
+    acquisition_date: '2025-12-26',
+    purchase_price: 5.00,
+    labeled_size: '2X',
+    primary_material: 'Wool',
+    condition_notes: 'Approximate price; possibly felted/shrunken. Made in Hong Kong.',
+    status: 'unlisted',
+    description: 'Wool cardigan. Recommended shipping: Poly mailer (large)'
+  },
+  {
+    title: 'Ellen Tracy Aubergine sweater with button collar detail',
+    category: 'clothing',
+    subcategory: 'sweater',
+    brand: 'Ellen Tracy',
+    store_id: 'private_sale_leslie',
+    acquisition_date: '2025-12-26',
+    purchase_price: 10.00,
+    labeled_size: 'L',
+    primary_material: '100% Merino wool',
+    condition_notes: 'Approximate price. Made in Cambodia.',
+    status: 'unlisted',
+    description: 'Aubergine sweater with button collar detail. Recommended shipping: Poly mailer'
+  },
+  {
+    title: 'Melanie Lyne Bright red coat with black buttons',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Melanie Lyne',
+    store_id: 'sa_edmonton',
+    acquisition_date: '2025-12-27',
+    purchase_price: 20.00,
+    labeled_size: '16',
+    primary_material: 'Wool/cashmere',
+    condition_notes: 'Approximate date',
+    status: 'unlisted',
+    description: 'Bright red coat with black buttons. Recommended shipping: 16" x 12" x 4" box'
+  },
+  {
+    title: 'Danier Red leather blazer',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Danier',
+    store_id: 'sa_coquitlam',
+    acquisition_date: '2026-01-02',
+    purchase_price: 20.00,
+    labeled_size: 'M',
+    primary_material: 'Leather',
+    condition_notes: 'Made in Canada.',
+    status: 'unlisted',
+    description: 'Red leather blazer. Recommended shipping: 14" x 10" x 4" box'
+  },
+  {
+    title: 'Giannini Fashion Collection Tan coat',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Giannini Fashion Collection',
+    store_id: 'vv_queensborough',
+    acquisition_date: '2026-01-08',
+    purchase_price: 27.00,
+    labeled_size: 'S',
+    primary_material: '75% cashmere/25% wool',
+    status: 'unlisted',
+    description: 'Tan coat. Recommended shipping: 16" x 12" x 4" box'
+  },
+  {
+    title: 'Gloverall Tan overcoat with hood and wooden toggle buttons',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Gloverall',
+    store_id: 'vv_queensborough',
+    acquisition_date: '2026-01-08',
+    purchase_price: 21.00,
+    labeled_size: 'British 34',
+    status: 'unlisted',
+    description: 'Tan overcoat with hood and wooden toggle buttons. Recommended shipping: 16" x 14" x 6" box'
+  },
+  {
+    title: 'Pat Perkins Original Cream long overcoat with red/green tartan detail and scarf',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Pat Perkins Original',
+    store_id: 'vv_queensborough',
+    acquisition_date: '2026-01-08',
+    purchase_price: 10.49,
+    labeled_size: 'S',
+    primary_material: 'Wool',
+    condition_notes: 'Made in England.',
+    status: 'unlisted',
+    description: 'Cream long overcoat with red/green tartan detail and scarf. Recommended shipping: 16" x 12" x 4" box'
+  },
+  {
+    title: 'Opera Black leather jacket',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Opera',
+    store_id: 'vv_queensborough',
+    acquisition_date: '2026-01-08',
+    purchase_price: 20.00,
+    labeled_size: 'Korean 15',
+    primary_material: 'Leather',
+    condition_notes: 'Made in Korea.',
+    status: 'unlisted',
+    description: 'Black leather jacket. Recommended shipping: 14" x 10" x 4" box'
+  },
+  {
+    title: 'Lucian Matis Black cocktail dress with beaded collar and cuff detail',
+    category: 'clothing',
+    subcategory: 'dress',
+    brand: 'Lucian Matis',
+    store_id: 'vv_queensborough',
+    acquisition_date: '2026-01-08',
+    purchase_price: 28.00,
+    primary_material: 'Poly/rayon',
+    status: 'unlisted',
+    description: 'Black cocktail dress with beaded collar and cuff detail. Recommended shipping: 12" x 10" x 4" box'
+  },
+  {
+    title: 'Moiselle Aubergine silk dress with polyester sequin detail',
+    category: 'clothing',
+    subcategory: 'dress',
+    brand: 'Moiselle',
+    store_id: 'vv_queensborough',
+    acquisition_date: '2026-01-08',
+    purchase_price: 23.00,
+    labeled_size: '38',
+    primary_material: 'Silk',
+    status: 'unlisted',
+    description: 'Aubergine silk dress with polyester sequin detail. Recommended shipping: 12" x 10" x 4" box'
+  },
+  {
+    title: 'Bardot Black lace over nude sleeveless cocktail dress',
+    category: 'clothing',
+    subcategory: 'dress',
+    brand: 'Bardot',
+    store_id: 'vv_queensborough',
+    acquisition_date: '2026-01-08',
+    purchase_price: 20.49,
+    labeled_size: 'UK 16',
+    primary_material: 'Lace',
+    status: 'unlisted',
+    description: 'Black lace over nude sleeveless cocktail dress. Recommended shipping: Poly mailer'
+  },
+  {
+    title: 'Aidan Mattox Black lace cocktail dress',
+    category: 'clothing',
+    subcategory: 'dress',
+    brand: 'Aidan Mattox',
+    store_id: 'vv_queensborough',
+    acquisition_date: '2026-01-08',
+    purchase_price: 23.00,
+    labeled_size: 'EU 32',
+    primary_material: 'Lace',
+    status: 'unlisted',
+    description: 'Black lace cocktail dress. Recommended shipping: Poly mailer'
+  },
+  {
+    title: 'Eileen Fisher Red oversized sweater',
+    category: 'clothing',
+    subcategory: 'sweater',
+    brand: 'Eileen Fisher',
+    store_id: 'vv_queensborough',
+    acquisition_date: '2026-01-08',
+    purchase_price: 11.79,
+    labeled_size: 'XL',
+    primary_material: '80% silk/20% cotton',
+    status: 'unlisted',
+    description: 'Red oversized sweater. Recommended shipping: Poly mailer (large)'
+  },
+  {
+    title: 'Episode by Carolyn Freeman Chocolate brown cardigan',
+    category: 'clothing',
+    subcategory: 'sweater',
+    brand: 'Episode by Carolyn Freeman',
+    store_id: 'vv_queensborough',
+    acquisition_date: '2026-01-08',
+    purchase_price: 16.49,
+    labeled_size: 'M',
+    primary_material: '70% wool/30% cashmere',
+    condition_notes: 'Made in Hong Kong.',
+    status: 'unlisted',
+    description: 'Chocolate brown cardigan. Recommended shipping: Poly mailer'
+  },
+  {
+    title: 'Fly London Beige pumps',
     category: 'shoes',
     subcategory: 'pumps',
-    brand: 'Salvatore Ferragamo',
-    era: '1990s',
-    store_id: 'vv_burnaby',
-    acquisition_date: '2026-01-07',
-    purchase_price: 12.99,
-    tax_paid: 1.69,
-    labeled_size: '7.5B',
-    modern_size_equivalent: '7.5',
-    measurements: { insole_length_cm: 25.5, heel_height_inches: 2.5 },
-    width: 'standard',
-    primary_material: 'Leather',
-    material_verified: true,
-    overall_condition: 'good',
-    condition_notes: 'Some sole wear, heels in good shape',
-    flaws: [
-      { type: 'sole_wear', severity: 'moderate', location: 'ball of foot', repairable: true },
-      { type: 'scuffs', severity: 'minor', location: 'toe', repairable: true }
-    ],
-    intent: 'resale',
-    resale_platform_target: ['poshmark', 'ebay'],
-    estimated_resale_value: 75,
-    minimum_acceptable_price: 45,
-    brand_premium_multiplier: 2.0,
+    brand: 'Fly London',
+    store_id: 'rch_auxiliary',
+    acquisition_date: '2026-01-09',
+    purchase_price: 25.00,
+    labeled_size: 'EU 38',
+    condition_notes: 'Made in Portugal.',
     status: 'unlisted',
-    description: 'Classic Ferragamo pumps in black leather. Made in Italy. Minor wear.'
+    description: 'Beige pumps. Recommended shipping: 12" x 8" x 4" box'
   },
   {
-    title: 'Silk scarf with equestrian print',
-    category: 'accessories',
-    subcategory: 'scarf',
+    title: 'Frye Cognac knee-high heeled boots',
+    category: 'shoes',
+    subcategory: 'boots',
+    brand: 'Frye',
+    store_id: 'rch_auxiliary',
+    acquisition_date: '2026-01-09',
+    purchase_price: 37.50,
+    labeled_size: '~10',
+    primary_material: 'Leather',
+    status: 'unlisted',
+    description: 'Cognac knee-high heeled boots. Recommended shipping: 16" x 8" x 6" boot box'
+  },
+  {
+    title: 'Ingledews Gray/black wingtip high-cut Oxfords',
+    category: 'shoes',
+    subcategory: 'oxfords',
+    brand: 'Ingledews',
+    store_id: 'rch_auxiliary',
+    acquisition_date: '2026-01-09',
+    purchase_price: 8.00,
+    labeled_size: 'EU 39',
+    condition_notes: 'Made in Italy.',
+    status: 'unlisted',
+    description: 'Gray/black wingtip high-cut Oxfords. Recommended shipping: 12" x 8" x 4" box'
+  },
+  {
+    title: 'Ingledews Distressed gunmetal heeled booties',
+    category: 'shoes',
+    subcategory: 'booties',
+    brand: 'Ingledews',
+    store_id: 'rch_auxiliary',
+    acquisition_date: '2026-01-09',
+    purchase_price: 6.00,
+    labeled_size: 'EU 39',
+    condition_notes: 'Made in Italy.',
+    status: 'unlisted',
+    description: 'Distressed gunmetal heeled booties. Recommended shipping: 12" x 8" x 4" box'
+  },
+  {
+    title: 'Miz Mooz Zip-up ankle boots with eyelet detail',
+    category: 'shoes',
+    subcategory: 'boots',
+    brand: 'Miz Mooz',
+    store_id: 'rch_auxiliary',
+    acquisition_date: '2026-01-09',
+    purchase_price: 12.00,
+    labeled_size: '9',
+    status: 'unlisted',
+    description: 'Zip-up ankle boots with eyelet detail. Recommended shipping: 12" x 8" x 4" box'
+  },
+  {
+    title: 'Carlo Rosetti Burgundy/purple lace-up Oxford heels',
+    category: 'shoes',
+    subcategory: 'oxfords',
+    brand: 'Carlo Rosetti',
+    store_id: 'st_barnabas',
+    acquisition_date: '2026-01-10',
+    purchase_price: 15.00,
+    labeled_size: '6.5',
+    condition_notes: 'Made in Mexico.',
+    status: 'unlisted',
+    description: 'Burgundy/purple lace-up Oxford heels. Recommended shipping: 12" x 8" x 4" box'
+  },
+  {
+    title: 'Think! Oxblood heeled ankle boots with eyelet detail',
+    category: 'shoes',
+    subcategory: 'boots',
+    brand: 'Think!',
+    store_id: 'raps_granville',
+    acquisition_date: '2026-01-11',
+    purchase_price: 4.00,
+    labeled_size: '35',
+    condition_notes: 'Made in Italy.',
+    status: 'unlisted',
+    description: 'Oxblood heeled ankle boots with eyelet detail. Recommended shipping: 12" x 8" x 4" box'
+  },
+  {
+    title: 'Wonders Black heeled shooties',
+    category: 'shoes',
+    subcategory: 'booties',
+    brand: 'Wonders',
+    store_id: 'raps_granville',
+    acquisition_date: '2026-01-11',
+    purchase_price: 4.00,
+    labeled_size: '40',
+    condition_notes: 'Made in Spain.',
+    status: 'unlisted',
+    description: 'Black heeled shooties. Recommended shipping: 12" x 8" x 4" box'
+  },
+  {
+    title: 'Chie Mihara Black Mary Janes with suede floral detail',
+    category: 'shoes',
+    subcategory: 'mary_janes',
+    brand: 'Chie Mihara',
+    store_id: 'raps_granville',
+    acquisition_date: '2026-01-11',
+    purchase_price: 4.00,
+    labeled_size: '38',
+    condition_notes: 'Made in Spain.',
+    status: 'unlisted',
+    description: 'Black Mary Janes with suede floral detail. Recommended shipping: 12" x 8" x 4" box'
+  },
+  {
+    title: 'Marc Aurel Bright spring green bouclé coat',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Marc Aurel',
+    store_id: 'raps_granville',
+    acquisition_date: '2026-01-11',
+    purchase_price: 12.00,
+    labeled_size: '36',
+    primary_material: 'Wool/cotton/angora/silk/linen/viscose blend',
+    condition_notes: 'Made in Germany.',
+    status: 'unlisted',
+    description: 'Bright spring green bouclé coat. Recommended shipping: 16" x 12" x 4" box'
+  },
+  {
+    title: 'Sesto Golf by Sherry Cognac golf shoes with woven detail',
+    category: 'shoes',
+    subcategory: 'golf_shoes',
+    brand: 'Sesto Golf by Sherry',
+    store_id: 'steveston_treasure',
+    acquisition_date: '2026-01-11',
+    purchase_price: 30.00,
+    labeled_size: "Men's 9.5",
+    primary_material: 'Leather',
+    condition_notes: 'Made in Italy.',
+    status: 'unlisted',
+    description: 'Cognac golf shoes with woven detail. Recommended shipping: 14" x 10" x 5" box'
+  },
+  {
+    title: 'John Fluevog Dalai Black ankle boots with gray laced-up detail',
+    category: 'shoes',
+    subcategory: 'boots',
+    brand: 'John Fluevog',
+    store_id: 'steveston_treasure',
+    acquisition_date: '2026-01-11',
+    purchase_price: 20.00,
+    labeled_size: '5',
+    primary_material: 'Leather',
+    status: 'unlisted',
+    description: 'Dalai ankle boots with gray laced-up detail. Recommended shipping: 12" x 8" x 4" box'
+  },
+  {
+    title: 'Danier Black leather jacket with gray zippers and lining',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Danier',
+    store_id: 'richmond_hospital_aux',
+    acquisition_date: '2026-01-11',
+    purchase_price: 12.00,
+    labeled_size: 'XS',
+    primary_material: 'Leather',
+    status: 'unlisted',
+    description: 'Black leather jacket with gray zippers and lining. Recommended shipping: 14" x 10" x 4" box'
+  },
+  {
+    title: 'Black riding boots',
+    category: 'shoes',
+    subcategory: 'boots',
     brand: null,
-    era: '1980s',
-    store_id: 'vv_coquitlam_barnet',
-    acquisition_date: '2026-01-02',
-    purchase_price: 3.99,
-    tax_paid: 0.52,
-    primary_material: 'Silk',
-    material_verified: false,
-    material_notes: 'Hand roll edges, feels like silk but no label',
-    overall_condition: 'excellent',
-    intent: 'personal_keep',
-    status: 'kept',
-    description: 'Beautiful equestrian print silk scarf. Rich jewel tones. Hand-rolled edges.'
+    store_id: 'richmond_hospital_aux',
+    acquisition_date: '2026-01-11',
+    purchase_price: 12.00,
+    labeled_size: '37',
+    primary_material: 'Leather',
+    condition_notes: 'Made in Italy.',
+    status: 'unlisted',
+    description: 'Black riding boots. Recommended shipping: 16" x 8" x 6" boot box'
   },
   {
-    title: '14K gold rope chain necklace',
-    category: 'jewelry',
-    subcategory: 'necklace',
-    brand: null,
-    era: '1980s',
-    store_id: 'mcc_vancouver',
-    acquisition_date: '2026-01-08',
-    purchase_price: 8.99,
-    tax_paid: 1.17,
-    primary_material: '14K Gold',
-    material_verified: true,
-    material_notes: 'Tested positive for 14K, weighs 4.2g',
-    metal_type: 'gold_14k',
-    closure_type: 'lobster_claw',
-    hallmarks: '14K, Italy',
-    tested_with: ['magnet', 'loupe_10x', 'acid_test', 'weight_comparison'],
-    measurements: { chain_length_inches: 18, weight_grams: 4.2 },
-    overall_condition: 'like_new',
-    intent: 'resale',
-    resale_platform_target: ['ebay'],
-    estimated_resale_value: 180,
-    minimum_acceptable_price: 150,
-    status: 'listed',
-    description: 'Solid 14K gold rope chain, 18 inches. Italian made. Excellent condition.'
-  }
-];
-
-// Visits match inventory: total_spent = purchase_price + tax_paid for items on that date/store
-const MOCK_VISITS = [
-  {
-    store_id: 'vv_victoria',
-    date: '2026-01-05',
-    purchases_count: 1,
-    total_spent: 21.46, // Pendleton blazer: 18.99 + 2.47
-    notes: 'Great finds today. Wool section was well stocked. Found the Pendleton blazer.'
+    title: 'Evan Picone Black pumps with square toe',
+    category: 'shoes',
+    subcategory: 'pumps',
+    brand: 'Evan Picone',
+    store_id: 'richmond_hospital_aux',
+    acquisition_date: '2026-01-11',
+    purchase_price: 6.00,
+    labeled_size: '7.5 narrow',
+    condition_notes: 'Made in Spain.',
+    status: 'unlisted',
+    description: 'Black pumps with square toe. Recommended shipping: 12" x 8" x 4" box'
   },
   {
-    store_id: 'sa_mount_pleasant',
-    date: '2026-01-03',
-    purchases_count: 1,
-    total_spent: 5.64, // Sterling brooch: 4.99 + 0.65
-    notes: 'Jewelry case had some good pieces. Sterling brooch was a steal.'
+    title: 'Fera Giacomo Black pumps with triple Mary Jane strap detail',
+    category: 'shoes',
+    subcategory: 'pumps',
+    brand: 'Fera Giacomo',
+    store_id: 'richmond_hospital_aux',
+    acquisition_date: '2026-01-11',
+    purchase_price: 18.00,
+    labeled_size: '38',
+    condition_notes: 'Made in Italy.',
+    status: 'unlisted',
+    description: 'Black pumps with triple Mary Jane strap detail. Recommended shipping: 12" x 8" x 4" box'
   },
   {
-    store_id: 'vv_burnaby',
-    date: '2026-01-07',
-    purchases_count: 1,
-    total_spent: 14.68, // Ferragamo pumps: 12.99 + 1.69
-    notes: 'Shoe section picked over but found the Ferragamos hidden in the back.'
+    title: 'Roots Tuff Black ankle boots',
+    category: 'shoes',
+    subcategory: 'boots',
+    brand: 'Roots',
+    store_id: 'vv_richmond',
+    acquisition_date: '2026-01-11',
+    purchase_price: 35.00,
+    labeled_size: '6.5',
+    status: 'unlisted',
+    description: 'Tuff ankle boots. Recommended shipping: 12" x 8" x 4" box'
   },
   {
-    store_id: 'vv_coquitlam_barnet',
-    date: '2026-01-02',
-    purchases_count: 1,
-    total_spent: 4.51, // Silk scarf: 3.99 + 0.52
-    notes: 'First visit of the year. Accessories well organized. Good silk scarf selection.'
+    title: 'Babaton The Connor Camel coat',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Babaton',
+    store_id: 'vv_richmond',
+    acquisition_date: '2026-01-11',
+    purchase_price: 38.49,
+    labeled_size: 'S',
+    primary_material: '100% Italian wool',
+    status: 'unlisted',
+    description: 'The Connor coat in camel. Recommended shipping: 16" x 12" x 4" box'
   },
   {
-    store_id: 'mcc_vancouver',
-    date: '2026-01-08',
-    purchases_count: 1,
-    total_spent: 10.16, // 14K gold chain: 8.99 + 1.17
-    notes: 'Lucky find - 14K gold chain was priced as costume jewelry!'
+    title: 'Escada by Margaretha Ley Red blazer with black buttons',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Escada by Margaretha Ley',
+    store_id: 'vv_richmond',
+    acquisition_date: '2026-01-11',
+    purchase_price: 18.00,
+    labeled_size: '40',
+    primary_material: '100% cashmere',
+    condition_notes: 'Made in Germany.',
+    status: 'unlisted',
+    description: 'Red blazer with black buttons. Recommended shipping: 14" x 10" x 4" box'
+  },
+  {
+    title: 'Escada by Margaretha Ley Aubergine blazer with black velvet collar and epaulette details',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Escada by Margaretha Ley',
+    store_id: 'vv_richmond',
+    acquisition_date: '2026-01-11',
+    purchase_price: 18.00,
+    labeled_size: '38',
+    primary_material: '98% wool/2% elastane',
+    condition_notes: 'Made in Germany.',
+    status: 'unlisted',
+    description: 'Aubergine blazer with black velvet collar and epaulette details. Recommended shipping: 14" x 10" x 4" box'
+  },
+  {
+    title: 'Nanette Lepore Olive green wool frock coat',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Nanette Lepore',
+    store_id: 'vv_richmond',
+    acquisition_date: '2026-01-11',
+    purchase_price: 45.00,
+    labeled_size: '10',
+    primary_material: 'Wool',
+    condition_notes: 'NWT',
+    status: 'unlisted',
+    description: 'Olive green wool frock coat. New with tags. Recommended shipping: 16" x 12" x 4" box'
+  },
+  {
+    title: 'UB Leather Collection Cream wool coat',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'UB Leather Collection',
+    store_id: 'vv_richmond',
+    acquisition_date: '2026-01-11',
+    purchase_price: 35.00,
+    labeled_size: 'S',
+    primary_material: 'Wool',
+    condition_notes: 'Made in China.',
+    status: 'unlisted',
+    description: 'Cream wool coat. Recommended shipping: 16" x 12" x 4" box'
+  },
+  {
+    title: 'Highland Queen Pure wool blazer',
+    category: 'clothing',
+    subcategory: 'jacket',
+    brand: 'Highland Queen',
+    store_id: 'vv_richmond',
+    acquisition_date: '2026-01-11',
+    purchase_price: 15.00,
+    labeled_size: 'M',
+    primary_material: 'Wool',
+    condition_notes: 'Made in Canada.',
+    status: 'unlisted',
+    description: 'Pure wool blazer. Recommended shipping: Poly mailer'
   }
 ];
 
 export async function seedDatabase() {
-  console.log('Seeding database with mock data...');
+  console.log('Seeding database with actual inventory...');
 
   let itemCount = 0;
-  let visitCount = 0;
 
-  for (const item of MOCK_ITEMS) {
+  for (const item of INVENTORY_ITEMS) {
     try {
       await createInventoryItem(item);
       itemCount++;
@@ -191,18 +664,8 @@ export async function seedDatabase() {
     }
   }
 
-  for (const visit of MOCK_VISITS) {
-    try {
-      await createVisit(visit);
-      visitCount++;
-      console.log(`Created visit: ${visit.store_id} on ${visit.date}`);
-    } catch (err) {
-      console.error(`Failed to create visit: ${visit.store_id}`, err);
-    }
-  }
-
-  console.log(`Seeding complete: ${itemCount} items, ${visitCount} visits`);
-  return { itemCount, visitCount };
+  console.log(`Seeding complete: ${itemCount} items`);
+  return { itemCount, visitCount: 0 };
 }
 
 // Manual seeding only - call seedDatabase() from console or UI button
