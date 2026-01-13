@@ -47,7 +47,6 @@ export function createTabController(tabsSelector, pagesSelector, options = {}) {
     const savedTab = localStorage.getItem(storageKey);
     const defaultTab = tabs[0]?.getAttribute(tabAttr);
     activate(savedTab || defaultTab);
-    delete document.documentElement.dataset.tab;
   }
 
   // Bind click handlers
