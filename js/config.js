@@ -118,7 +118,7 @@ export const JEWELRY_TESTS = [
 
 export const FLAW_TYPES = [
   'stain', 'hole', 'tear', 'missing_button', 'broken_zipper', 'pilling',
-  'fading', 'discoloration', 'odor', 'moth_damage', 'stretched', 'shrunk',
+  'fading', 'discolouration', 'odour', 'moth_damage', 'stretched', 'shrunk',
   'seam_damage', 'lining_damage', 'heel_wear', 'sole_wear', 'scuffs',
   'scratches', 'tarnish', 'patina', 'missing_stone', 'loose_stone',
   'broken_clasp', 'bent', 'dent', 'crack', 'chip', 'repair_visible', 'other'
@@ -127,6 +127,39 @@ export const FLAW_TYPES = [
 export const FLAW_SEVERITY = ['minor', 'moderate', 'significant'];
 
 export const WIDTH_OPTIONS = ['narrow', 'standard', 'wide', 'extra_wide'];
+
+export const PACKAGING_OPTIONS = [
+  'poly_mailer',
+  'poly_mailer_large',
+  'box_12x8x4',
+  'box_12x10x4',
+  'box_14x10x4',
+  'box_14x10x5',
+  'box_16x8x6_boot',
+  'box_16x12x4',
+  'box_16x14x6'
+];
+
+export const COLOUR_OPTIONS = [
+  'black', 'white', 'cream', 'ivory', 'beige', 'tan', 'camel', 'brown',
+  'chocolate', 'burgundy', 'maroon', 'wine', 'red', 'coral', 'orange',
+  'rust', 'mustard', 'yellow', 'gold', 'lime', 'green', 'olive', 'teal',
+  'turquoise', 'aqua', 'blue', 'navy', 'cobalt', 'royal_blue', 'powder_blue',
+  'lavender', 'purple', 'plum', 'aubergine', 'magenta', 'pink', 'blush',
+  'rose', 'grey', 'charcoal', 'silver', 'metallic', 'multicolour', 'print'
+];
+
+export const MATERIAL_OPTIONS = [
+  'cashmere', 'wool', 'merino_wool', 'lambswool', 'alpaca', 'silk',
+  'cotton', 'linen', 'leather', 'suede', 'nubuck',
+  'rayon', 'viscose', 'modal', 'lyocell', 'tencel', 'bamboo',
+  'polyester', 'nylon', 'acrylic', 'spandex', 'elastane',
+  'velvet', 'satin', 'chiffon', 'tweed', 'denim', 'corduroy',
+  'fleece', 'knit', 'jersey', 'lace', 'mesh', 'sequin',
+  'patent_leather', 'calfskin', 'lambskin', 'goatskin', 'snakeskin',
+  'crocodile', 'ostrich', 'pony_hair',
+  'unknown', 'other'
+];
 
 // Measurement fields by category
 export const MEASUREMENT_FIELDS = {
@@ -150,3 +183,25 @@ export const MEASUREMENT_FIELDS = {
     { key: 'weight_grams', label: 'Weight', unit: 'g' }
   ]
 };
+
+// Sort order for store tiers (S is best, C is lowest)
+export const TIER_ORDER = { S: 0, A: 1, B: 2, C: 3 };
+
+/**
+ * Get numeric sort order for a tier.
+ * @param {string} tier
+ * @returns {number}
+ */
+export function getTierSortOrder(tier) {
+  return TIER_ORDER[tier] ?? 99;
+}
+
+/**
+ * Get numeric sort order for a pipeline status.
+ * @param {string} status
+ * @returns {number}
+ */
+export function getStatusSortOrder(status) {
+  const idx = PIPELINE_STATUSES.indexOf(status);
+  return idx >= 0 ? idx : 99;
+}

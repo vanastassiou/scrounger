@@ -3,11 +3,28 @@
 // =============================================================================
 
 import { state } from './state.js';
-import { getAllVisits, createVisit, getInventoryForVisit } from './db.js';
+import { computeVisitsFromInventory, getInventoryForVisit, deleteInventoryItem } from './db.js';
 import { showToast, createModalController } from './ui.js';
-import { $, formatCurrency, formatDate, getTodayDate, capitalize } from './utils.js';
+import {
+  $, formatCurrency, formatDate, getTodayDate, capitalize, formatStatus, escapeHtml,
+  createChainStoreDropdown, createSortableTable, sortData
+} from './utils.js';
+import { openAddItemModal, openEditItemModal, openViewItemModal } from './inventory.js';
 
 let visitsData = [];
+let sortColumn = 'date';
+let sortDirection = 'desc';
+
+// =============================================================================
+// VISIT WORKFLOW STATE
+// =============================================================================
+
+let visitWorkflow = {
+  step: 1,
+  storeId: null,
+  date: null,
+  items: []
+};
 
 // =============================================================================
 // INITIALIZATION
@@ -19,26 +36,51 @@ export async function initVisits() {
 }
 
 export async function loadVisits() {
-  visitsData = await getAllVisits();
+  visitsData = await computeVisitsFromInventory();
   renderVisitsTable();
 }
 
+// Sort handler for visits table (created once, used by delegation)
+const visitsSortHandler = createSortableTable({
+  getState: () => ({ sortColumn, sortDirection }),
+  setState: (s) => { sortColumn = s.sortColumn; sortDirection = s.sortDirection; },
+  onSort: renderVisitsTable
+});
+
 function setupEventHandlers() {
-  // Visit form submission
-  const form = $('#visit-form');
-  if (form) {
-    form.addEventListener('submit', handleVisitSubmit);
+  // Step 1 form submission
+  const step1Form = $('#visit-step1-form');
+  if (step1Form) {
+    step1Form.addEventListener('submit', handleStep1Submit);
   }
 
-  // Table click delegation for items link
-  const table = $('#visits-table');
-  if (table) {
-    table.addEventListener('click', handleTableClick);
+  // Table click delegation for items link and sorting (delegate from container since table is dynamic)
+  const container = $('#visits-list');
+  if (container) {
+    container.addEventListener('click', (e) => {
+      // Handle sorting
+      if (visitsSortHandler(e)) return;
+      // Handle items link
+      handleTableClick(e);
+    });
+  }
+
+  // Visit workflow buttons
+  $('#visit-back-btn')?.addEventListener('click', () => showStep(1));
+  $('#visit-add-item-btn')?.addEventListener('click', handleAddItemFromVisit);
+  $('#visit-empty-add-btn')?.addEventListener('click', handleAddItemFromVisit);
+  $('#visit-cancel-btn')?.addEventListener('click', handleCancelVisit);
+  $('#visit-complete-btn')?.addEventListener('click', handleCompleteVisit);
+
+  // Spreadsheet click delegation for edit/delete
+  const spreadsheet = $('#visit-spreadsheet');
+  if (spreadsheet) {
+    spreadsheet.addEventListener('click', handleSpreadsheetClick);
   }
 }
 
 // =============================================================================
-// RENDERING
+// VISITS TABLE RENDERING
 // =============================================================================
 
 function renderVisitsTable() {
@@ -66,8 +108,17 @@ function renderVisitsTable() {
   const totalSpent = visitsData.reduce((sum, v) => sum + (v.total_spent || 0), 0);
   const totalItems = visitsData.reduce((sum, v) => sum + (v.purchases_count || 0), 0);
 
-  // Sort by date descending
-  const sorted = [...visitsData].sort((a, b) => b.date.localeCompare(a.date));
+  // Sort visits
+  const sorted = [...visitsData];
+  sortData(sorted, sortColumn, sortDirection, (visit, col) => {
+    switch (col) {
+      case 'date': return visit.date;
+      case 'store': return state.getStore(visit.store_id)?.name?.toLowerCase() || '';
+      case 'items': return visit.purchases_count || 0;
+      case 'spent': return visit.total_spent || 0;
+      default: return visit.date;
+    }
+  });
 
   container.innerHTML = `
     <div class="visits-summary">
@@ -80,10 +131,10 @@ function renderVisitsTable() {
       <table class="table" id="visits-table">
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Store</th>
-            <th>Items</th>
-            <th>Spent</th>
+            <th data-sort="date">Date</th>
+            <th data-sort="store">Store</th>
+            <th data-sort="items">Items</th>
+            <th data-sort="spent">Spent</th>
           </tr>
         </thead>
         <tbody>
@@ -99,14 +150,15 @@ function createVisitRow(visit) {
   const store = state.getStore(visit.store_id);
   const storeName = store?.name ?? visit.store_id;
   const hasItems = visit.purchases_count > 0;
+  const visitKey = `${visit.store_id}__${visit.date}`;
 
   return `
-    <tr data-visit-id="${visit.id}" data-store-id="${visit.store_id}" data-date="${visit.date}">
+    <tr data-visit-key="${visitKey}" data-store-id="${visit.store_id}" data-date="${visit.date}">
       <td>${formatDate(visit.date)}</td>
       <td>${escapeHtml(storeName)}</td>
       <td>
         ${hasItems
-          ? `<a href="#" class="items-link" data-store-id="${visit.store_id}" data-date="${visit.date}">${visit.purchases_count} item${visit.purchases_count !== 1 ? 's' : ''}</a>`
+          ? `<a href="#" class="table-link" data-store-id="${visit.store_id}" data-date="${visit.date}">${visit.purchases_count} item${visit.purchases_count !== 1 ? 's' : ''}</a>`
           : `<span class="text-muted">0 items</span>`
         }
       </td>
@@ -116,7 +168,7 @@ function createVisitRow(visit) {
 }
 
 async function handleTableClick(e) {
-  const link = e.target.closest('.items-link');
+  const link = e.target.closest('.table-link');
   if (!link) return;
 
   e.preventDefault();
@@ -128,7 +180,7 @@ async function handleTableClick(e) {
 }
 
 // =============================================================================
-// VISIT ITEMS MODAL
+// VISIT ITEMS MODAL (read-only view)
 // =============================================================================
 
 let visitItemsModal = null;
@@ -167,7 +219,7 @@ async function openVisitItemsModal(storeId, date) {
     } else {
       tbody.innerHTML = items.map(item => `
         <tr>
-          <td>${escapeHtml(item.title || '-')}</td>
+          <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
           <td>${capitalize(item.category)}</td>
           <td>${escapeHtml(item.brand || '-')}</td>
           <td>${formatCurrency(item.purchase_price || 0)}</td>
@@ -183,11 +235,23 @@ async function openVisitItemsModal(storeId, date) {
     totalEl.textContent = formatCurrency(total);
   }
 
+  // Add click handler for item links
+  if (tbody) {
+    tbody.addEventListener('click', (e) => {
+      const link = e.target.closest('.table-link');
+      if (link) {
+        e.preventDefault();
+        const itemId = link.dataset.id;
+        openViewItemModal(itemId);
+      }
+    });
+  }
+
   visitItemsModal.open();
 }
 
 // =============================================================================
-// LOG VISIT MODAL
+// LOG VISIT MODAL (Multi-Step Workflow)
 // =============================================================================
 
 let logVisitModal = null;
@@ -201,79 +265,211 @@ export function openLogVisitModal() {
     populateStoreSelect();
   }
 
-  // Reset form
-  const form = $('#visit-form');
+  // Reset workflow
+  resetVisitWorkflow();
+
+  // Reset form and show step 1
+  const form = $('#visit-step1-form');
   if (form) {
     form.reset();
     $('#visit-date').value = getTodayDate();
-    $('#visit-purchases').value = '0';
-    $('#visit-spent').value = '0';
   }
 
+  showStep(1);
   logVisitModal.open();
 }
 
+let storeDropdownInitialized = false;
+
 function populateStoreSelect() {
-  const storeSelect = $('#visit-store');
-  const allStores = state.getAllStores();
-  if (!storeSelect || allStores.length === 0) return;
+  if (storeDropdownInitialized) return;
+  storeDropdownInitialized = true;
 
-  storeSelect.innerHTML = '<option value="">Select store...</option>';
-
-  // Sort stores alphabetically by name
-  const sorted = [...allStores].sort((a, b) =>
-    a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-  );
-
-  sorted.forEach(store => {
-    const opt = document.createElement('option');
-    opt.value = store.id;
-    opt.textContent = store.name;
-    storeSelect.appendChild(opt);
+  createChainStoreDropdown({
+    chainSelector: '#visit-chain',
+    storeSelector: '#visit-store',
+    getAllStores: () => state.getAllStores()
   });
 }
 
-async function handleVisitSubmit(e) {
+// =============================================================================
+// STEP NAVIGATION
+// =============================================================================
+
+function showStep(stepNumber) {
+  const step1 = $('#visit-step-1');
+  const step2 = $('#visit-step-2');
+
+  if (stepNumber === 1) {
+    step1.hidden = false;
+    step2.hidden = true;
+    $('#visit-modal-title').textContent = 'Log visit';
+  } else {
+    step1.hidden = true;
+    step2.hidden = false;
+    updateStep2Header();
+  }
+
+  visitWorkflow.step = stepNumber;
+}
+
+function updateStep2Header() {
+  const store = state.getStore(visitWorkflow.storeId);
+  const storeName = store?.name || visitWorkflow.storeId;
+  $('#visit-context-label').textContent = `${storeName} - ${formatDate(visitWorkflow.date)}`;
+  $('#visit-modal-title').textContent = `Visit: ${storeName}`;
+}
+
+// =============================================================================
+// STEP 1: Store/Date Selection
+// =============================================================================
+
+async function handleStep1Submit(e) {
   e.preventDefault();
 
-  const form = e.target;
-  const formData = new FormData(form);
+  const formData = new FormData(e.target);
+  visitWorkflow.storeId = formData.get('store_id');
+  visitWorkflow.date = formData.get('date');
 
-  const visit = {
-    store_id: formData.get('store_id'),
-    date: formData.get('date'),
-    purchases_count: parseInt(formData.get('purchases_count')) || 0,
-    total_spent: parseFloat(formData.get('total_spent')) || 0,
-    notes: formData.get('notes')?.trim() || null
-  };
-
-  // Validation
-  if (!visit.store_id) {
+  if (!visitWorkflow.storeId) {
     showToast('Store is required');
     return;
   }
-  if (!visit.date) {
+  if (!visitWorkflow.date) {
     showToast('Date is required');
     return;
   }
 
-  try {
-    await createVisit(visit);
-    showToast('Visit logged');
-    logVisitModal.close();
-    await loadVisits();
-  } catch (err) {
-    // Error already shown by db.js
+  // Load existing items for this store/date
+  await refreshVisitItems();
+
+  // Show step 2
+  showStep(2);
+  renderSpreadsheet();
+}
+
+// =============================================================================
+// STEP 2: Item Spreadsheet
+// =============================================================================
+
+async function refreshVisitItems() {
+  visitWorkflow.items = await getInventoryForVisit(visitWorkflow.storeId, visitWorkflow.date);
+}
+
+function renderSpreadsheet() {
+  const tbody = $('#visit-spreadsheet-tbody');
+  const container = $('#visit-spreadsheet-container');
+  const emptyState = $('#visit-empty-state');
+  const completeBtn = $('#visit-complete-btn');
+
+  const hasItems = visitWorkflow.items.length > 0;
+
+  // Toggle visibility
+  if (container) container.hidden = !hasItems;
+  if (emptyState) emptyState.hidden = hasItems;
+  if (completeBtn) completeBtn.disabled = !hasItems;
+
+  if (!hasItems) {
+    if (tbody) tbody.innerHTML = '';
+    return;
+  }
+
+  tbody.innerHTML = visitWorkflow.items.map(item => `
+    <tr data-item-id="${item.id}">
+      <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
+      <td>${capitalize(item.category)}</td>
+      <td>${escapeHtml(item.brand || '-')}</td>
+      <td>${formatCurrency(item.purchase_price || 0)}</td>
+      <td class="table-actions">
+        <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
+        <button class="btn btn--sm btn--danger delete-item-btn" data-id="${item.id}">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+
+  // Update total
+  const total = visitWorkflow.items.reduce((sum, i) => sum + (i.purchase_price || 0), 0);
+  const totalEl = $('#visit-spreadsheet-total');
+  if (totalEl) {
+    totalEl.innerHTML = `<strong>${formatCurrency(total)}</strong>`;
   }
 }
 
 // =============================================================================
-// UTILITIES
+// SPREADSHEET ACTIONS
 // =============================================================================
 
-function escapeHtml(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+async function handleSpreadsheetClick(e) {
+  const itemLink = e.target.closest('.table-link');
+  const editBtn = e.target.closest('.edit-item-btn');
+  const deleteBtn = e.target.closest('.delete-item-btn');
+
+  if (itemLink) {
+    e.preventDefault();
+    const itemId = itemLink.dataset.id;
+    openViewItemModal(itemId);
+    return;
+  }
+
+  if (editBtn) {
+    const itemId = editBtn.dataset.id;
+    openEditItemModal(itemId, {
+      lockStoreDate: true,
+      onSave: async () => {
+        await refreshVisitItems();
+        renderSpreadsheet();
+      }
+    });
+  }
+
+  if (deleteBtn) {
+    const itemId = deleteBtn.dataset.id;
+    if (confirm('Delete this item?')) {
+      try {
+        await deleteInventoryItem(itemId);
+        await refreshVisitItems();
+        renderSpreadsheet();
+        showToast('Item deleted');
+      } catch (err) {
+        showToast('Failed to delete item');
+      }
+    }
+  }
+}
+
+function handleAddItemFromVisit() {
+  openAddItemModal({
+    storeId: visitWorkflow.storeId,
+    date: visitWorkflow.date,
+    onSave: async () => {
+      await refreshVisitItems();
+      renderSpreadsheet();
+    }
+  });
+}
+
+// =============================================================================
+// COMPLETE/CANCEL VISIT
+// =============================================================================
+
+function handleCompleteVisit() {
+  const itemCount = visitWorkflow.items.length;
+  showToast(`Visit completed: ${itemCount} item${itemCount !== 1 ? 's' : ''}`);
+  logVisitModal.close();
+  loadVisits();
+  resetVisitWorkflow();
+}
+
+function handleCancelVisit() {
+  logVisitModal.close();
+  resetVisitWorkflow();
+}
+
+function resetVisitWorkflow() {
+  visitWorkflow = {
+    step: 1,
+    storeId: null,
+    date: null,
+    items: []
+  };
 }
