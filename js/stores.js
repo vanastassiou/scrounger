@@ -170,7 +170,7 @@ function createStoreRow(store, stats) {
   let addressHtml = '';
   if (store.address) {
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address)}`;
-    addressHtml = `<a href="${mapsUrl}" target="_blank" rel="noopener" class="store-address table-link">${escapeHtml(store.address)}</a>`;
+    addressHtml = `<a href="${mapsUrl}" target="_blank" rel="noopener" class="store-address table-link" title="${escapeHtml(store.address)}">📍</a>`;
   }
 
   return `
@@ -211,12 +211,25 @@ export function renderStoreCount() {
 // VIEW STORE MODAL
 // =============================================================================
 
-async function openViewStoreModal(storeId) {
+export async function openViewStoreModal(storeId) {
   const dialog = $('#view-store-dialog');
   if (!dialog) return;
 
   if (!viewStoreModal) {
     viewStoreModal = createModalController(dialog);
+
+    // Add click handler for item links (once)
+    const contentEl = $('#view-store-content');
+    if (contentEl) {
+      contentEl.addEventListener('click', (e) => {
+        const link = e.target.closest('.table-link');
+        if (link) {
+          e.preventDefault();
+          const itemId = link.dataset.id;
+          openViewItemModal(itemId);
+        }
+      });
+    }
   }
 
   const store = state.getStore(storeId);
@@ -238,16 +251,6 @@ async function openViewStoreModal(storeId) {
   const contentEl = $('#view-store-content');
   if (contentEl) {
     contentEl.innerHTML = renderStoreDetails(store, stats, items);
-
-    // Add click handler for item links
-    contentEl.addEventListener('click', (e) => {
-      const link = e.target.closest('.table-link');
-      if (link) {
-        e.preventDefault();
-        const itemId = link.dataset.id;
-        openViewItemModal(itemId);
-      }
-    });
   }
 
   viewStoreModal.open();
@@ -260,7 +263,7 @@ function renderStoreDetails(store, stats, items) {
   let infoHtml = '<dl class="detail-grid">';
   if (store.address) {
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address)}`;
-    infoHtml += `<dt>Address</dt><dd><a href="${mapsUrl}" target="_blank" rel="noopener" class="table-link">${escapeHtml(store.address)}</a></dd>`;
+    infoHtml += `<dt>Address</dt><dd><a href="${mapsUrl}" target="_blank" rel="noopener" class="table-link" title="${escapeHtml(store.address)}">📍</a></dd>`;
   }
   infoHtml += `<dt>Tier</dt><dd><span class="tier tier--${store.tier}">${store.tier}</span></dd>`;
   if (store.phone) infoHtml += `<dt>Phone</dt><dd>${escapeHtml(store.phone)}</dd>`;

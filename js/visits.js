@@ -10,6 +10,7 @@ import {
   createChainStoreDropdown, createSortableTable, sortData
 } from './utils.js';
 import { openAddItemModal, openEditItemModal, openViewItemModal } from './inventory.js';
+import { openViewStoreModal } from './stores.js';
 
 let visitsData = [];
 let sortColumn = 'date';
@@ -155,7 +156,7 @@ function createVisitRow(visit) {
   return `
     <tr data-visit-key="${visitKey}" data-store-id="${visit.store_id}" data-date="${visit.date}">
       <td>${formatDate(visit.date)}</td>
-      <td>${escapeHtml(storeName)}</td>
+      <td><a href="#" class="table-link store-link" data-store-id="${visit.store_id}">${escapeHtml(storeName)}</a></td>
       <td>
         ${hasItems
           ? `<a href="#" class="table-link" data-store-id="${visit.store_id}" data-date="${visit.date}">${visit.purchases_count} item${visit.purchases_count !== 1 ? 's' : ''}</a>`
@@ -176,6 +177,13 @@ async function handleTableClick(e) {
   const storeId = link.dataset.storeId;
   const date = link.dataset.date;
 
+  // Store link (no date) - open store detail modal
+  if (link.classList.contains('store-link')) {
+    openViewStoreModal(storeId);
+    return;
+  }
+
+  // Items link - open visit items modal
   await openVisitItemsModal(storeId, date);
 }
 
@@ -191,6 +199,19 @@ async function openVisitItemsModal(storeId, date) {
 
   if (!visitItemsModal) {
     visitItemsModal = createModalController(dialog);
+
+    // Add click handler for item links (once)
+    const contentEl = $('#visit-items-content');
+    if (contentEl) {
+      contentEl.addEventListener('click', (e) => {
+        const link = e.target.closest('.table-link');
+        if (link) {
+          e.preventDefault();
+          const itemId = link.dataset.id;
+          openViewItemModal(itemId);
+        }
+      });
+    }
   }
 
   // Get store name
@@ -200,54 +221,56 @@ async function openVisitItemsModal(storeId, date) {
   // Get items for this visit
   const items = await getInventoryForVisit(storeId, date);
 
-  // Update modal content
+  // Update modal title
   const titleEl = $('#visit-items-title');
   if (titleEl) {
     titleEl.textContent = `${storeName} - ${formatDate(date)}`;
   }
 
-  const tbody = $('#visit-items-tbody');
-  if (tbody) {
-    if (items.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="4" class="empty-state">
-            <p class="text-muted">No items recorded for this visit</p>
-          </td>
-        </tr>
-      `;
-    } else {
-      tbody.innerHTML = items.map(item => `
-        <tr>
-          <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
-          <td>${capitalize(item.category)}</td>
-          <td>${escapeHtml(item.brand || '-')}</td>
-          <td>${formatCurrency(item.purchase_price || 0)}</td>
-        </tr>
-      `).join('');
-    }
-  }
-
-  // Update total
-  const totalEl = $('#visit-items-total');
-  if (totalEl) {
-    const total = items.reduce((sum, item) => sum + (item.purchase_price || 0), 0);
-    totalEl.textContent = formatCurrency(total);
-  }
-
-  // Add click handler for item links
-  if (tbody) {
-    tbody.addEventListener('click', (e) => {
-      const link = e.target.closest('.table-link');
-      if (link) {
-        e.preventDefault();
-        const itemId = link.dataset.id;
-        openViewItemModal(itemId);
-      }
-    });
+  // Render content
+  const contentEl = $('#visit-items-content');
+  if (contentEl) {
+    contentEl.innerHTML = renderVisitItemsDetails(store, items);
   }
 
   visitItemsModal.open();
+}
+
+function renderVisitItemsDetails(store, items) {
+  const sections = [];
+
+  // Items section
+  if (items.length > 0) {
+    const total = items.reduce((sum, item) => sum + (item.purchase_price || 0), 0);
+
+    let itemsHtml = '<table class="mini-table"><thead><tr>';
+    itemsHtml += '<th>Item</th><th>Category</th><th>Brand</th><th>Cost</th>';
+    itemsHtml += '</tr></thead><tbody>';
+
+    for (const item of items) {
+      const title = item.title || 'Untitled item';
+      const category = capitalize(item.category);
+      const brand = item.brand || '-';
+      const price = formatCurrency(item.purchase_price || 0);
+      itemsHtml += `<tr>`;
+      itemsHtml += `<td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(title)}</a></td>`;
+      itemsHtml += `<td>${category}</td>`;
+      itemsHtml += `<td>${escapeHtml(brand)}</td>`;
+      itemsHtml += `<td>${price}</td>`;
+      itemsHtml += `</tr>`;
+    }
+
+    itemsHtml += '</tbody><tfoot><tr>';
+    itemsHtml += `<td colspan="3" class="text-muted">Total</td>`;
+    itemsHtml += `<td><strong>${formatCurrency(total)}</strong></td>`;
+    itemsHtml += '</tr></tfoot></table>';
+
+    sections.push(`<section class="detail-section"><h3 class="detail-section-title">Items (${items.length})</h3>${itemsHtml}</section>`);
+  } else {
+    sections.push(`<section class="detail-section"><h3 class="detail-section-title">Items</h3><p class="text-muted">No items recorded for this visit.</p></section>`);
+  }
+
+  return sections.join('');
 }
 
 // =============================================================================

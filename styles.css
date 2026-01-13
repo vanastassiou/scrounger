@@ -724,12 +724,14 @@
   /* Unified table link style */
   .table-link {
     color: var(--color-primary);
-    text-decoration: underline;
+    font-weight: 700;
+    text-decoration: none;
     cursor: pointer;
   }
 
   .table-link:hover {
     color: var(--color-primary-hover);
+    text-decoration: underline;
   }
 
   /* Store table cells */
@@ -740,18 +742,9 @@
     gap: 0.25rem 0.75rem;
   }
 
-  .store-name {
-    font-weight: 500;
-    text-decoration: none;
-  }
-
-  .store-name:hover {
-    text-decoration: underline;
-  }
-
   .store-address {
-    font-size: 0.75rem;
-    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    font-weight: 400;
   }
 
   /* Item details */
