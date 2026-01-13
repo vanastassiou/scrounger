@@ -45,8 +45,8 @@ export async function loadStores() {
   userStoresData = await getAllUserStores();
   state.userStores = userStoresData;
 
-  // Merge static and user stores
-  const staticStores = state.storesDB.stores || [];
+  // Merge static and user stores, excluding hidden stores from display
+  const staticStores = (state.storesDB.stores || []).filter(s => !s.hidden);
   storesData = [...staticStores, ...userStoresData];
 
   statsMap = await getAllStoreStats();

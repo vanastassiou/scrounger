@@ -1133,15 +1133,12 @@
 .action-item-list li {
   padding: var(--space-xs) var(--space-md);
   font-size: 0.875rem;
-  color: var(--color-text-muted);
-  cursor: pointer;
   border-radius: var(--radius-sm);
   transition: background 0.15s ease;
 }
 
 .action-item-list li:hover {
   background: var(--color-surface-elevated);
-  color: var(--color-text);
 }
 
 .action-item-empty {
@@ -1153,7 +1150,6 @@
 
 .action-item-more {
   font-style: italic;
-  color: var(--color-primary);
 }
 
 /* =============================================================================

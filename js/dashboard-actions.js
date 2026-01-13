@@ -69,12 +69,12 @@ function renderActionList(type, items, status) {
 
   listEl.innerHTML = displayItems.map(item => `
     <li data-item-id="${item.id}" data-status="${status}">
-      ${item.title || 'Untitled'} ${item.brand ? `(${item.brand})` : ''}
+      <a href="#" class="table-link">${item.title || 'Untitled'}</a>
     </li>
   `).join('');
 
   if (remaining > 0) {
-    listEl.innerHTML += `<li class="action-item-more" data-status="${status}">+ ${remaining} more</li>`;
+    listEl.innerHTML += `<li class="action-item-more" data-status="${status}"><a href="#" class="table-link">+ ${remaining} more</a></li>`;
   }
 }
 
