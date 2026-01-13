@@ -32,6 +32,9 @@ export function createTabController(tabsSelector, pagesSelector, options = {}) {
       }
       page.classList.add('active');
 
+      // Update html data-tab attribute for inline CSS
+      document.documentElement.dataset.tab = targetId;
+
       if (storageKey) {
         localStorage.setItem(storageKey, targetId);
       }
