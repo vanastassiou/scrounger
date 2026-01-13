@@ -22,6 +22,7 @@
   <link rel="modulepreload" href="js/selling.js">
   <link rel="modulepreload" href="js/dashboard-actions.js">
   <link rel="modulepreload" href="js/sync.js">
+  <link rel="modulepreload" href="js/settings.js">
   <!-- Prevent flash of wrong tab -->
   <script>
     (function() {
@@ -36,12 +37,14 @@
     html[data-tab="inventory"] #inventory,
     html[data-tab="stores"] #stores,
     html[data-tab="visits"] #visits,
-    html[data-tab="selling"] #selling { display: block; }
+    html[data-tab="selling"] #selling,
+    html[data-tab="settings"] #settings { display: block; }
     html[data-tab="dashboard"] .tab[data-tab="dashboard"],
     html[data-tab="inventory"] .tab[data-tab="inventory"],
     html[data-tab="stores"] .tab[data-tab="stores"],
     html[data-tab="visits"] .tab[data-tab="visits"],
-    html[data-tab="selling"] .tab[data-tab="selling"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+    html[data-tab="selling"] .tab[data-tab="selling"],
+    html[data-tab="settings"] .tab[data-tab="settings"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
   </style>
 </head>
 <body>
@@ -56,6 +59,7 @@
     <button class="tab" data-tab="stores">Stores</button>
     <button class="tab" data-tab="visits">Visits</button>
     <button class="tab" data-tab="selling">Selling</button>
+    <button class="tab" data-tab="settings">Settings</button>
   </nav>
 
   <main>
@@ -314,6 +318,77 @@
         </table>
       </div>
       <div id="selling-count" class="text-muted"></div>
+    </section>
+
+    <!-- Settings -->
+    <section id="settings" class="page">
+      <div class="page-header">
+        <h2>Settings</h2>
+      </div>
+
+      <!-- Google Drive Sync -->
+      <div class="card">
+        <h3 class="card-title">Google Drive Sync</h3>
+
+        <div class="sync-steps">
+          <!-- Step 1: Connect -->
+          <div class="sync-step" id="sync-step-1">
+            <div class="sync-step-header">
+              <span class="sync-step-number">1</span>
+              <span class="sync-step-title">Connect Account</span>
+              <span class="sync-step-badge" id="sync-step-1-status">Pending</span>
+            </div>
+            <div class="sync-step-content">
+              <p class="sync-step-status" id="sync-connect-status">Not connected</p>
+              <button class="btn" id="btn-connect">Connect to Google Drive</button>
+            </div>
+          </div>
+
+          <!-- Step 2: Select Folder -->
+          <div class="sync-step sync-step--disabled" id="sync-step-2">
+            <div class="sync-step-header">
+              <span class="sync-step-number">2</span>
+              <span class="sync-step-title">Select Folder</span>
+              <span class="sync-step-badge" id="sync-step-2-status">Pending</span>
+            </div>
+            <div class="sync-step-content">
+              <p class="sync-step-status" id="sync-folder-status">No folder selected</p>
+              <div class="form-row">
+                <input type="text" class="form-input" id="sync-folder-input" placeholder="Folder name (e.g., Thrifting)" disabled>
+                <button class="btn" id="btn-set-folder" disabled>Set</button>
+              </div>
+              <div class="sync-step-actions">
+                <button class="btn btn--sm" id="btn-pick-folder" disabled>Browse folders</button>
+                <button class="btn btn--sm btn--danger" id="btn-remove-folder" disabled>Remove folder</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3: Sync Status -->
+          <div class="sync-step sync-step--disabled" id="sync-step-3">
+            <div class="sync-step-header">
+              <span class="sync-step-number">3</span>
+              <span class="sync-step-title">Sync Status</span>
+              <span class="sync-step-badge" id="sync-step-3-status">Ready</span>
+            </div>
+            <div class="sync-step-content">
+              <p class="sync-step-status" id="sync-current-status">Ready to sync</p>
+              <p class="text-muted">Last sync: <span id="last-sync-time">Never</span></p>
+              <button class="btn btn--primary" id="btn-sync-now" disabled>Sync Now</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Management -->
+      <div class="card">
+        <h3 class="card-title">Data Management</h3>
+        <div class="action-buttons">
+          <button class="btn btn--block" id="btn-export-data">Export data (JSON)</button>
+          <button class="btn btn--block" id="btn-import-data">Import data</button>
+          <button class="btn btn--block btn--danger" id="btn-clear-data">Clear all data</button>
+        </div>
+      </div>
     </section>
   </main>
 

@@ -3,7 +3,7 @@
 // =============================================================================
 
 export const DB_NAME = 'ThriftInventory';
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 export const STORE_TIERS = ['S', 'A', 'B', 'C'];
 
