@@ -22,7 +22,7 @@ export function resetDB() {
 export async function clearAllData() {
   try {
     const db = await openDB();
-    const tx = db.transaction(['inventory', 'visits', 'stores'], 'readwrite');
+    const tx = db.transaction(['inventory', 'visits', 'stores', 'settings'], 'readwrite');
 
     await Promise.all([
       new Promise((resolve, reject) => {
@@ -39,6 +39,11 @@ export async function clearAllData() {
         const req = tx.objectStore('stores').clear();
         req.onsuccess = resolve;
         req.onerror = () => reject(req.error);
+      }),
+      new Promise((resolve, reject) => {
+        const req = tx.objectStore('settings').clear();
+        req.onsuccess = resolve;
+        req.onerror = () => reject(req.error);
       })
     ]);
 
@@ -48,7 +53,7 @@ export async function clearAllData() {
   }
 }
 
-function openDB() {
+export function openDB() {
   if (dbInstance) return Promise.resolve(dbInstance);
 
   return new Promise((resolve, reject) => {
@@ -145,6 +150,117 @@ async function clearStore(storeName) {
 export { openDB as db };
 
 // =============================================================================
+// SETTINGS HELPERS
+// =============================================================================
+
+export async function getSetting(key) {
+  try {
+    return await getByKey('settings', key);
+  } catch (err) {
+    return handleError(err, `Failed to get setting ${key}`, null);
+  }
+}
+
+export async function setSetting(key, value) {
+  try {
+    const record = { id: key, value, updated_at: nowISO() };
+    await putRecord('settings', record);
+    return record;
+  } catch (err) {
+    console.error('Failed to set setting:', err);
+    throw err;
+  }
+}
+
+// =============================================================================
+// BASELINE DATA IMPORT
+// =============================================================================
+
+/**
+ * Import baseline inventory from JSON data (runs once per version).
+ * Skips items that already exist (by title + store_id + acquisition_date).
+ */
+export async function importBaselineInventory(items, version) {
+  try {
+    const currentVersion = await getSetting('inventory_baseline_version');
+    if (currentVersion?.value === version) {
+      return { imported: 0, skipped: true, reason: 'version_match' };
+    }
+
+    const existingItems = await getAllFromStore('inventory');
+    const existingKeys = new Set(
+      existingItems.map(i => `${i.title}__${i.store_id}__${i.acquisition_date}`)
+    );
+
+    const now = nowISO();
+    let imported = 0;
+
+    for (const item of items) {
+      const key = `${item.title}__${item.store_id}__${item.acquisition_date}`;
+      if (existingKeys.has(key)) continue;
+
+      const record = {
+        ...item,
+        id: generateId(),
+        source: 'baseline',
+        created_at: now,
+        updated_at: now,
+        dirty: false
+      };
+      delete record.baseline_id; // Remove baseline tracking field
+      await addRecord('inventory', record);
+      imported++;
+    }
+
+    await setSetting('inventory_baseline_version', version);
+    return { imported, skipped: false };
+  } catch (err) {
+    return handleError(err, 'Failed to import baseline inventory', { imported: 0, error: err.message });
+  }
+}
+
+/**
+ * Compute visits dynamically from inventory items.
+ * Aggregates by store_id + acquisition_date.
+ */
+export async function computeVisitsFromInventory() {
+  try {
+    const items = await getAllFromStore('inventory');
+    const visitsMap = new Map();
+
+    for (const item of items) {
+      if (!item.store_id || !item.acquisition_date) continue;
+
+      const key = `${item.store_id}__${item.acquisition_date}`;
+      if (!visitsMap.has(key)) {
+        visitsMap.set(key, {
+          store_id: item.store_id,
+          date: item.acquisition_date,
+          purchases_count: 0,
+          total_spent: 0,
+          items: []
+        });
+      }
+
+      const visit = visitsMap.get(key);
+      visit.purchases_count++;
+      visit.total_spent += (item.purchase_price || 0) + (item.tax_paid || 0);
+      visit.items.push({
+        id: item.id,
+        title: item.title,
+        purchase_price: item.purchase_price,
+        category: item.category
+      });
+    }
+
+    return Array.from(visitsMap.values())
+      .sort((a, b) => b.date.localeCompare(a.date));
+  } catch (err) {
+    return handleError(err, 'Failed to compute visits from inventory', []);
+  }
+}
+
+// =============================================================================
 // INVENTORY CRUD
 // =============================================================================
 
@@ -154,6 +270,7 @@ export async function createInventoryItem(data) {
     const item = {
       ...data,
       id: generateId(),
+      source: data.source || 'user',
       created_at: now,
       updated_at: now,
       dirty: true
@@ -289,6 +406,21 @@ export async function getInventoryInPipeline() {
   }
 }
 
+export async function getItemsNotInPipeline() {
+  try {
+    const items = await getAllFromStore('inventory');
+    const pipelineStatuses = [
+      'unlisted', 'photographed', 'listed', 'pending_sale',
+      'packaged', 'shipped', 'confirmed_received', 'sold'
+    ];
+
+    return items.filter(item => !pipelineStatuses.includes(item.status))
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  } catch (err) {
+    return handleError(err, 'Failed to get non-pipeline inventory', []);
+  }
+}
+
 export async function getSellingAnalytics(dateRange = null) {
   try {
     const store = await getStore('inventory');
@@ -405,6 +537,16 @@ export async function getInventoryForVisit(storeId, date) {
   }
 }
 
+export async function getInventoryByStore(storeId) {
+  try {
+    const store = await getStore('inventory');
+    const index = store.index('store_id');
+    return promisify(index.getAll(storeId));
+  } catch (err) {
+    return handleError(err, `Failed to get inventory by store ${storeId}`, []);
+  }
+}
+
 // =============================================================================
 // VISITS CRUD
 // =============================================================================
@@ -507,7 +649,8 @@ export async function getStoreStats(storeId) {
 }
 
 export async function getAllStoreStats() {
-  const visits = await getAllVisits();
+  // Use computed visits from inventory for accurate stats
+  const visits = await computeVisitsFromInventory();
   const statsMap = new Map();
 
   // Group visits by store

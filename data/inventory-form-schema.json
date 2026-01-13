@@ -1,58 +1,211 @@
 {
-  "meta": {
-    "document_type": "form_schema",
-    "domain": "thrift_store_sourcing",
-    "version": "1.0",
-    "created": "2026-01-03",
-    "purpose": "Per-item inventory form with quality scoring for vintage clothing, shoes, and jewelry"
-  },
-
   "form_sections": {
     "acquisition": {
       "description": "Where and when the item was acquired",
       "fields": {
+        "acquisition_date": {
+          "default": "today",
+          "required": true,
+          "type": "date"
+        },
         "item_id": {
-          "type": "string",
           "auto_generate": true,
           "format": "UUID or incremental",
-          "required": true
-        },
-        "acquisition_date": {
-          "type": "date",
-          "default": "today",
-          "required": true
-        },
-        "store_id": {
-          "type": "reference",
-          "references": "stores.json",
-          "required": true
+          "required": true,
+          "type": "string"
         },
         "purchase_price": {
-          "type": "currency",
           "currency": "CAD",
-          "required": true
+          "required": true,
+          "type": "currency"
+        },
+        "store_id": {
+          "references": "stores.json",
+          "required": true,
+          "type": "reference"
         },
         "tax_paid": {
-          "type": "currency",
           "currency": "CAD",
+          "notes": "For accurate cost basis calculation",
           "required": false,
-          "notes": "For accurate cost basis calculation"
+          "type": "currency"
         }
       }
     },
-
+    "condition": {
+      "description": "Item condition assessment",
+      "fields": {
+        "condition_notes": {
+          "required": false,
+          "type": "text"
+        },
+        "flaws": {
+          "items": {
+            "affects_wearability": "boolean",
+            "flaw_type": {
+              "options": [
+                "stain",
+                "hole",
+                "tear",
+                "missing_button",
+                "broken_zipper",
+                "pilling",
+                "fading",
+                "discolouration",
+                "odour",
+                "moth_damage",
+                "stretched",
+                "shrunk",
+                "seam_damage",
+                "lining_damage",
+                "heel_wear",
+                "sole_wear",
+                "scuffs",
+                "scratches",
+                "tarnish",
+                "patina",
+                "missing_stone",
+                "loose_stone",
+                "broken_clasp",
+                "bent",
+                "dent",
+                "crack",
+                "chip",
+                "repair_visible",
+                "other"
+              ],
+              "type": "enum"
+            },
+            "location": "string",
+            "repairable": "boolean",
+            "severity": {
+              "options": [
+                "minor",
+                "moderate",
+                "significant"
+              ],
+              "type": "enum"
+            }
+          },
+          "required": false,
+          "type": "array"
+        },
+        "overall_condition": {
+          "options": [
+            "new_with_tags",
+            "like_new",
+            "excellent",
+            "very_good",
+            "good",
+            "fair",
+            "poor",
+            "for_parts"
+          ],
+          "required": true,
+          "type": "enum"
+        },
+        "repairs_completed": {
+          "items": {
+            "repair_cost": "currency",
+            "repair_date": "date",
+            "repair_type": "string"
+          },
+          "required": false,
+          "type": "array"
+        },
+        "repairs_needed": {
+          "items": "string",
+          "required": false,
+          "type": "array"
+        }
+      }
+    },
+    "intent": {
+      "description": "Keep vs sell determination",
+      "fields": {
+        "intent": {
+          "options": [
+            "personal_keep",
+            "resale",
+            "undecided"
+          ],
+          "required": true,
+          "type": "enum"
+        },
+        "resale_platform_target": {
+          "conditional_on": "intent == resale",
+          "options": [
+            "poshmark",
+            "ebay",
+            "etsy",
+            "depop",
+            "facebook_marketplace",
+            "local_consignment",
+            "other"
+          ],
+          "required": false,
+          "type": "multi_select"
+        }
+      }
+    },
     "item_identification": {
       "description": "Core item details",
       "fields": {
+        "brand": {
+          "autocomplete_from": "brands.json",
+          "notes": "Leave blank if unbranded or unknown",
+          "required": false,
+          "type": "string"
+        },
         "category": {
-          "type": "enum",
-          "options": ["clothing", "shoes", "jewelry", "accessories"],
-          "required": true
+          "options": [
+            "clothing",
+            "shoes",
+            "jewelry",
+            "accessories"
+          ],
+          "required": true,
+          "type": "enum"
+        },
+        "description": {
+          "notes": "Detailed description for listing",
+          "required": false,
+          "type": "text"
+        },
+        "era": {
+          "options": [
+            "pre_1920s",
+            "1920s",
+            "1930s",
+            "1940s",
+            "1950s",
+            "1960s",
+            "1970s",
+            "1980s",
+            "1990s",
+            "2000s",
+            "2010s",
+            "contemporary",
+            "unknown"
+          ],
+          "required": true,
+          "type": "enum"
         },
         "subcategory": {
-          "type": "enum",
           "depends_on": "category",
           "options": {
+            "accessories": [
+              "handbag",
+              "clutch",
+              "wallet",
+              "belt",
+              "scarf",
+              "hat",
+              "gloves",
+              "sunglasses",
+              "hair_accessory",
+              "other"
+            ],
             "clothing": [
               "dress",
               "blouse",
@@ -76,22 +229,6 @@
               "formal_gown",
               "other"
             ],
-            "shoes": [
-              "heels",
-              "pumps",
-              "flats",
-              "boots",
-              "ankle_boots",
-              "sandals",
-              "loafers",
-              "oxfords",
-              "sneakers",
-              "mules",
-              "platforms",
-              "wedges",
-              "slippers",
-              "other"
-            ],
             "jewelry": [
               "ring",
               "necklace",
@@ -108,138 +245,70 @@
               "set",
               "other"
             ],
-            "accessories": [
-              "handbag",
-              "clutch",
-              "wallet",
-              "belt",
-              "scarf",
-              "hat",
-              "gloves",
-              "sunglasses",
-              "hair_accessory",
+            "shoes": [
+              "heels",
+              "pumps",
+              "flats",
+              "boots",
+              "ankle_boots",
+              "sandals",
+              "loafers",
+              "oxfords",
+              "sneakers",
+              "mules",
+              "platforms",
+              "wedges",
+              "slippers",
               "other"
             ]
           },
-          "required": true
-        },
-        "brand": {
-          "type": "string",
-          "autocomplete_from": "brands.json",
-          "required": false,
-          "notes": "Leave blank if unbranded or unknown"
-        },
-        "era": {
-          "type": "enum",
-          "options": [
-            "pre_1920s",
-            "1920s",
-            "1930s",
-            "1940s",
-            "1950s",
-            "1960s",
-            "1970s",
-            "1980s",
-            "1990s",
-            "2000s",
-            "2010s",
-            "contemporary",
-            "unknown"
-          ],
-          "required": true
+          "required": true,
+          "type": "enum"
         },
         "title": {
-          "type": "string",
           "max_length": 100,
+          "notes": "Brief descriptive title for listing",
           "required": true,
-          "notes": "Brief descriptive title for listing"
-        },
-        "description": {
-          "type": "text",
-          "required": false,
-          "notes": "Detailed description for listing"
+          "type": "string"
         }
       }
     },
-
-    "sizing": {
-      "description": "Size information",
-      "fields": {
-        "labeled_size": {
-          "type": "string",
-          "required": false,
-          "notes": "Size as marked on label"
-        },
-        "modern_size_equivalent": {
-          "type": "string",
-          "required": false,
-          "notes": "Estimated modern size equivalent (vintage sizing differs)"
-        },
-        "measurements": {
-          "type": "object",
-          "required": false,
-          "conditional_fields": {
-            "clothing": {
-              "bust_inches": "number",
-              "waist_inches": "number",
-              "hips_inches": "number",
-              "shoulder_width_inches": "number",
-              "sleeve_length_inches": "number",
-              "length_inches": "number",
-              "inseam_inches": "number",
-              "rise_inches": "number"
-            },
-            "shoes": {
-              "labeled_size": "string",
-              "insole_length_cm": "number",
-              "width": "enum:narrow,standard,wide,extra_wide",
-              "heel_height_inches": "number"
-            },
-            "jewelry": {
-              "ring_size": "string",
-              "chain_length_inches": "number",
-              "bracelet_circumference_inches": "number",
-              "pendant_dimensions_mm": "string",
-              "weight_grams": "number"
-            }
-          }
-        }
-      }
-    },
-
-    "materials": {
-      "description": "Material composition",
-      "fields": {
-        "primary_material": {
-          "type": "string",
-          "autocomplete_from": "materials.json",
-          "required": true
-        },
-        "secondary_materials": {
-          "type": "array",
-          "items": "string",
-          "autocomplete_from": "materials.json",
-          "required": false
-        },
-        "material_verified": {
-          "type": "boolean",
-          "default": false,
-          "notes": "True if verified via label, testing, or hallmark"
-        },
-        "material_notes": {
-          "type": "text",
-          "required": false,
-          "notes": "Details on material quality, hand feel, testing results"
-        }
-      }
-    },
-
     "jewelry_specific": {
-      "description": "Fields specific to jewelry items",
       "conditional_on": "category == jewelry",
+      "description": "Fields specific to jewelry items",
       "fields": {
+        "closure_type": {
+          "options": [
+            "lobster_claw",
+            "spring_ring",
+            "toggle",
+            "box_clasp",
+            "hook_and_eye",
+            "magnetic",
+            "barrel",
+            "push_back",
+            "screw_back",
+            "lever_back",
+            "omega_back",
+            "clip_on",
+            "brooch_pin",
+            "none",
+            "other"
+          ],
+          "required": false,
+          "type": "enum"
+        },
+        "hallmarks": {
+          "items": {
+            "interpretation": "string",
+            "mark_description": "string",
+            "mark_location": "string",
+            "photo_reference": "string"
+          },
+          "required": false,
+          "type": "array"
+        },
         "metal_type": {
-          "type": "enum",
           "options": [
             "gold_24k",
             "gold_22k",
@@ -264,52 +333,21 @@
             "base_metal",
             "unknown"
           ],
-          "required": true
-        },
-        "hallmarks": {
-          "type": "array",
-          "items": {
-            "mark_description": "string",
-            "mark_location": "string",
-            "interpretation": "string",
-            "photo_reference": "string"
-          },
-          "required": false
+          "required": true,
+          "type": "enum"
         },
         "stones": {
-          "type": "array",
           "items": {
-            "stone_type": "string",
-            "cut": "string",
             "approximate_carat": "number",
-            "treatment_suspected": "boolean",
-            "notes": "string"
+            "cut": "string",
+            "notes": "string",
+            "stone_type": "string",
+            "treatment_suspected": "boolean"
           },
-          "required": false
-        },
-        "closure_type": {
-          "type": "enum",
-          "options": [
-            "lobster_claw",
-            "spring_ring",
-            "toggle",
-            "box_clasp",
-            "hook_and_eye",
-            "magnetic",
-            "barrel",
-            "push_back",
-            "screw_back",
-            "lever_back",
-            "omega_back",
-            "clip_on",
-            "brooch_pin",
-            "none",
-            "other"
-          ],
-          "required": false
+          "required": false,
+          "type": "array"
         },
         "tested_with": {
-          "type": "multi_select",
           "options": [
             "magnet",
             "loupe_10x",
@@ -319,193 +357,49 @@
             "weight_comparison",
             "none"
           ],
-          "required": false
-        }
-      }
-    },
-
-    "condition": {
-      "description": "Item condition assessment",
-      "fields": {
-        "overall_condition": {
-          "type": "enum",
-          "options": [
-            "new_with_tags",
-            "like_new",
-            "excellent",
-            "very_good",
-            "good",
-            "fair",
-            "poor",
-            "for_parts"
-          ],
-          "required": true
-        },
-        "condition_notes": {
-          "type": "text",
-          "required": false
-        },
-        "flaws": {
-          "type": "array",
-          "items": {
-            "flaw_type": {
-              "type": "enum",
-              "options": [
-                "stain",
-                "hole",
-                "tear",
-                "missing_button",
-                "broken_zipper",
-                "pilling",
-                "fading",
-                "discoloration",
-                "odor",
-                "moth_damage",
-                "stretched",
-                "shrunk",
-                "seam_damage",
-                "lining_damage",
-                "heel_wear",
-                "sole_wear",
-                "scuffs",
-                "scratches",
-                "tarnish",
-                "patina",
-                "missing_stone",
-                "loose_stone",
-                "broken_clasp",
-                "bent",
-                "dent",
-                "crack",
-                "chip",
-                "repair_visible",
-                "other"
-              ]
-            },
-            "severity": {
-              "type": "enum",
-              "options": ["minor", "moderate", "significant"]
-            },
-            "location": "string",
-            "repairable": "boolean",
-            "affects_wearability": "boolean"
-          },
-          "required": false
-        },
-        "repairs_needed": {
-          "type": "array",
-          "items": "string",
-          "required": false
-        },
-        "repairs_completed": {
-          "type": "array",
-          "items": {
-            "repair_type": "string",
-            "repair_date": "date",
-            "repair_cost": "currency"
-          },
-          "required": false
-        }
-      }
-    },
-
-    "photos": {
-      "description": "Photo documentation",
-      "fields": {
-        "photos": {
-          "type": "array",
-          "items": {
-            "file_path": "string",
-            "photo_type": {
-              "type": "enum",
-              "options": [
-                "front",
-                "back",
-                "detail",
-                "label",
-                "flaw",
-                "hallmark",
-                "closure",
-                "measurement",
-                "styled"
-              ]
-            }
-          },
-          "min_recommended": 4,
-          "required": false
-        }
-      }
-    },
-
-    "intent": {
-      "description": "Keep vs sell determination",
-      "fields": {
-        "intent": {
-          "type": "enum",
-          "options": ["personal_keep", "resale", "undecided"],
-          "required": true
-        },
-        "resale_platform_target": {
-          "type": "multi_select",
-          "options": [
-            "poshmark",
-            "ebay",
-            "etsy",
-            "depop",
-            "facebook_marketplace",
-            "local_consignment",
-            "other"
-          ],
-          "conditional_on": "intent == resale",
-          "required": false
-        }
-      }
-    },
-
-    "pricing": {
-      "description": "Pricing and valuation",
-      "fields": {
-        "estimated_base_value": {
-          "type": "currency",
-          "currency": "CAD",
           "required": false,
-          "notes": "Base value before brand premium"
-        },
-        "brand_premium_multiplier": {
-          "type": "number",
-          "default": 1.0,
-          "required": false,
-          "notes": "Multiplier from brands.json"
-        },
-        "estimated_resale_value": {
-          "type": "currency",
-          "currency": "CAD",
-          "required": false,
-          "notes": "Target listing price"
-        },
-        "minimum_acceptable_price": {
-          "type": "currency",
-          "currency": "CAD",
-          "required": false
-        },
-        "comp_research": {
-          "type": "array",
-          "items": {
-            "platform": "string",
-            "sold_price": "currency",
-            "listing_url": "string",
-            "notes": "string"
-          },
-          "required": false
+          "type": "multi_select"
         }
       }
     },
-
     "listing_status": {
       "description": "Sales tracking",
       "fields": {
+        "listing_date": {
+          "required": false,
+          "type": "date"
+        },
+        "net_profit": {
+          "calculated": true,
+          "currency": "CAD",
+          "formula": "sold_price - purchase_price - tax_paid - shipping_cost - platform_fees - sum(repairs_completed.repair_cost)",
+          "type": "currency"
+        },
+        "platform_fees": {
+          "currency": "CAD",
+          "required": false,
+          "type": "currency"
+        },
+        "shipping_cost": {
+          "currency": "CAD",
+          "required": false,
+          "type": "currency"
+        },
+        "sold_date": {
+          "required": false,
+          "type": "date"
+        },
+        "sold_platform": {
+          "required": false,
+          "type": "string"
+        },
+        "sold_price": {
+          "currency": "CAD",
+          "required": false,
+          "type": "currency"
+        },
         "status": {
-          "type": "enum",
+          "default": "unlisted",
           "options": [
             "unlisted",
             "photographed",
@@ -516,184 +410,424 @@
             "donated",
             "kept"
           ],
-          "default": "unlisted",
-          "required": true
+          "required": true,
+          "type": "enum"
+        }
+      }
+    },
+    "materials": {
+      "description": "Material composition",
+      "fields": {
+        "material_notes": {
+          "notes": "Details on material quality, hand feel, testing results",
+          "required": false,
+          "type": "text"
         },
-        "listing_date": {
-          "type": "date",
-          "required": false
+        "material_verified": {
+          "default": false,
+          "notes": "True if verified via label, testing, or hallmark",
+          "type": "boolean"
         },
-        "sold_date": {
-          "type": "date",
-          "required": false
+        "primary_material": {
+          "autocomplete_from": "materials.json",
+          "required": true,
+          "type": "string"
         },
-        "sold_price": {
-          "type": "currency",
+        "secondary_materials": {
+          "autocomplete_from": "materials.json",
+          "items": "string",
+          "required": false,
+          "type": "array"
+        }
+      }
+    },
+    "photos": {
+      "description": "Photo documentation",
+      "fields": {
+        "photos": {
+          "items": {
+            "file_path": "string",
+            "photo_type": {
+              "options": [
+                "front",
+                "back",
+                "detail",
+                "label",
+                "flaw",
+                "hallmark",
+                "closure",
+                "measurement",
+                "styled"
+              ],
+              "type": "enum"
+            }
+          },
+          "min_recommended": 4,
+          "required": false,
+          "type": "array"
+        }
+      }
+    },
+    "pricing": {
+      "description": "Pricing and valuation",
+      "fields": {
+        "brand_premium_multiplier": {
+          "default": 1.0,
+          "notes": "Multiplier from brands.json",
+          "required": false,
+          "type": "number"
+        },
+        "comp_research": {
+          "items": {
+            "listing_url": "string",
+            "notes": "string",
+            "platform": "string",
+            "sold_price": "currency"
+          },
+          "required": false,
+          "type": "array"
+        },
+        "estimated_base_value": {
           "currency": "CAD",
-          "required": false
+          "notes": "Base value before brand premium",
+          "required": false,
+          "type": "currency"
         },
-        "sold_platform": {
-          "type": "string",
-          "required": false
-        },
-        "shipping_cost": {
-          "type": "currency",
+        "estimated_resale_value": {
           "currency": "CAD",
-          "required": false
+          "notes": "Target listing price",
+          "required": false,
+          "type": "currency"
         },
-        "platform_fees": {
-          "type": "currency",
+        "minimum_acceptable_price": {
           "currency": "CAD",
-          "required": false
+          "required": false,
+          "type": "currency"
+        }
+      }
+    },
+    "sizing": {
+      "description": "Size information",
+      "fields": {
+        "labeled_size": {
+          "notes": "Size as marked on label",
+          "required": false,
+          "type": "string"
         },
-        "net_profit": {
-          "type": "currency",
-          "currency": "CAD",
-          "calculated": true,
-          "formula": "sold_price - purchase_price - tax_paid - shipping_cost - platform_fees - sum(repairs_completed.repair_cost)"
+        "measurements": {
+          "conditional_fields": {
+            "clothing": {
+              "bust_inches": "number",
+              "hips_inches": "number",
+              "inseam_inches": "number",
+              "length_inches": "number",
+              "rise_inches": "number",
+              "shoulder_width_inches": "number",
+              "sleeve_length_inches": "number",
+              "waist_inches": "number"
+            },
+            "jewelry": {
+              "bracelet_circumference_inches": "number",
+              "chain_length_inches": "number",
+              "pendant_dimensions_mm": "string",
+              "ring_size": "string",
+              "weight_grams": "number"
+            },
+            "shoes": {
+              "heel_height_inches": "number",
+              "insole_length_cm": "number",
+              "labeled_size": "string",
+              "width": "enum:narrow,standard,wide,extra_wide"
+            }
+          },
+          "required": false,
+          "type": "object"
+        },
+        "modern_size_equivalent": {
+          "notes": "Estimated modern size equivalent (vintage sizing differs)",
+          "required": false,
+          "type": "string"
         }
       }
     }
   },
-
+  "meta": {
+    "created": "2026-01-03",
+    "document_type": "form_schema",
+    "domain": "thrift_store_sourcing",
+    "purpose": "Per-item inventory form with quality scoring for vintage clothing, shoes, and jewelry",
+    "version": "1.0"
+  },
   "quality_scoring": {
-    "description": "Checklist-based quality scoring system",
-    "purpose": "Quick in-store evaluation to decide purchase worthiness",
-    "scoring_method": "Sum points from applicable criteria. Higher = better value proposition.",
-
     "clothing_checklist": {
-      "construction_quality": [
-        {"criterion": "Natural fiber content (silk, wool, cotton, linen)", "points": 10},
-        {"criterion": "Lined garment", "points": 5},
-        {"criterion": "French seams or bound seams", "points": 5},
-        {"criterion": "Hand-stitched details visible", "points": 8},
-        {"criterion": "Metal zipper (not plastic)", "points": 3},
-        {"criterion": "Quality buttons (shell, metal, glass, wood)", "points": 4},
-        {"criterion": "Made in quality country (Italy, France, UK, Japan, USA, Canada)", "points": 5},
-        {"criterion": "Union label present", "points": 5},
-        {"criterion": "Interfacing in collar/cuffs", "points": 3},
-        {"criterion": "Pattern matching at seams", "points": 5}
-      ],
-      "vintage_indicators": [
-        {"criterion": "Pre-1980 label typography/design", "points": 8},
-        {"criterion": "Metal zipper pull", "points": 4},
-        {"criterion": "ILGWU or similar union label", "points": 6},
-        {"criterion": "Lot number on label", "points": 3},
-        {"criterion": "No care instruction label (pre-1971 USA)", "points": 8},
-        {"criterion": "RN/WPL number datable to vintage era", "points": 5},
-        {"criterion": "Side metal zipper on dress/skirt", "points": 5},
-        {"criterion": "Unique vintage silhouette", "points": 7}
-      ],
       "brand_value": [
-        {"criterion": "Designer label (see S-tier brands)", "points": 20},
-        {"criterion": "Quality contemporary brand (see A-tier)", "points": 12},
-        {"criterion": "Collectible vintage label (see vintage brands)", "points": 15},
-        {"criterion": "Deadstock/NWT", "points": 10}
+        {
+          "criterion": "Designer label (see S-tier brands)",
+          "points": 20
+        },
+        {
+          "criterion": "Quality contemporary brand (see A-tier)",
+          "points": 12
+        },
+        {
+          "criterion": "Collectible vintage label (see vintage brands)",
+          "points": 15
+        },
+        {
+          "criterion": "Deadstock/NWT",
+          "points": 10
+        }
       ],
       "condition_deductions": [
-        {"criterion": "Stains (per stain)", "points": -5},
-        {"criterion": "Holes/tears", "points": -8},
-        {"criterion": "Significant fading", "points": -6},
-        {"criterion": "Odor (smoke, mildew)", "points": -10},
-        {"criterion": "Missing closures", "points": -4},
-        {"criterion": "Stretched/misshapen", "points": -7}
+        {
+          "criterion": "Stains (per stain)",
+          "points": -5
+        },
+        {
+          "criterion": "Holes/tears",
+          "points": -8
+        },
+        {
+          "criterion": "Significant fading",
+          "points": -6
+        },
+        {
+          "criterion": "Odour (smoke, mildew)",
+          "points": -10
+        },
+        {
+          "criterion": "Missing closures",
+          "points": -4
+        },
+        {
+          "criterion": "Stretched/misshapen",
+          "points": -7
+        }
+      ],
+      "construction_quality": [
+        {
+          "criterion": "Natural fiber content (silk, wool, cotton, linen)",
+          "points": 10
+        },
+        {
+          "criterion": "Lined garment",
+          "points": 5
+        },
+        {
+          "criterion": "French seams or bound seams",
+          "points": 5
+        },
+        {
+          "criterion": "Hand-stitched details visible",
+          "points": 8
+        },
+        {
+          "criterion": "Metal zipper (not plastic)",
+          "points": 3
+        },
+        {
+          "criterion": "Quality buttons (shell, metal, glass, wood)",
+          "points": 4
+        },
+        {
+          "criterion": "Made in quality country (Italy, France, UK, Japan, USA, Canada)",
+          "points": 5
+        },
+        {
+          "criterion": "Union label present",
+          "points": 5
+        },
+        {
+          "criterion": "Interfacing in collar/cuffs",
+          "points": 3
+        },
+        {
+          "criterion": "Pattern matching at seams",
+          "points": 5
+        }
       ],
       "thresholds": {
-        "strong_buy": 35,
         "consider": 20,
-        "pass": "below 20"
-      }
-    },
-
-    "shoes_checklist": {
-      "construction_quality": [
-        {"criterion": "Genuine leather upper", "points": 10},
-        {"criterion": "Leather sole", "points": 8},
-        {"criterion": "Goodyear welt or Blake stitch construction", "points": 10},
-        {"criterion": "Made in quality country (Italy, Spain, UK, USA, Portugal)", "points": 6},
-        {"criterion": "Leather lining", "points": 5},
-        {"criterion": "Metal hardware", "points": 3},
-        {"criterion": "Stacked leather heel", "points": 4}
-      ],
+        "pass": "below 20",
+        "strong_buy": 35
+      },
       "vintage_indicators": [
-        {"criterion": "Pre-1980s silhouette", "points": 7},
-        {"criterion": "Vintage brand label", "points": 6},
-        {"criterion": "Wood or stacked heel construction", "points": 4},
-        {"criterion": "Unique vintage design elements", "points": 5}
-      ],
-      "brand_value": [
-        {"criterion": "Designer label (see S-tier shoe brands)", "points": 20},
-        {"criterion": "Quality brand (see A-tier)", "points": 12},
-        {"criterion": "Collectible vintage maker", "points": 15}
-      ],
-      "condition_deductions": [
-        {"criterion": "Heel wear >25%", "points": -6},
-        {"criterion": "Sole separation", "points": -10},
-        {"criterion": "Major scuffs on leather", "points": -4},
-        {"criterion": "Broken heel tip", "points": -3},
-        {"criterion": "Interior lining damage", "points": -5},
-        {"criterion": "Odor", "points": -8},
-        {"criterion": "Stretched/misshapen", "points": -7}
-      ],
-      "thresholds": {
-        "strong_buy": 30,
-        "consider": 18,
-        "pass": "below 18"
-      }
+        {
+          "criterion": "Pre-1980 label typography/design",
+          "points": 8
+        },
+        {
+          "criterion": "Metal zipper pull",
+          "points": 4
+        },
+        {
+          "criterion": "ILGWU or similar union label",
+          "points": 6
+        },
+        {
+          "criterion": "Lot number on label",
+          "points": 3
+        },
+        {
+          "criterion": "No care instruction label (pre-1971 USA)",
+          "points": 8
+        },
+        {
+          "criterion": "RN/WPL number datable to vintage era",
+          "points": 5
+        },
+        {
+          "criterion": "Side metal zipper on dress/skirt",
+          "points": 5
+        },
+        {
+          "criterion": "Unique vintage silhouette",
+          "points": 7
+        }
+      ]
     },
-
+    "description": "Checklist-based quality scoring system",
     "jewelry_checklist": {
-      "metal_quality": [
-        {"criterion": "Solid gold (any karat)", "points": 30},
-        {"criterion": "Sterling silver (.925)", "points": 15},
-        {"criterion": "Platinum or palladium", "points": 35},
-        {"criterion": "Gold filled (1/20 or better)", "points": 10},
-        {"criterion": "Vermeil (gold over sterling)", "points": 8},
-        {"criterion": "Quality vintage costume (signed)", "points": 12}
-      ],
-      "hallmark_indicators": [
-        {"criterion": "Clear readable hallmarks", "points": 5},
-        {"criterion": "Maker's mark present", "points": 4},
-        {"criterion": "Date letter (UK)", "points": 6},
-        {"criterion": "Assay office mark", "points": 5}
-      ],
-      "stone_quality": [
-        {"criterion": "Genuine precious stones", "points": 15},
-        {"criterion": "Genuine semi-precious stones", "points": 8},
-        {"criterion": "Quality vintage paste/rhinestones", "points": 5},
-        {"criterion": "Stones secure in settings", "points": 3}
+      "condition_deductions": [
+        {
+          "criterion": "Missing stones",
+          "points": -10
+        },
+        {
+          "criterion": "Broken clasp",
+          "points": -5
+        },
+        {
+          "criterion": "Heavy tarnish",
+          "points": -3
+        },
+        {
+          "criterion": "Bent or misshapen",
+          "points": -6
+        },
+        {
+          "criterion": "Plating wear showing base metal",
+          "points": -8
+        },
+        {
+          "criterion": "Repairs visible",
+          "points": -4
+        }
       ],
       "construction_indicators": [
-        {"criterion": "Heavy for size (precious metal indicator)", "points": 5},
-        {"criterion": "Quality clasp mechanism", "points": 3},
-        {"criterion": "No green tinge on metal", "points": 4},
-        {"criterion": "Clean solder work", "points": 3},
-        {"criterion": "Prong settings intact", "points": 3}
+        {
+          "criterion": "Heavy for size (precious metal indicator)",
+          "points": 5
+        },
+        {
+          "criterion": "Quality clasp mechanism",
+          "points": 3
+        },
+        {
+          "criterion": "No green tinge on metal",
+          "points": 4
+        },
+        {
+          "criterion": "Clean solder work",
+          "points": 3
+        },
+        {
+          "criterion": "Prong settings intact",
+          "points": 3
+        }
       ],
-      "vintage_costume_value": [
-        {"criterion": "Signed designer costume (Trifari, Weiss, etc.)", "points": 15},
-        {"criterion": "Bakelite or early plastic", "points": 12},
-        {"criterion": "Art Deco design elements", "points": 10},
-        {"criterion": "Victorian/Edwardian era", "points": 15},
-        {"criterion": "Mid-century modern design", "points": 8}
+      "hallmark_indicators": [
+        {
+          "criterion": "Clear readable hallmarks",
+          "points": 5
+        },
+        {
+          "criterion": "Maker's mark present",
+          "points": 4
+        },
+        {
+          "criterion": "Date letter (UK)",
+          "points": 6
+        },
+        {
+          "criterion": "Assay office mark",
+          "points": 5
+        }
       ],
-      "condition_deductions": [
-        {"criterion": "Missing stones", "points": -10},
-        {"criterion": "Broken clasp", "points": -5},
-        {"criterion": "Heavy tarnish", "points": -3},
-        {"criterion": "Bent or misshapen", "points": -6},
-        {"criterion": "Plating wear showing base metal", "points": -8},
-        {"criterion": "Repairs visible", "points": -4}
+      "metal_quality": [
+        {
+          "criterion": "Solid gold (any karat)",
+          "points": 30
+        },
+        {
+          "criterion": "Sterling silver (.925)",
+          "points": 15
+        },
+        {
+          "criterion": "Platinum or palladium",
+          "points": 35
+        },
+        {
+          "criterion": "Gold filled (1/20 or better)",
+          "points": 10
+        },
+        {
+          "criterion": "Vermeil (gold over sterling)",
+          "points": 8
+        },
+        {
+          "criterion": "Quality vintage costume (signed)",
+          "points": 12
+        }
+      ],
+      "stone_quality": [
+        {
+          "criterion": "Genuine precious stones",
+          "points": 15
+        },
+        {
+          "criterion": "Genuine semi-precious stones",
+          "points": 8
+        },
+        {
+          "criterion": "Quality vintage paste/rhinestones",
+          "points": 5
+        },
+        {
+          "criterion": "Stones secure in settings",
+          "points": 3
+        }
       ],
       "thresholds": {
-        "strong_buy": 25,
         "consider": 12,
-        "pass": "below 12"
-      }
+        "pass": "below 12",
+        "strong_buy": 25
+      },
+      "vintage_costume_value": [
+        {
+          "criterion": "Signed designer costume (Trifari, Weiss, etc.)",
+          "points": 15
+        },
+        {
+          "criterion": "Bakelite or early plastic",
+          "points": 12
+        },
+        {
+          "criterion": "Art Deco design elements",
+          "points": 10
+        },
+        {
+          "criterion": "Victorian/Edwardian era",
+          "points": 15
+        },
+        {
+          "criterion": "Mid-century modern design",
+          "points": 8
+        }
+      ]
     },
-
+    "purpose": "Quick in-store evaluation to decide purchase worthiness",
     "quick_pass_rules": {
-      "description": "Instant disqualifiers regardless of other factors",
       "clothing": [
         "Mildew smell that won't wash out",
         "Extensive moth damage",
@@ -701,19 +835,120 @@
         "Polyester fast fashion construction",
         "No identifiable era or brand value"
       ],
-      "shoes": [
-        "Sole separation beyond repair",
-        "Interior mold/mildew",
-        "Cracked patent leather",
-        "Completely worn heels on non-resoleable construction",
-        "Strong odor"
-      ],
+      "description": "Instant disqualifiers regardless of other factors",
       "jewelry": [
         "Green oxidation throughout (base metal)",
         "Magnetic (unless known to be costume)",
         "Multiple missing stones in fine piece",
         "Broken beyond economical repair",
         "Obvious fake markings"
+      ],
+      "shoes": [
+        "Sole separation beyond repair",
+        "Interior mold/mildew",
+        "Cracked patent leather",
+        "Completely worn heels on non-resoleable construction",
+        "Strong odour"
+      ]
+    },
+    "scoring_method": "Sum points from applicable criteria. Higher = better value proposition.",
+    "shoes_checklist": {
+      "brand_value": [
+        {
+          "criterion": "Designer label (see S-tier shoe brands)",
+          "points": 20
+        },
+        {
+          "criterion": "Quality brand (see A-tier)",
+          "points": 12
+        },
+        {
+          "criterion": "Collectible vintage maker",
+          "points": 15
+        }
+      ],
+      "condition_deductions": [
+        {
+          "criterion": "Heel wear >25%",
+          "points": -6
+        },
+        {
+          "criterion": "Sole separation",
+          "points": -10
+        },
+        {
+          "criterion": "Major scuffs on leather",
+          "points": -4
+        },
+        {
+          "criterion": "Broken heel tip",
+          "points": -3
+        },
+        {
+          "criterion": "Interior lining damage",
+          "points": -5
+        },
+        {
+          "criterion": "Odour",
+          "points": -8
+        },
+        {
+          "criterion": "Stretched/misshapen",
+          "points": -7
+        }
+      ],
+      "construction_quality": [
+        {
+          "criterion": "Genuine leather upper",
+          "points": 10
+        },
+        {
+          "criterion": "Leather sole",
+          "points": 8
+        },
+        {
+          "criterion": "Goodyear welt or Blake stitch construction",
+          "points": 10
+        },
+        {
+          "criterion": "Made in quality country (Italy, Spain, UK, USA, Portugal)",
+          "points": 6
+        },
+        {
+          "criterion": "Leather lining",
+          "points": 5
+        },
+        {
+          "criterion": "Metal hardware",
+          "points": 3
+        },
+        {
+          "criterion": "Stacked leather heel",
+          "points": 4
+        }
+      ],
+      "thresholds": {
+        "consider": 18,
+        "pass": "below 18",
+        "strong_buy": 30
+      },
+      "vintage_indicators": [
+        {
+          "criterion": "Pre-1980s silhouette",
+          "points": 7
+        },
+        {
+          "criterion": "Vintage brand label",
+          "points": 6
+        },
+        {
+          "criterion": "Wood or stacked heel construction",
+          "points": 4
+        },
+        {
+          "criterion": "Unique vintage design elements",
+          "points": 5
+        }
       ]
     }
   }

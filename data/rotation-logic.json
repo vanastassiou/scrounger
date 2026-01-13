@@ -1,377 +1,286 @@
 {
-  "meta": {
-    "document_type": "business_logic",
-    "domain": "thrift_store_sourcing",
-    "version": "1.0",
-    "created": "2026-01-03",
-    "purpose": "Rotation scheduling logic for vintage clothing, shoes, and jewelry sourcing in Metro Vancouver / Fraser Valley"
-  },
-
-  "store_tiers": {
-    "description": "Quality tier classification based on donation catchment demographics and estate donation likelihood",
-    "tiers": {
-      "S": {
-        "label": "Premium",
-        "description": "High-wealth catchment, strong estate donation pipeline, or specialty vintage focus",
-        "expected_hit_rate": "high",
-        "visit_priority": "primary_rotation"
-      },
-      "A": {
-        "label": "Strong",
-        "description": "Upper-middle catchment, good turnover, reliable mid-tier finds with occasional premium",
-        "expected_hit_rate": "medium-high",
-        "visit_priority": "primary_rotation"
-      },
-      "B": {
-        "label": "Moderate",
-        "description": "Mixed demographics, inconsistent quality but volume compensates",
-        "expected_hit_rate": "medium",
-        "visit_priority": "secondary_rotation"
-      },
-      "C": {
-        "label": "Opportunistic",
-        "description": "Lower-wealth catchment or heavily picked over by resellers, occasional gems",
-        "expected_hit_rate": "low",
-        "visit_priority": "fill_in_only"
-      }
-    }
-  },
-
   "chain_characteristics": {
-    "value_village": {
-      "full_name": "Value Village / Savers",
-      "ownership": "for_profit",
-      "pricing_model": "standardized_by_category",
-      "pricing_tendency": "aggressive",
-      "jewelry_handling": "display_case_with_some_floor",
-      "turnover_rate": "high",
-      "best_days": ["monday", "tuesday"],
-      "notes": "High volume, consistent stock flow. Staff occasionally miss fine jewelry hallmarks. Designer items sometimes pulled for online auction."
-    },
-    "salvation_army": {
-      "full_name": "Salvation Army Thrift Store",
-      "ownership": "nonprofit",
-      "pricing_model": "variable_by_location",
-      "pricing_tendency": "moderate",
-      "jewelry_handling": "display_case",
-      "turnover_rate": "medium",
-      "best_days": ["tuesday", "wednesday"],
-      "notes": "Less picked over than VV. Quality varies significantly by location. Some locations have weekly color tag sales."
-    },
-    "mcc": {
-      "full_name": "MCC Thrift (Mennonite Central Committee)",
-      "ownership": "nonprofit",
-      "pricing_model": "conservative",
-      "pricing_tendency": "low",
-      "jewelry_handling": "mixed_display_and_floor",
-      "turnover_rate": "low-medium",
-      "best_days": ["any"],
-      "notes": "Often underpriced. Smaller selection but higher quality ratio. Strong estate donation pipeline in some locations. Limited hours."
-    },
-    "hospital_auxiliary": {
-      "full_name": "Hospital Auxiliary / Hospice Thrift",
-      "ownership": "nonprofit_volunteer",
-      "pricing_model": "conservative",
-      "pricing_tendency": "low",
-      "jewelry_handling": "display_case_volunteer_priced",
-      "turnover_rate": "low",
-      "best_days": ["varies_check_restock_day"],
-      "notes": "Highest estate donation rate. Volunteers often unfamiliar with brand/jewelry values. Limited hours, often weekday daytime only. HIGHEST PRIORITY for fine jewelry."
-    },
     "church_thrift": {
+      "best_days": [
+        "varies"
+      ],
       "full_name": "Church-run Thrift Stores",
+      "jewelry_handling": "often_floor_mixed",
+      "notes": "Extremely inconsistent hours and stock. When good, very good \u2014 estate cleanouts from congregation. Worth checking but don't build rotation around them.",
       "ownership": "nonprofit_volunteer",
       "pricing_model": "conservative",
       "pricing_tendency": "very_low",
-      "jewelry_handling": "often_floor_mixed",
-      "turnover_rate": "very_low",
-      "best_days": ["varies"],
-      "notes": "Extremely inconsistent hours and stock. When good, very good — estate cleanouts from congregation. Worth checking but don't build rotation around them."
+      "turnover_rate": "very_low"
     },
     "consignment": {
+      "best_days": [
+        "any"
+      ],
       "full_name": "Consignment Stores",
+      "jewelry_handling": "curated_display",
+      "notes": "Not traditional thrift \u2014 priced closer to market. Useful for research on local pricing and occasionally undervalued items from uninformed consignors.",
       "ownership": "for_profit",
       "pricing_model": "market_rate",
       "pricing_tendency": "high",
-      "jewelry_handling": "curated_display",
-      "turnover_rate": "medium",
-      "best_days": ["any"],
-      "notes": "Not traditional thrift — priced closer to market. Useful for research on local pricing and occasionally undervalued items from uninformed consignors."
-    }
-  },
-
-  "visit_frequency_rules": {
-    "description": "Recommended visit intervals by store tier and chain type",
-    "rules": [
-      {
-        "condition": {
-          "tier": "S",
-          "chain": "any"
-        },
-        "recommended_interval_days": 5,
-        "max_interval_days": 7,
-        "rationale": "Premium stores justify frequent visits; stock turns fast and competition is high"
-      },
-      {
-        "condition": {
-          "tier": "A",
-          "chain": "value_village"
-        },
-        "recommended_interval_days": 7,
-        "max_interval_days": 10,
-        "rationale": "Good stores with high turnover need weekly coverage"
-      },
-      {
-        "condition": {
-          "tier": "A",
-          "chain": "hospital_auxiliary"
-        },
-        "recommended_interval_days": 7,
-        "max_interval_days": 14,
-        "rationale": "Lower turnover but high value potential justifies weekly checks"
-      },
-      {
-        "condition": {
-          "tier": "B",
-          "chain": "any"
-        },
-        "recommended_interval_days": 14,
-        "max_interval_days": 21,
-        "rationale": "Moderate stores can be checked biweekly"
-      },
-      {
-        "condition": {
-          "tier": "C",
-          "chain": "any"
-        },
-        "recommended_interval_days": 30,
-        "max_interval_days": null,
-        "rationale": "Low-priority stores only when in area or nothing else available"
-      }
-    ]
-  },
-
-  "priority_scoring": {
-    "description": "Algorithm for calculating daily visit priority score",
-    "formula": "base_score + time_bonus + day_bonus + geographic_bonus",
-    "components": {
-      "base_score": {
-        "S": 100,
-        "A": 75,
-        "B": 50,
-        "C": 25
-      },
-      "time_bonus": {
-        "description": "Bonus based on days since last visit",
-        "calculation": "min(days_since_visit * 5, 50)",
-        "cap": 50
-      },
-      "day_bonus": {
-        "description": "Bonus for optimal shopping days by chain",
-        "value": 15,
-        "applies_when": "current_day in chain.best_days"
-      },
-      "geographic_bonus": {
-        "description": "Bonus for stores that cluster well with planned route",
-        "value": 10,
-        "applies_when": "store within 10min of another planned stop"
-      },
-      "restock_bonus": {
-        "description": "Bonus if known restock day",
-        "value": 20,
-        "applies_when": "current_day == store.known_restock_day"
-      }
-    }
-  },
-
-  "trip_planning_heuristics": {
-    "time_allocation": {
-      "description": "Recommended time per store type",
-      "jewelry_case_scan": {
-        "minutes": 10,
-        "notes": "Quick scan of display case, check for hallmarks on promising pieces"
-      },
-      "clothing_rack_thorough": {
-        "minutes": 45,
-        "notes": "Full rack flip for vintage/designer, checking labels and construction"
-      },
-      "clothing_rack_quick": {
-        "minutes": 20,
-        "notes": "Scan by color/texture for obvious vintage, spot check labels"
-      },
-      "shoe_section": {
-        "minutes": 15,
-        "notes": "Check soles for quality indicators, scan for vintage silhouettes"
-      },
-      "housewares_jewelry_hunt": {
-        "minutes": 10,
-        "notes": "Some stores mix jewelry in housewares — quick scan of small items"
-      }
+      "turnover_rate": "medium"
     },
-    "route_optimization": {
-      "max_stores_per_trip": {
-        "4_hour_trip": 4,
-        "5_hour_trip": 5,
-        "notes": "Includes drive time and assumes thorough search at each stop"
-      },
-      "geographic_clustering": {
-        "description": "Group stores by area to minimize backtracking",
-        "suggested_clusters": [
-          {
-            "name": "new_west_burnaby",
-            "drive_radius_minutes": 15,
-            "home_base": "new_westminster"
-          },
-          {
-            "name": "vancouver_east",
-            "drive_radius_minutes": 20,
-            "anchor": "commercial_drive_area"
-          },
-          {
-            "name": "vancouver_west_richmond",
-            "drive_radius_minutes": 25,
-            "anchor": "oakridge_area"
-          },
-          {
-            "name": "north_shore",
-            "drive_radius_minutes": 30,
-            "anchor": "north_vancouver"
-          },
-          {
-            "name": "tricities",
-            "drive_radius_minutes": 25,
-            "anchor": "coquitlam"
-          },
-          {
-            "name": "surrey_delta",
-            "drive_radius_minutes": 30,
-            "anchor": "surrey_central"
-          },
-          {
-            "name": "langley_abbotsford",
-            "drive_radius_minutes": 40,
-            "anchor": "langley"
-          },
-          {
-            "name": "chilliwack",
-            "drive_radius_minutes": 60,
-            "anchor": "chilliwack"
-          }
-        ]
-      }
+    "hospital_auxiliary": {
+      "best_days": [
+        "varies_check_restock_day"
+      ],
+      "full_name": "Hospital Auxiliary / Hospice Thrift",
+      "jewelry_handling": "display_case_volunteer_priced",
+      "notes": "Highest estate donation rate. Volunteers often unfamiliar with brand/jewelry values. Limited hours, often weekday daytime only. HIGHEST PRIORITY for fine jewelry.",
+      "ownership": "nonprofit_volunteer",
+      "pricing_model": "conservative",
+      "pricing_tendency": "low",
+      "turnover_rate": "low"
     },
-    "trip_types": {
-      "jewelry_focused": {
-        "description": "Quick hits on jewelry cases at multiple stores",
-        "stores_per_trip": "6-8",
-        "time_per_store_minutes": 15,
-        "best_for": "When limited time or testing new stores",
-        "priority_chains": ["hospital_auxiliary", "mcc", "church_thrift"]
-      },
-      "deep_dive": {
-        "description": "Thorough search of 2-3 high-value stores",
-        "stores_per_trip": "2-3",
-        "time_per_store_minutes": 60,
-        "best_for": "When you have time and targeting clothing/shoes",
-        "priority_chains": ["value_village", "salvation_army"]
-      },
-      "geographic_sweep": {
-        "description": "Hit all stores in a cluster",
-        "stores_per_trip": "4-5",
-        "time_per_store_minutes": 30,
-        "best_for": "Establishing baseline knowledge of an area",
-        "priority_chains": ["any"]
-      },
-      "opportunistic": {
-        "description": "Single store visit when passing through",
-        "stores_per_trip": "1",
-        "time_per_store_minutes": 45,
-        "best_for": "Maintaining visit frequency without dedicated trip",
-        "priority_chains": ["any"]
-      }
+    "mcc": {
+      "best_days": [
+        "any"
+      ],
+      "full_name": "MCC Thrift (Mennonite Central Committee)",
+      "jewelry_handling": "mixed_display_and_floor",
+      "notes": "Often underpriced. Smaller selection but higher quality ratio. Strong estate donation pipeline in some locations. Limited hours.",
+      "ownership": "nonprofit",
+      "pricing_model": "conservative",
+      "pricing_tendency": "low",
+      "turnover_rate": "low-medium"
+    },
+    "salvation_army": {
+      "best_days": [
+        "tuesday",
+        "wednesday"
+      ],
+      "full_name": "Salvation Army Thrift Store",
+      "jewelry_handling": "display_case",
+      "notes": "Less picked over than VV. Quality varies significantly by location. Some locations have weekly color tag sales.",
+      "ownership": "nonprofit",
+      "pricing_model": "variable_by_location",
+      "pricing_tendency": "moderate",
+      "turnover_rate": "medium"
+    },
+    "value_village": {
+      "best_days": [
+        "monday",
+        "tuesday"
+      ],
+      "full_name": "Value Village / Savers",
+      "jewelry_handling": "display_case_with_some_floor",
+      "notes": "High volume, consistent stock flow. Staff occasionally miss fine jewelry hallmarks. Designer items sometimes pulled for online auction.",
+      "ownership": "for_profit",
+      "pricing_model": "standardized_by_category",
+      "pricing_tendency": "aggressive",
+      "turnover_rate": "high"
     }
   },
-
+  "meta": {
+    "created": "2026-01-03",
+    "document_type": "business_logic",
+    "domain": "thrift_store_sourcing",
+    "purpose": "Rotation scheduling logic for vintage clothing, shoes, and jewelry sourcing in Metro Vancouver / Fraser Valley",
+    "version": "1.0"
+  },
   "optimal_timing": {
-    "best_times_of_day": {
-      "morning_opening": {
-        "window": "store_open to store_open + 2hrs",
-        "advantage": "First pick on new floor stock",
-        "disadvantage": "Competition from other resellers",
-        "best_for": ["value_village", "salvation_army"]
-      },
-      "midday": {
-        "window": "11:00 - 14:00",
-        "advantage": "Staff actively restocking, less crowded",
-        "disadvantage": "None significant",
-        "best_for": ["all"]
-      },
-      "late_afternoon": {
-        "window": "15:00 - 17:00",
-        "advantage": "Day's donations processed and on floor",
-        "disadvantage": "Picked over from morning",
-        "best_for": ["value_village"]
-      }
-    },
     "best_days": {
-      "monday": {
-        "advantage": "Weekend donations processed, fresh stock",
-        "chains": ["value_village", "salvation_army"]
-      },
-      "tuesday": {
-        "advantage": "Continued weekend processing, less competition than Monday",
-        "chains": ["value_village", "salvation_army"]
-      },
-      "wednesday": {
-        "advantage": "Mid-week lull, good for thorough searching",
-        "chains": ["all"]
-      },
-      "thursday": {
-        "advantage": "Some stores restock for weekend",
-        "chains": ["mcc", "hospital_auxiliary"]
-      },
       "friday": {
         "advantage": "None significant",
-        "disadvantage": "Pre-weekend busy",
-        "chains": []
+        "chains": [],
+        "disadvantage": "Pre-weekend busy"
+      },
+      "monday": {
+        "advantage": "Weekend donations processed, fresh stock",
+        "chains": [
+          "value_village",
+          "salvation_army"
+        ]
       },
       "saturday": {
         "advantage": "Highest volume of donations incoming",
-        "disadvantage": "Most crowded, heavy competition",
-        "chains": []
+        "chains": [],
+        "disadvantage": "Most crowded, heavy competition"
       },
       "sunday": {
         "advantage": "Some stores closed = less competition at open ones",
-        "disadvantage": "Many stores closed",
-        "chains": ["value_village"]
+        "chains": [
+          "value_village"
+        ],
+        "disadvantage": "Many stores closed"
+      },
+      "thursday": {
+        "advantage": "Some stores restock for weekend",
+        "chains": [
+          "mcc",
+          "hospital_auxiliary"
+        ]
+      },
+      "tuesday": {
+        "advantage": "Continued weekend processing, less competition than Monday",
+        "chains": [
+          "value_village",
+          "salvation_army"
+        ]
+      },
+      "wednesday": {
+        "advantage": "Mid-week lull, good for thorough searching",
+        "chains": [
+          "all"
+        ]
+      }
+    },
+    "best_times_of_day": {
+      "late_afternoon": {
+        "advantage": "Day's donations processed and on floor",
+        "best_for": [
+          "value_village"
+        ],
+        "disadvantage": "Picked over from morning",
+        "window": "15:00 - 17:00"
+      },
+      "midday": {
+        "advantage": "Staff actively restocking, less crowded",
+        "best_for": [
+          "all"
+        ],
+        "disadvantage": "None significant",
+        "window": "11:00 - 14:00"
+      },
+      "morning_opening": {
+        "advantage": "First pick on new floor stock",
+        "best_for": [
+          "value_village",
+          "salvation_army"
+        ],
+        "disadvantage": "Competition from other resellers",
+        "window": "store_open to store_open + 2hrs"
       }
     },
     "seasonal_considerations": {
+      "fall": {
+        "months": [
+          "september",
+          "october"
+        ],
+        "notes": "Back to school cleanouts, good for vintage clothing"
+      },
       "post_holiday": {
-        "months": ["january", "february"],
-        "notes": "Excellent for vintage — closet cleanouts after holidays, estate settlements"
+        "months": [
+          "january",
+          "february"
+        ],
+        "notes": "Excellent for vintage \u2014 closet cleanouts after holidays, estate settlements"
+      },
+      "pre_holiday": {
+        "months": [
+          "november",
+          "december"
+        ],
+        "notes": "Costume jewelry influx, vintage holiday wear. Estate settlements before year end."
       },
       "spring_cleaning": {
-        "months": ["march", "april", "may"],
+        "months": [
+          "march",
+          "april",
+          "may"
+        ],
         "notes": "High volume of donations, quality varies"
       },
       "summer": {
-        "months": ["june", "july", "august"],
+        "months": [
+          "june",
+          "july",
+          "august"
+        ],
         "notes": "Slower donations, moving season brings some estate pieces"
-      },
-      "fall": {
-        "months": ["september", "october"],
-        "notes": "Back to school cleanouts, good for vintage clothing"
-      },
-      "pre_holiday": {
-        "months": ["november", "december"],
-        "notes": "Costume jewelry influx, vintage holiday wear. Estate settlements before year end."
       }
     }
   },
-
+  "priority_scoring": {
+    "components": {
+      "base_score": {
+        "A": 75,
+        "B": 50,
+        "C": 25,
+        "S": 100
+      },
+      "day_bonus": {
+        "applies_when": "current_day in chain.best_days",
+        "description": "Bonus for optimal shopping days by chain",
+        "value": 15
+      },
+      "geographic_bonus": {
+        "applies_when": "store within 10min of another planned stop",
+        "description": "Bonus for stores that cluster well with planned route",
+        "value": 10
+      },
+      "restock_bonus": {
+        "applies_when": "current_day == store.known_restock_day",
+        "description": "Bonus if known restock day",
+        "value": 20
+      },
+      "time_bonus": {
+        "calculation": "min(days_since_visit * 5, 50)",
+        "cap": 50,
+        "description": "Bonus based on days since last visit"
+      }
+    },
+    "description": "Algorithm for calculating daily visit priority score",
+    "formula": "base_score + time_bonus + day_bonus + geographic_bonus"
+  },
+  "store_tiers": {
+    "description": "Quality tier classification based on donation catchment demographics and estate donation likelihood",
+    "tiers": {
+      "A": {
+        "description": "Upper-middle catchment, good turnover, reliable mid-tier finds with occasional premium",
+        "expected_hit_rate": "medium-high",
+        "label": "Strong",
+        "visit_priority": "primary_rotation"
+      },
+      "B": {
+        "description": "Mixed demographics, inconsistent quality but volume compensates",
+        "expected_hit_rate": "medium",
+        "label": "Moderate",
+        "visit_priority": "secondary_rotation"
+      },
+      "C": {
+        "description": "Lower-wealth catchment or heavily picked over by resellers, occasional gems",
+        "expected_hit_rate": "low",
+        "label": "Opportunistic",
+        "visit_priority": "fill_in_only"
+      },
+      "S": {
+        "description": "High-wealth catchment, strong estate donation pipeline, or specialty vintage focus",
+        "expected_hit_rate": "high",
+        "label": "Premium",
+        "visit_priority": "primary_rotation"
+      }
+    }
+  },
   "tracking_recommendations": {
+    "analytics_to_track": {
+      "overall": [
+        "cost_per_hour_sourcing",
+        "revenue_per_hour_sourcing",
+        "best_performing_clusters",
+        "optimal_visit_frequency_actual_vs_recommended"
+      ],
+      "per_store": [
+        "average_spend_per_visit",
+        "hit_rate_visits_with_purchase_vs_total",
+        "best_performing_day_of_week",
+        "average_items_per_visit",
+        "profit_margin_on_items_from_store"
+      ]
+    },
     "per_visit_logging": {
+      "optional_fields": [
+        "notes",
+        "stock_quality_rating_1_to_5",
+        "jewelry_case_quality_1_to_5",
+        "crowding_level",
+        "staff_restocking_observed"
+      ],
       "required_fields": [
         "store_id",
         "visit_date",
@@ -379,29 +288,175 @@
         "visit_duration_minutes",
         "items_purchased_count",
         "total_spent"
-      ],
-      "optional_fields": [
-        "notes",
-        "stock_quality_rating_1_to_5",
-        "jewelry_case_quality_1_to_5",
-        "crowding_level",
-        "staff_restocking_observed"
-      ]
-    },
-    "analytics_to_track": {
-      "per_store": [
-        "average_spend_per_visit",
-        "hit_rate_visits_with_purchase_vs_total",
-        "best_performing_day_of_week",
-        "average_items_per_visit",
-        "profit_margin_on_items_from_store"
-      ],
-      "overall": [
-        "cost_per_hour_sourcing",
-        "revenue_per_hour_sourcing",
-        "best_performing_clusters",
-        "optimal_visit_frequency_actual_vs_recommended"
       ]
     }
+  },
+  "trip_planning_heuristics": {
+    "route_optimization": {
+      "geographic_clustering": {
+        "description": "Group stores by area to minimize backtracking",
+        "suggested_clusters": [
+          {
+            "anchor": "chilliwack",
+            "drive_radius_minutes": 60,
+            "name": "chilliwack"
+          },
+          {
+            "anchor": "langley",
+            "drive_radius_minutes": 40,
+            "name": "langley_abbotsford"
+          },
+          {
+            "drive_radius_minutes": 15,
+            "home_base": "new_westminster",
+            "name": "new_west_burnaby"
+          },
+          {
+            "anchor": "north_vancouver",
+            "drive_radius_minutes": 30,
+            "name": "north_shore"
+          },
+          {
+            "anchor": "surrey_central",
+            "drive_radius_minutes": 30,
+            "name": "surrey_delta"
+          },
+          {
+            "anchor": "coquitlam",
+            "drive_radius_minutes": 25,
+            "name": "tricities"
+          },
+          {
+            "anchor": "commercial_drive_area",
+            "drive_radius_minutes": 20,
+            "name": "vancouver_east"
+          },
+          {
+            "anchor": "oakridge_area",
+            "drive_radius_minutes": 25,
+            "name": "vancouver_west_richmond"
+          }
+        ]
+      },
+      "max_stores_per_trip": {
+        "4_hour_trip": 4,
+        "5_hour_trip": 5,
+        "notes": "Includes drive time and assumes thorough search at each stop"
+      }
+    },
+    "time_allocation": {
+      "clothing_rack_quick": {
+        "minutes": 20,
+        "notes": "Scan by color/texture for obvious vintage, spot check labels"
+      },
+      "clothing_rack_thorough": {
+        "minutes": 45,
+        "notes": "Full rack flip for vintage/designer, checking labels and construction"
+      },
+      "description": "Recommended time per store type",
+      "housewares_jewelry_hunt": {
+        "minutes": 10,
+        "notes": "Some stores mix jewelry in housewares \u2014 quick scan of small items"
+      },
+      "jewelry_case_scan": {
+        "minutes": 10,
+        "notes": "Quick scan of display case, check for hallmarks on promising pieces"
+      },
+      "shoe_section": {
+        "minutes": 15,
+        "notes": "Check soles for quality indicators, scan for vintage silhouettes"
+      }
+    },
+    "trip_types": {
+      "deep_dive": {
+        "best_for": "When you have time and targeting clothing/shoes",
+        "description": "Thorough search of 2-3 high-value stores",
+        "priority_chains": [
+          "value_village",
+          "salvation_army"
+        ],
+        "stores_per_trip": "2-3",
+        "time_per_store_minutes": 60
+      },
+      "geographic_sweep": {
+        "best_for": "Establishing baseline knowledge of an area",
+        "description": "Hit all stores in a cluster",
+        "priority_chains": [
+          "any"
+        ],
+        "stores_per_trip": "4-5",
+        "time_per_store_minutes": 30
+      },
+      "jewelry_focused": {
+        "best_for": "When limited time or testing new stores",
+        "description": "Quick hits on jewelry cases at multiple stores",
+        "priority_chains": [
+          "hospital_auxiliary",
+          "mcc",
+          "church_thrift"
+        ],
+        "stores_per_trip": "6-8",
+        "time_per_store_minutes": 15
+      },
+      "opportunistic": {
+        "best_for": "Maintaining visit frequency without dedicated trip",
+        "description": "Single store visit when passing through",
+        "priority_chains": [
+          "any"
+        ],
+        "stores_per_trip": "1",
+        "time_per_store_minutes": 45
+      }
+    }
+  },
+  "visit_frequency_rules": {
+    "description": "Recommended visit intervals by store tier and chain type",
+    "rules": [
+      {
+        "condition": {
+          "chain": "any",
+          "tier": "S"
+        },
+        "max_interval_days": 7,
+        "rationale": "Premium stores justify frequent visits; stock turns fast and competition is high",
+        "recommended_interval_days": 5
+      },
+      {
+        "condition": {
+          "chain": "value_village",
+          "tier": "A"
+        },
+        "max_interval_days": 10,
+        "rationale": "Good stores with high turnover need weekly coverage",
+        "recommended_interval_days": 7
+      },
+      {
+        "condition": {
+          "chain": "hospital_auxiliary",
+          "tier": "A"
+        },
+        "max_interval_days": 14,
+        "rationale": "Lower turnover but high value potential justifies weekly checks",
+        "recommended_interval_days": 7
+      },
+      {
+        "condition": {
+          "chain": "any",
+          "tier": "B"
+        },
+        "max_interval_days": 21,
+        "rationale": "Moderate stores can be checked biweekly",
+        "recommended_interval_days": 14
+      },
+      {
+        "condition": {
+          "chain": "any",
+          "tier": "C"
+        },
+        "max_interval_days": null,
+        "rationale": "Low-priority stores only when in area or nothing else available",
+        "recommended_interval_days": 30
+      }
+    ]
   }
 }

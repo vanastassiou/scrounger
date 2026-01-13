@@ -3,15 +3,15 @@
 // =============================================================================
 
 import { state } from './state.js';
-import { createTabController, updateSyncStatus, showToast } from './ui.js';
+import { createTabController, updateSyncStatus, showToast, createModalController } from './ui.js';
 import { initInventory, renderInventoryStats, openAddItemModal } from './inventory.js';
 import { initStores, renderStoreCount } from './stores.js';
 import { initVisits, loadVisits, openLogVisitModal } from './visits.js';
-import { initSelling } from './selling.js';
+import { initSelling, listItemForSale } from './selling.js';
 import { initDashboardActions } from './dashboard-actions.js';
 import { syncOnOpen, isAuthenticated } from './sync.js';
-import { seedDatabase } from './seed.js';
-import { clearAllData } from './db.js';
+import { clearAllData, importBaselineInventory, getItemsNotInPipeline } from './db.js';
+import { escapeHtml } from './utils.js';
 
 // =============================================================================
 // INITIALIZATION
@@ -22,6 +22,9 @@ async function init() {
 
   // Load stores data first (needed by other modules)
   await loadStoresData();
+
+  // Load baseline inventory data (runs once per version)
+  await loadBaselineData();
 
   // Initialize tab controller
   createTabController('.tab', '.page', {
@@ -44,9 +47,12 @@ async function init() {
   // Dashboard action buttons
   document.getElementById('add-item-btn')?.addEventListener('click', openAddItemModal);
   document.getElementById('log-visit-btn')?.addEventListener('click', openLogVisitModal);
+  document.getElementById('list-for-sale-btn')?.addEventListener('click', openSelectItemDialog);
+
+  // Item picker modal event handlers
+  initSelectItemDialog();
 
   // Dev tools
-  document.getElementById('seed-data-btn')?.addEventListener('click', handleSeedData);
   document.getElementById('clear-data-btn')?.addEventListener('click', handleClearData);
 
   // Check for stored auth and sync
@@ -75,6 +81,19 @@ async function loadStoresData() {
   }
 }
 
+async function loadBaselineData() {
+  try {
+    const response = await fetch('data/inventory.json');
+    const data = await response.json();
+    const result = await importBaselineInventory(data.items, data.meta.version);
+    if (result.imported > 0) {
+      console.log(`Imported ${result.imported} baseline inventory items`);
+    }
+  } catch (err) {
+    console.error('Failed to load baseline data:', err);
+  }
+}
+
 function handleTabActivate(tabId) {
   // Could trigger lazy loading or refresh data here
   console.log('Tab activated:', tabId);
@@ -88,28 +107,6 @@ async function renderDashboardStats() {
 // =============================================================================
 // DEV TOOLS
 // =============================================================================
-
-async function handleSeedData() {
-  const btn = document.getElementById('seed-data-btn');
-  if (btn) btn.disabled = true;
-
-  try {
-    const result = await seedDatabase();
-    showToast(`Seeded ${result.itemCount} items, ${result.visitCount} visits`);
-
-    // Reload data
-    await Promise.all([
-      initInventory(),
-      loadVisits()
-    ]);
-    await renderDashboardStats();
-  } catch (err) {
-    console.error('Seed failed:', err);
-    showToast('Seed failed');
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
 
 async function handleClearData() {
   if (!confirm('Clear all inventory and visit data?')) return;
@@ -136,8 +133,82 @@ async function handleClearData() {
 }
 
 // Expose for console access
-window.seedDatabase = seedDatabase;
 window.clearAllData = clearAllData;
+
+// =============================================================================
+// SELECT ITEM DIALOG (List for Sale)
+// =============================================================================
+
+const selectItemModal = createModalController(document.getElementById('select-item-dialog'));
+let selectItemData = [];
+
+function initSelectItemDialog() {
+  const searchInput = document.getElementById('item-picker-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      renderItemPickerList(e.target.value.toLowerCase());
+    });
+  }
+
+  const listEl = document.getElementById('item-picker-list');
+  if (listEl) {
+    listEl.addEventListener('click', async (e) => {
+      const itemEl = e.target.closest('.item-picker-item');
+      if (itemEl) {
+        const itemId = parseInt(itemEl.dataset.id);
+        await listItemForSale(itemId);
+        selectItemModal.close();
+        // Refresh dashboard
+        await initDashboardActions();
+        await renderDashboardStats();
+      }
+    });
+  }
+}
+
+async function openSelectItemDialog() {
+  // Load items not in pipeline
+  selectItemData = await getItemsNotInPipeline();
+
+  // Reset search
+  const searchInput = document.getElementById('item-picker-search');
+  if (searchInput) searchInput.value = '';
+
+  // Render list
+  renderItemPickerList('');
+
+  selectItemModal.open();
+}
+
+function renderItemPickerList(searchTerm) {
+  const listEl = document.getElementById('item-picker-list');
+  if (!listEl) return;
+
+  let filtered = selectItemData;
+
+  if (searchTerm) {
+    filtered = selectItemData.filter(item => {
+      const title = (item.title || '').toLowerCase();
+      const brand = (item.brand || '').toLowerCase();
+      return title.includes(searchTerm) || brand.includes(searchTerm);
+    });
+  }
+
+  if (filtered.length === 0) {
+    listEl.innerHTML = '<p class="text-muted">No items available to list</p>';
+    return;
+  }
+
+  listEl.innerHTML = filtered.map(item => `
+    <div class="item-picker-item" data-id="${item.id}">
+      <div class="item-picker-title">${escapeHtml(item.title || 'Untitled')}</div>
+      <div class="item-picker-meta">
+        ${item.brand ? `<span>${escapeHtml(item.brand)}</span>` : ''}
+        ${item.status ? `<span class="status status--${item.status}">${item.status}</span>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
 
 // =============================================================================
 // SERVICE WORKER
