@@ -3,9 +3,14 @@
 // =============================================================================
 
 import { state } from './state.js';
-import { getAllStoreStats, getAllUserStores, createUserStore } from './db.js';
+import { getAllStoreStats, getAllUserStores, createUserStore, getInventoryByStore } from './db.js';
 import { showToast, createModalController } from './ui.js';
-import { $, $$ } from './utils.js';
+import {
+  $, $$, formatCurrency, formatDate, escapeHtml,
+  createSortableTable, createFilterButtons, emptyStateRow
+} from './utils.js';
+import { getTierSortOrder } from './config.js';
+import { openViewItemModal } from './inventory.js';
 
 let storesData = [];
 let userStoresData = [];
@@ -13,6 +18,7 @@ let statsMap = new Map();
 let filterTier = null;
 let sortColumn = 'name';
 let sortDirection = 'asc';
+let viewStoreModal = null;
 
 // =============================================================================
 // INITIALIZATION
@@ -49,31 +55,38 @@ export async function loadStores() {
 
 function setupEventHandlers() {
   // Tier filter buttons
-  const filterBtns = $$('.filter-btn[data-tier]');
-  filterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      filterBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const tier = btn.dataset.tier;
-      filterTier = tier === 'all' ? null : tier;
+  createFilterButtons({
+    selector: '.filter-btn[data-tier]',
+    dataAttr: 'tier',
+    onFilter: (value) => {
+      filterTier = value;
       renderStoresTable();
-    });
+    }
   });
 
-  // Table header sorting
+  // Table header sorting and row clicks
   const table = $('#stores-table');
   if (table) {
+    const sortHandler = createSortableTable({
+      getState: () => ({ sortColumn, sortDirection }),
+      setState: (s) => { sortColumn = s.sortColumn; sortDirection = s.sortDirection; },
+      onSort: renderStoresTable
+    });
+
     table.addEventListener('click', (e) => {
-      const th = e.target.closest('th[data-sort]');
-      if (th) {
-        const col = th.dataset.sort;
-        if (sortColumn === col) {
-          sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-          sortColumn = col;
-          sortDirection = 'asc';
-        }
-        renderStoresTable();
+      // Header sorting
+      if (sortHandler(e)) return;
+
+      // External links (address) - let them navigate normally
+      const externalLink = e.target.closest('.store-address');
+      if (externalLink) return;
+
+      // Row/store name click - open store detail
+      const row = e.target.closest('tr[data-store-id]');
+      if (row) {
+        e.preventDefault();
+        const storeId = row.dataset.storeId;
+        openViewStoreModal(storeId);
       }
     });
   }
@@ -118,10 +131,8 @@ function renderStoresTable() {
         bVal = b.name.toLowerCase();
         break;
       case 'tier':
-        // S < A < B < C (S is best)
-        const tierOrder = { S: 0, A: 1, B: 2, C: 3 };
-        aVal = tierOrder[a.tier] ?? 99;
-        bVal = tierOrder[b.tier] ?? 99;
+        aVal = getTierSortOrder(a.tier);
+        bVal = getTierSortOrder(b.tier);
         break;
       case 'visits':
         aVal = statsA?.total_visits ?? 0;
@@ -142,14 +153,7 @@ function renderStoresTable() {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4" class="empty-state">
-          <div class="empty-icon">S</div>
-          <p>No stores found</p>
-        </td>
-      </tr>
-    `;
+    tbody.innerHTML = emptyStateRow({ colspan: 4, icon: 'S', message: 'No stores found' });
     updateStoreCount(0);
     return;
   }
@@ -163,12 +167,18 @@ function createStoreRow(store, stats) {
   const visitCount = stats?.total_visits ?? 0;
   const hitRate = stats ? `${Math.round(stats.hit_rate * 100)}%` : '-';
 
+  let addressHtml = '';
+  if (store.address) {
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address)}`;
+    addressHtml = `<a href="${mapsUrl}" target="_blank" rel="noopener" class="store-address table-link">${escapeHtml(store.address)}</a>`;
+  }
+
   return `
     <tr data-store-id="${store.id}">
       <td>
         <div class="store-info">
-          <span class="store-name">${escapeHtml(store.name)}</span>
-          <span class="store-address">${escapeHtml(store.address || '')}</span>
+          <a href="#" class="store-name table-link">${escapeHtml(store.name)}</a>
+          ${addressHtml}
         </div>
       </td>
       <td><span class="tier tier--${store.tier}">${store.tier}</span></td>
@@ -195,6 +205,127 @@ export function renderStoreCount() {
     }
     countEl.textContent = visitedCount;
   }
+}
+
+// =============================================================================
+// VIEW STORE MODAL
+// =============================================================================
+
+async function openViewStoreModal(storeId) {
+  const dialog = $('#view-store-dialog');
+  if (!dialog) return;
+
+  if (!viewStoreModal) {
+    viewStoreModal = createModalController(dialog);
+  }
+
+  const store = state.getStore(storeId);
+  if (!store) {
+    showToast('Store not found');
+    return;
+  }
+
+  const stats = statsMap.get(storeId);
+  const items = await getInventoryByStore(storeId);
+
+  // Update modal title
+  const titleEl = $('#view-store-title');
+  if (titleEl) {
+    titleEl.textContent = store.name;
+  }
+
+  // Render content
+  const contentEl = $('#view-store-content');
+  if (contentEl) {
+    contentEl.innerHTML = renderStoreDetails(store, stats, items);
+
+    // Add click handler for item links
+    contentEl.addEventListener('click', (e) => {
+      const link = e.target.closest('.table-link');
+      if (link) {
+        e.preventDefault();
+        const itemId = link.dataset.id;
+        openViewItemModal(itemId);
+      }
+    });
+  }
+
+  viewStoreModal.open();
+}
+
+function renderStoreDetails(store, stats, items) {
+  const sections = [];
+
+  // Store info section
+  let infoHtml = '<dl class="detail-grid">';
+  if (store.address) {
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address)}`;
+    infoHtml += `<dt>Address</dt><dd><a href="${mapsUrl}" target="_blank" rel="noopener" class="table-link">${escapeHtml(store.address)}</a></dd>`;
+  }
+  infoHtml += `<dt>Tier</dt><dd><span class="tier tier--${store.tier}">${store.tier}</span></dd>`;
+  if (store.phone) infoHtml += `<dt>Phone</dt><dd>${escapeHtml(store.phone)}</dd>`;
+  if (store.chain) infoHtml += `<dt>Chain</dt><dd>${escapeHtml(formatChainName(store.chain))}</dd>`;
+  if (store.notes) infoHtml += `<dt>Notes</dt><dd>${escapeHtml(store.notes)}</dd>`;
+  infoHtml += '</dl>';
+  sections.push(`<section class="detail-section"><h3 class="detail-section-title">Store Info</h3>${infoHtml}</section>`);
+
+  // Stats section
+  if (stats) {
+    let statsHtml = '<dl class="detail-grid">';
+    statsHtml += `<dt>Total visits</dt><dd>${stats.total_visits}</dd>`;
+    statsHtml += `<dt>Hit rate</dt><dd>${Math.round(stats.hit_rate * 100)}%</dd>`;
+    statsHtml += `<dt>Total spent</dt><dd>${formatCurrency(stats.total_spent)}</dd>`;
+    statsHtml += `<dt>Items acquired</dt><dd>${stats.total_items}</dd>`;
+    if (stats.last_visit_date) {
+      statsHtml += `<dt>Last visit</dt><dd>${formatDate(stats.last_visit_date)}</dd>`;
+    }
+    statsHtml += '</dl>';
+    sections.push(`<section class="detail-section"><h3 class="detail-section-title">Statistics</h3>${statsHtml}</section>`);
+  }
+
+  // Inventory section
+  if (items.length > 0) {
+    // Sort items by acquisition date (most recent first)
+    const sortedItems = [...items].sort((a, b) =>
+      (b.acquisition_date || '').localeCompare(a.acquisition_date || '')
+    );
+
+    let itemsHtml = '<table class="mini-table"><thead><tr>';
+    itemsHtml += '<th>Item</th><th>Date</th><th>Price</th>';
+    itemsHtml += '</tr></thead><tbody>';
+
+    for (const item of sortedItems) {
+      const title = item.title || 'Untitled item';
+      const date = item.acquisition_date ? formatDate(item.acquisition_date) : '-';
+      const price = item.purchase_price != null ? formatCurrency(item.purchase_price) : '-';
+      itemsHtml += `<tr>`;
+      itemsHtml += `<td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(title)}</a></td>`;
+      itemsHtml += `<td>${date}</td>`;
+      itemsHtml += `<td>${price}</td>`;
+      itemsHtml += `</tr>`;
+    }
+
+    itemsHtml += '</tbody></table>';
+    sections.push(`<section class="detail-section"><h3 class="detail-section-title">Inventory (${items.length})</h3>${itemsHtml}</section>`);
+  } else {
+    sections.push(`<section class="detail-section"><h3 class="detail-section-title">Inventory</h3><p class="text-muted">No items acquired from this store yet.</p></section>`);
+  }
+
+  return sections.join('');
+}
+
+function formatChainName(chain) {
+  if (!chain) return '';
+  const names = {
+    value_village: 'Value Village',
+    salvation_army: 'Salvation Army',
+    hospital_auxiliary: 'Hospital Auxiliary',
+    mcc: 'MCC (Mennonite)',
+    animal_charity: 'Animal Charity',
+    church: 'Church',
+    community: 'Community'
+  };
+  return names[chain] || chain.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 // =============================================================================
@@ -254,13 +385,3 @@ async function handleStoreSubmit(e) {
   }
 }
 
-// =============================================================================
-// UTILITIES
-// =============================================================================
-
-function escapeHtml(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}

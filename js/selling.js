@@ -5,6 +5,7 @@
 import { state } from './state.js';
 import {
   getInventoryInPipeline,
+  getItemsNotInPipeline,
   getSellingAnalytics,
   markItemAsSold,
   getInventoryItem,
@@ -19,15 +20,21 @@ import {
   capitalize,
   formatStatus,
   calculateProfit,
-  formatProfitDisplay
+  formatProfitDisplay,
+  escapeHtml,
+  createSortableTable,
+  createFilterButtons,
+  emptyStateRow
 } from './utils.js';
-import { RESALE_PLATFORMS, PIPELINE_STATUSES } from './config.js';
+import { RESALE_PLATFORMS, PIPELINE_STATUSES, getStatusSortOrder } from './config.js';
+import { openViewItemModal, openEditItemModal } from './inventory.js';
 
 // =============================================================================
 // STATE
 // =============================================================================
 
 let pipelineData = [];
+let nonPipelineData = [];
 let sortColumn = 'status';
 let sortDirection = 'asc';
 let filterStatus = null;
@@ -35,6 +42,7 @@ let filterPlatform = null;
 let dateRangeFilter = 'all';
 let searchTerm = '';
 let currentSoldItem = null;
+let currentShipItem = null;
 
 // =============================================================================
 // INITIALIZATION
@@ -48,20 +56,19 @@ export async function initSelling() {
 
 async function loadPipeline() {
   pipelineData = await getInventoryInPipeline();
+  nonPipelineData = await getItemsNotInPipeline();
   renderPipelineTable();
 }
 
 function setupEventHandlers() {
   // Status filter buttons
-  const statusBtns = $$('.filter-btn[data-status]');
-  statusBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      statusBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const status = btn.dataset.status;
-      filterStatus = status === 'all' ? null : status;
+  createFilterButtons({
+    selector: '.filter-btn[data-status]',
+    dataAttr: 'status',
+    onFilter: (value) => {
+      filterStatus = value;
       renderPipelineTable();
-    });
+    }
   });
 
   // Platform filter
@@ -95,18 +102,36 @@ function setupEventHandlers() {
   // Table sorting and actions
   const table = $('#selling-table');
   if (table) {
+    const sortHandler = createSortableTable({
+      getState: () => ({ sortColumn, sortDirection }),
+      setState: (s) => { sortColumn = s.sortColumn; sortDirection = s.sortDirection; },
+      onSort: renderPipelineTable
+    });
+
     table.addEventListener('click', (e) => {
       // Header sorting
-      const th = e.target.closest('th[data-sort]');
-      if (th) {
-        const col = th.dataset.sort;
-        if (sortColumn === col) {
-          sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-          sortColumn = col;
-          sortDirection = 'asc';
-        }
-        renderPipelineTable();
+      if (sortHandler(e)) return;
+
+      // Item link click - view item details
+      const itemLink = e.target.closest('.table-link');
+      if (itemLink) {
+        e.preventDefault();
+        const itemId = itemLink.dataset.id;
+        openViewItemModal(itemId);
+        return;
+      }
+
+      // Edit button click
+      const editBtn = e.target.closest('.edit-item-btn');
+      if (editBtn) {
+        e.preventDefault();
+        const itemId = editBtn.dataset.id;
+        openEditItemModal(itemId, {
+          onSave: async () => {
+            await loadPipelineData();
+            renderPipelineTable();
+          }
+        });
         return;
       }
 
@@ -125,9 +150,29 @@ function setupEventHandlers() {
         e.preventDefault();
         const itemId = parseInt(statusBtn.dataset.id);
         const nextStatus = statusBtn.dataset.nextStatus;
-        updateItemStatus(itemId, nextStatus);
+        // Open ship modal for packaged -> shipped transition
+        if (nextStatus === 'shipped') {
+          openShipItemModal(itemId);
+        } else {
+          updateItemStatus(itemId, nextStatus);
+        }
+        return;
+      }
+
+      // List for sale button
+      const listForSaleBtn = e.target.closest('.list-for-sale-btn');
+      if (listForSaleBtn) {
+        e.preventDefault();
+        const itemId = parseInt(listForSaleBtn.dataset.id);
+        listItemForSale(itemId);
       }
     });
+  }
+
+  // Ship item form
+  const shipItemForm = $('#ship-item-form');
+  if (shipItemForm) {
+    shipItemForm.addEventListener('submit', handleShipItemSubmit);
   }
 
   // Mark-as-sold form
@@ -204,8 +249,11 @@ function renderPipelineTable() {
   const tbody = $('#selling-tbody');
   if (!tbody) return;
 
+  // Combine pipeline and non-pipeline data
+  let allData = [...pipelineData, ...nonPipelineData];
+
   // Filter data
-  let filtered = pipelineData;
+  let filtered = allData;
 
   // Filter by status
   if (filterStatus) {
@@ -243,8 +291,8 @@ function renderPipelineTable() {
         bVal = b.category || '';
         break;
       case 'status':
-        aVal = PIPELINE_STATUSES.indexOf(a.status);
-        bVal = PIPELINE_STATUSES.indexOf(b.status);
+        aVal = getStatusSortOrder(a.status);
+        bVal = getStatusSortOrder(b.status);
         break;
       case 'purchase_price':
         aVal = a.purchase_price || 0;
@@ -274,14 +322,7 @@ function renderPipelineTable() {
 
   // Render rows
   if (filtered.length === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" class="empty-state">
-          <div class="empty-icon">💰</div>
-          <p>No items in pipeline</p>
-        </td>
-      </tr>
-    `;
+    tbody.innerHTML = emptyStateRow({ colspan: 7, icon: '💰', message: 'No items in pipeline' });
   } else {
     tbody.innerHTML = filtered.map(item => renderPipelineRow(item)).join('');
   }
@@ -289,7 +330,8 @@ function renderPipelineTable() {
   // Update count
   const countEl = $('#selling-count');
   if (countEl) {
-    countEl.textContent = `Showing ${filtered.length} of ${pipelineData.length} items`;
+    const totalItems = pipelineData.length + nonPipelineData.length;
+    countEl.textContent = `Showing ${filtered.length} of ${totalItems} items`;
   }
 }
 
@@ -303,7 +345,12 @@ function renderPipelineRow(item) {
 
   // Determine action button
   let actionButton = '';
-  if (item.status === 'confirmed_received') {
+  const isInPipeline = PIPELINE_STATUSES.includes(item.status);
+
+  if (!isInPipeline) {
+    // Non-pipeline item - show "List for sale" button
+    actionButton = `<button class="btn btn--sm btn--primary list-for-sale-btn" data-id="${item.id}">List for sale</button>`;
+  } else if (item.status === 'confirmed_received') {
     actionButton = `<button class="btn btn--sm btn--primary mark-sold-btn" data-id="${item.id}">Mark sold</button>`;
   } else if (item.status !== 'sold') {
     const nextStatus = getNextStatus(item.status);
@@ -314,17 +361,16 @@ function renderPipelineRow(item) {
 
   return `
     <tr data-id="${item.id}">
-      <td>
-        <div class="item-title">${item.title || 'Untitled'}</div>
-        ${item.brand ? `<div class="text-muted">${item.brand}</div>` : ''}
-      </td>
-      <td>${capitalize(item.category || '')}</td>
-      <td><span class="status-badge status--${item.status}">${formatStatus(item.status)}</span></td>
+      <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || 'Untitled')}</a></td>
+      <td><span class="status status--${item.status}">${formatStatus(item.status)}</span></td>
       <td>${formatCurrency(cost)}</td>
       <td>${price > 0 ? formatCurrency(price) : '-'}</td>
       <td class="${profitClass}">${item.status === 'sold' ? profitDisplay : '-'}</td>
       <td>${platform}</td>
-      <td class="table-actions">${actionButton}</td>
+      <td class="table-actions">
+        <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
+        ${actionButton}
+      </td>
     </tr>
   `;
 }
@@ -441,3 +487,72 @@ async function updateItemStatus(itemId, newStatus) {
     showToast('Failed to update status', 'error');
   }
 }
+
+// =============================================================================
+// SHIP ITEM MODAL
+// =============================================================================
+
+const shipItemModal = createModalController($('#ship-item-dialog'));
+
+async function openShipItemModal(itemId) {
+  const item = await getInventoryItem(itemId);
+  if (!item) {
+    showToast('Item not found', 'error');
+    return;
+  }
+
+  currentShipItem = item;
+
+  // Populate form
+  $('#ship-item-id').value = itemId;
+  $('#ship-item-title').textContent = item.title || 'Untitled';
+  $('#ship-date').value = new Date().toISOString().split('T')[0];
+  $('#shipping-carrier').value = '';
+  $('#tracking-number').value = '';
+  $('#ship-shipping-cost').value = item.shipping_cost || '';
+
+  shipItemModal.open();
+}
+
+async function handleShipItemSubmit(e) {
+  e.preventDefault();
+
+  const formData = new FormData(e.target);
+  const itemId = parseInt(formData.get('item_id'));
+
+  const shipData = {
+    status: 'shipped',
+    shipping_carrier: formData.get('shipping_carrier'),
+    tracking_number: formData.get('tracking_number') || null,
+    ship_date: formData.get('ship_date'),
+    shipping_cost: parseFloat(formData.get('shipping_cost')) || 0
+  };
+
+  try {
+    await updateInventoryItem(itemId, shipData);
+    showToast('Item marked as shipped', 'success');
+    shipItemModal.close();
+    await loadPipeline();
+    currentShipItem = null;
+  } catch (err) {
+    console.error('Failed to ship item:', err);
+    showToast('Failed to ship item', 'error');
+  }
+}
+
+// =============================================================================
+// LIST FOR SALE
+// =============================================================================
+
+async function listItemForSale(itemId) {
+  try {
+    await updateInventoryItem(itemId, { status: 'unlisted' });
+    showToast('Item added to selling pipeline', 'success');
+    await loadPipeline();
+  } catch (err) {
+    console.error('Failed to list item for sale:', err);
+    showToast('Failed to list item for sale', 'error');
+  }
+}
+
+export { openShipItemModal, listItemForSale, loadPipeline, nonPipelineData };

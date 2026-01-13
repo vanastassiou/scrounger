@@ -395,6 +395,49 @@
     grid-template-columns: repeat(3, 1fr);
   }
 
+  .form-row--flex {
+    display: flex;
+    gap: var(--space-md);
+  }
+
+  .form-group--grow {
+    flex: 1;
+  }
+
+  .form-group--narrow {
+    width: 80px;
+    flex-shrink: 0;
+  }
+
+  /* Materials List */
+  .materials-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-sm);
+  }
+
+  .material-item {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+  }
+
+  .material-item .form-select {
+    flex: 1;
+  }
+
+  .material-item .form-input--narrow {
+    width: 70px;
+  }
+
+  .material-item .btn--icon {
+    padding: var(--space-xs) var(--space-sm);
+    min-width: auto;
+    font-size: 1.25rem;
+    line-height: 1;
+  }
+
   /* Form Sections */
   .form-section {
     border: none;
@@ -669,20 +712,23 @@
     background: var(--color-surface-elevated);
   }
 
+  .table tbody tr[data-store-id] {
+    cursor: pointer;
+  }
+
   .table tfoot td {
     font-weight: 600;
     border-top: 2px solid var(--color-border);
   }
 
-  .items-link,
-  .item-link {
+  /* Unified table link style */
+  .table-link {
     color: var(--color-primary);
     text-decoration: underline;
     cursor: pointer;
   }
 
-  .items-link:hover,
-  .item-link:hover {
+  .table-link:hover {
     color: var(--color-primary-hover);
   }
 
@@ -696,6 +742,11 @@
 
   .store-name {
     font-weight: 500;
+    text-decoration: none;
+  }
+
+  .store-name:hover {
+    text-decoration: underline;
   }
 
   .store-address {
@@ -762,6 +813,28 @@
 
   .flaws-summary li {
     margin-bottom: var(--space-xs);
+  }
+
+  .mini-table {
+    width: 100%;
+    font-size: 0.875rem;
+    border-collapse: collapse;
+  }
+
+  .mini-table th,
+  .mini-table td {
+    padding: var(--space-xs) var(--space-sm);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .mini-table th {
+    color: var(--color-text-muted);
+    font-weight: 500;
+  }
+
+  .mini-table tbody tr:hover {
+    background: var(--color-surface-elevated);
   }
 
   /* Modal */
@@ -835,8 +908,13 @@
   }
 
   .status--unlisted { background: var(--color-surface-elevated); }
-  .status--listed { background: var(--color-primary); }
-  .status--sold { background: var(--color-success); }
+  .status--photographed { background: #8b5cf6; color: white; }
+  .status--listed { background: var(--color-primary); color: white; }
+  .status--pending_sale { background: #f59e0b; color: white; }
+  .status--packaged { background: #10b981; color: white; }
+  .status--shipped { background: #06b6d4; color: white; }
+  .status--confirmed_received { background: #84cc16; color: white; }
+  .status--sold { background: var(--color-success); color: white; }
   .status--kept { background: var(--color-warning); color: black; }
 
   /* Empty State */
@@ -990,48 +1068,21 @@
   display: flex;
   gap: var(--space-xs);
   justify-content: flex-end;
+  white-space: nowrap;
+}
+
+.table-actions .btn {
+  margin-right: var(--space-xs);
+}
+
+.table-actions .btn:last-child {
+  margin-right: 0;
 }
 
 .btn--sm {
   padding: var(--space-xs) var(--space-sm);
   font-size: 0.75rem;
   line-height: 1.2;
-}
-
-/* Pipeline Status Badges */
-.status--unlisted {
-  background: #6b7280;
-  color: white;
-}
-
-.status--photographed {
-  background: #8b5cf6;
-  color: white;
-}
-
-.status--listed {
-  background: #3b82f6;
-  color: white;
-}
-
-.status--pending_sale {
-  background: #f59e0b;
-  color: white;
-}
-
-.status--packaged {
-  background: #10b981;
-  color: white;
-}
-
-.status--shipped {
-  background: #06b6d4;
-  color: white;
-}
-
-.status--confirmed_received {
-  background: #84cc16;
-  color: white;
 }
 
 /* =============================================================================
@@ -1110,4 +1161,103 @@
 .action-item-more {
   font-style: italic;
   color: var(--color-primary);
+}
+
+/* =============================================================================
+   VISIT WORKFLOW
+   ============================================================================= */
+
+.visit-step {
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.visit-header-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+#visit-context-label {
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.visit-items-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-md);
+}
+
+/* Disabled form fields */
+.form-input:disabled,
+.form-select:disabled {
+  background: var(--color-surface-elevated);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Danger button variant */
+.btn--danger {
+  background: var(--color-danger, #dc3545);
+  color: white;
+}
+
+.btn--danger:hover {
+  background: #c82333;
+}
+
+/* =============================================================================
+   ITEM PICKER MODAL
+   ============================================================================= */
+
+.modal-content--wide {
+  width: 100%;
+  max-width: 500px;
+}
+
+.modal-body {
+  padding: 0 var(--space-md) var(--space-md);
+}
+
+.item-picker-list {
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.item-picker-item {
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.item-picker-item:last-child {
+  border-bottom: none;
+}
+
+.item-picker-item:hover {
+  background: var(--color-surface-elevated);
+}
+
+.item-picker-title {
+  font-weight: 500;
+  margin-bottom: var(--space-xs);
+}
+
+.item-picker-meta {
+  display: flex;
+  gap: var(--space-sm);
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
 }
