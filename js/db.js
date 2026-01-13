@@ -22,7 +22,7 @@ export function resetDB() {
 export async function clearAllData() {
   try {
     const db = await openDB();
-    const tx = db.transaction(['inventory', 'visits', 'stores', 'settings'], 'readwrite');
+    const tx = db.transaction(['inventory', 'visits', 'stores', 'settings', 'attachments'], 'readwrite');
 
     await Promise.all([
       new Promise((resolve, reject) => {
@@ -42,6 +42,11 @@ export async function clearAllData() {
       }),
       new Promise((resolve, reject) => {
         const req = tx.objectStore('settings').clear();
+        req.onsuccess = resolve;
+        req.onerror = () => reject(req.error);
+      }),
+      new Promise((resolve, reject) => {
+        const req = tx.objectStore('attachments').clear();
         req.onsuccess = resolve;
         req.onerror = () => reject(req.error);
       })
@@ -90,6 +95,12 @@ export function openDB() {
         const storeStore = db.createObjectStore('stores', { keyPath: 'id' });
         storeStore.createIndex('tier', 'tier', { unique: false });
         storeStore.createIndex('name', 'name', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('attachments')) {
+        const attachmentStore = db.createObjectStore('attachments', { keyPath: 'id' });
+        attachmentStore.createIndex('itemId', 'itemId', { unique: false });
+        attachmentStore.createIndex('synced', 'synced', { unique: false });
       }
     };
   });
@@ -762,12 +773,14 @@ export async function exportAllData() {
   try {
     const inventory = await getAllFromStore('inventory');
     const visits = await getAllFromStore('visits');
+    const stores = await getAllFromStore('stores');
 
     return {
       version: 1,
       exported_at: nowISO(),
       inventory,
-      visits
+      visits,
+      stores
     };
   } catch (err) {
     console.error('Failed to export data:', err);
@@ -866,4 +879,95 @@ export async function markVisitsSynced(ids) {
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
   });
+}
+
+// =============================================================================
+// ATTACHMENTS CRUD (for photo sync)
+// =============================================================================
+
+export async function createAttachment(itemId, filename, blob, mimeType) {
+  try {
+    const now = nowISO();
+    const attachment = {
+      id: generateId(),
+      itemId,
+      filename,
+      blob,
+      mimeType: mimeType || 'application/octet-stream',
+      synced: false,
+      driveFileId: null,
+      created_at: now,
+      updated_at: now
+    };
+    await addRecord('attachments', attachment);
+    return attachment;
+  } catch (err) {
+    console.error('Failed to create attachment:', err);
+    throw err;
+  }
+}
+
+export async function getAttachment(id) {
+  try {
+    return await getByKey('attachments', id);
+  } catch (err) {
+    return handleError(err, `Failed to get attachment ${id}`, null);
+  }
+}
+
+export async function getAttachmentsByItem(itemId) {
+  try {
+    const store = await getStore('attachments');
+    const index = store.index('itemId');
+    return promisify(index.getAll(itemId));
+  } catch (err) {
+    return handleError(err, `Failed to get attachments for item ${itemId}`, []);
+  }
+}
+
+export async function getPendingAttachments() {
+  try {
+    const store = await getStore('attachments');
+    const index = store.index('synced');
+    return promisify(index.getAll(false));
+  } catch (err) {
+    return handleError(err, 'Failed to get pending attachments', []);
+  }
+}
+
+export async function markAttachmentSynced(id, driveFileId) {
+  try {
+    const store = await getStore('attachments', 'readwrite');
+    const existing = await promisify(store.get(id));
+    if (!existing) throw new Error('Attachment not found');
+
+    const updated = {
+      ...existing,
+      synced: true,
+      driveFileId,
+      updated_at: nowISO()
+    };
+    await promisify(store.put(updated));
+    return updated;
+  } catch (err) {
+    console.error('Failed to mark attachment synced:', err);
+    throw err;
+  }
+}
+
+export async function deleteAttachment(id) {
+  try {
+    await deleteRecord('attachments', id);
+  } catch (err) {
+    console.error('Failed to delete attachment:', err);
+    throw err;
+  }
+}
+
+export async function getAllAttachments() {
+  try {
+    return await getAllFromStore('attachments');
+  } catch (err) {
+    return handleError(err, 'Failed to get all attachments', []);
+  }
 }

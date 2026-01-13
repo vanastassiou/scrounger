@@ -9,7 +9,8 @@ import { initStores, renderStoreCount } from './stores.js';
 import { initVisits, loadVisits, openLogVisitModal } from './visits.js';
 import { initSelling, listItemForSale } from './selling.js';
 import { initDashboardActions } from './dashboard-actions.js';
-import { syncOnOpen, isAuthenticated } from './sync.js';
+import { initSettings } from './settings.js';
+import { isConnected, syncOnOpen } from './sync.js';
 import { clearAllData, importBaselineInventory, getItemsNotInPipeline } from './db.js';
 import { escapeHtml } from './utils.js';
 
@@ -38,7 +39,8 @@ async function init() {
     initStores(),
     initVisits(),
     initSelling(),
-    initDashboardActions()
+    initDashboardActions(),
+    initSettings()
   ]);
 
   // Render dashboard stats
@@ -55,16 +57,14 @@ async function init() {
   // Dev tools
   document.getElementById('clear-data-btn')?.addEventListener('click', handleClearData);
 
-  // Check for stored auth and sync
-  if (isAuthenticated()) {
+  // Sync on app open if connected
+  if (isConnected()) {
     syncOnOpen().catch(console.error);
-  } else {
-    updateSyncStatus(state.syncState);
   }
 
   // Handle online/offline
   window.addEventListener('online', () => {
-    if (isAuthenticated()) {
+    if (isConnected()) {
       syncOnOpen().catch(console.error);
     }
   });

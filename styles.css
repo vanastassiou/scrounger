@@ -1250,3 +1250,106 @@
   font-size: 0.875rem;
   color: var(--color-text-muted);
 }
+
+/* =============================================================================
+   SETTINGS TAB - SYNC CONFIGURATION
+   ============================================================================= */
+
+/* Sync Steps Container */
+.sync-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Individual Sync Step */
+.sync-step {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.sync-step--disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.sync-step-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface-elevated);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sync-step-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  background: var(--color-primary);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.sync-step-title {
+  flex: 1;
+  font-weight: 500;
+}
+
+.sync-step-badge {
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  background: var(--color-text-muted);
+  color: var(--color-bg);
+}
+
+.sync-step-content {
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.sync-step-status {
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.sync-step-status--pending {
+  color: var(--color-text-muted);
+}
+
+.sync-step-status--success {
+  color: var(--color-success);
+}
+
+.sync-step-status--warning {
+  color: var(--color-warning);
+}
+
+.sync-step-status--error {
+  color: var(--color-error);
+}
+
+.sync-step-status--syncing {
+  color: var(--color-primary);
+}
+
+.sync-step-actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-top: var(--space-sm);
+}
+
+/* Small button variant */
+.btn--sm {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.75rem;
+}

@@ -1,77 +1,317 @@
 // =============================================================================
 // SYNC SERVICE
 // =============================================================================
-// Google Drive sync for backup/restore.
-// Sync pattern:
-// 1. On app open: Pull latest JSON from Drive, merge with local
-// 2. On local change: Mark dirty, queue background sync
-// 3. Background sync: Push local state to Drive, clear dirty flag
+// Google Drive sync using core modules from seneschal pattern.
 
-import { state } from './state.js';
-import { SYNC_FILE_NAME, DRIVE_FOLDER_NAME } from './config.js';
+import { createGoogleDriveProvider } from './core/google-drive.js';
+import { createSyncEngine, SyncStatus } from './core/sync-engine.js';
+import { hasOAuthCallback } from './core/oauth.js';
 import {
-  getAllInventory,
-  getAllVisits,
-  getDirtyInventory,
-  getDirtyVisits,
-  markInventorySynced,
-  markVisitsSynced,
-  importData
+  exportAllData,
+  importData,
+  getPendingAttachments,
+  markAttachmentSynced,
+  createAttachment,
+  getAttachment
 } from './db.js';
-import { updateSyncStatus } from './ui.js';
-import { nowISO } from './utils.js';
+import { updateSyncStatus, showToast } from './ui.js';
 
-let fileId = null;
-let syncInProgress = false;
-let syncQueued = false;
+// Configuration - will be loaded dynamically
+let googleConfig = null;
+let provider = null;
+let syncEngine = null;
+let syncTimeout = null;
+
+const SYNC_DEBOUNCE_MS = 30000; // 30 seconds
+const DOMAIN = 'thrifting';
+
+// =============================================================================
+// INITIALIZATION
+// =============================================================================
+
+/**
+ * Initialize sync with Google config.
+ * Call this on app startup.
+ */
+export async function initSync() {
+  try {
+    // Try to load config
+    const configModule = await import('./google-config.js').catch(() => null);
+    if (!configModule?.googleConfig) {
+      console.log('Sync disabled: google-config.js not found');
+      return false;
+    }
+
+    googleConfig = configModule.googleConfig;
+
+    // Create provider
+    provider = createGoogleDriveProvider({
+      domain: DOMAIN,
+      clientId: googleConfig.clientId,
+      clientSecret: googleConfig.clientSecret,
+      apiKey: googleConfig.apiKey,
+      redirectUri: googleConfig.redirectUri || window.location.origin + '/'
+    });
+
+    // Create sync engine
+    syncEngine = createSyncEngine({
+      provider,
+      domain: DOMAIN,
+      getLocalData: exportAllData,
+      setLocalData: importMergedData
+    });
+
+    // Subscribe to status changes
+    syncEngine.onStatusChange((status, error) => {
+      updateSyncStatus({
+        syncInProgress: status === SyncStatus.SYNCING,
+        error: error,
+        lastSyncAt: syncEngine.getLastSync()
+      });
+    });
+
+    // Handle OAuth callback if present
+    if (hasOAuthCallback()) {
+      await provider.handleAuthCallback();
+      showToast('Connected to Google Drive', 'success');
+    }
+
+    return true;
+  } catch (err) {
+    console.error('Failed to initialize sync:', err);
+    return false;
+  }
+}
 
 // =============================================================================
 // PUBLIC API
 // =============================================================================
 
-export function isAuthenticated() {
-  return !!state.accessToken;
-}
-
-export function setAccessToken(token) {
-  state.accessToken = token;
-}
-
-export function markDirty() {
-  state.syncState = { isDirty: true };
-  updateSyncStatus(state.syncState);
-  queueSync();
+/**
+ * Check if sync is initialized
+ */
+export function isSyncEnabled() {
+  return !!syncEngine;
 }
 
 /**
- * Called on app open to pull latest from Drive.
+ * Check if connected to Google Drive
+ */
+export function isConnected() {
+  return provider?.isConnected() || false;
+}
+
+/**
+ * Check if sync folder is configured
+ */
+export function isFolderConfigured() {
+  return provider?.isFolderConfigured() || false;
+}
+
+/**
+ * Start OAuth flow
+ */
+export async function connect() {
+  if (!provider) {
+    showToast('Sync not configured', 'error');
+    return;
+  }
+  await provider.connect();
+}
+
+/**
+ * Disconnect from Google Drive
+ */
+export function disconnect() {
+  if (provider) {
+    provider.disconnect();
+    updateSyncStatus({ lastSyncAt: null, error: null });
+    showToast('Disconnected from Google Drive');
+  }
+}
+
+/**
+ * Get current sync folder
+ */
+export function getFolder() {
+  return provider?.getFolder() || null;
+}
+
+/**
+ * Set sync folder by name
+ */
+export async function setFolder(folderName) {
+  if (!provider) return null;
+  try {
+    const folder = await provider.setFolderByName(folderName);
+    showToast(`Sync folder set to "${folder.name}"`);
+    return folder;
+  } catch (err) {
+    showToast('Failed to set folder: ' + err.message, 'error');
+    return null;
+  }
+}
+
+/**
+ * Open folder picker
+ */
+export async function selectFolder() {
+  if (!provider) return null;
+  try {
+    const folder = await provider.selectFolder();
+    if (folder) {
+      showToast(`Sync folder set to "${folder.name}"`);
+    }
+    return folder;
+  } catch (err) {
+    showToast('Failed to select folder: ' + err.message, 'error');
+    return null;
+  }
+}
+
+/**
+ * Clear folder selection
+ */
+export function removeFolder() {
+  if (provider) {
+    provider.removeFolder();
+  }
+}
+
+/**
+ * Get last sync timestamp
+ */
+export function getLastSync() {
+  return syncEngine?.getLastSync() || null;
+}
+
+/**
+ * Get current sync status
+ */
+export function getSyncStatus() {
+  if (!syncEngine) {
+    return { status: 'disabled', error: null };
+  }
+  return {
+    status: syncEngine.getStatus(),
+    error: syncEngine.getError()
+  };
+}
+
+/**
+ * Perform sync now
+ */
+export async function syncNow() {
+  if (!syncEngine) {
+    showToast('Sync not configured', 'error');
+    return { success: false, error: 'Sync not configured' };
+  }
+
+  if (!syncEngine.canSync()) {
+    const error = !isConnected()
+      ? 'Not connected to Google Drive'
+      : 'No sync folder configured';
+    showToast(error, 'error');
+    return { success: false, error };
+  }
+
+  const result = await syncEngine.sync();
+
+  if (result.success) {
+    // Sync attachments after data sync
+    await syncAttachments();
+    showToast('Sync complete');
+  } else {
+    showToast('Sync failed: ' + result.error, 'error');
+  }
+
+  return result;
+}
+
+/**
+ * Queue a debounced sync (called after data changes)
+ */
+export function queueSync() {
+  if (!syncEngine || !syncEngine.canSync()) {
+    return;
+  }
+
+  clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(async () => {
+    try {
+      await syncEngine.sync();
+      await syncAttachments();
+    } catch (err) {
+      console.error('Auto-sync failed:', err);
+    }
+  }, SYNC_DEBOUNCE_MS);
+}
+
+/**
+ * Called on app open to sync if connected
  */
 export async function syncOnOpen() {
-  if (!isAuthenticated()) return;
+  if (!syncEngine || !syncEngine.canSync()) {
+    return;
+  }
 
   try {
-    updateState({ syncInProgress: true, error: null });
-    syncInProgress = true;
+    await syncEngine.sync();
+    await syncAttachments();
+  } catch (err) {
+    console.error('Sync on open failed:', err);
+  }
+}
 
-    await ensureSyncFile();
+// =============================================================================
+// ATTACHMENT SYNC
+// =============================================================================
 
-    const remoteData = await pullFromDrive();
-    if (remoteData) {
-      await mergeRemoteData(remoteData);
+/**
+ * Sync attachments (photos) with Google Drive
+ */
+async function syncAttachments() {
+  if (!provider || !provider.isFolderConfigured()) {
+    return;
+  }
+
+  try {
+    // Upload pending local attachments
+    const pending = await getPendingAttachments();
+    for (const att of pending) {
+      try {
+        const driveId = await provider.uploadAttachment(
+          att.id,
+          att.filename,
+          att.blob,
+          att.mimeType
+        );
+        await markAttachmentSynced(att.id, driveId);
+      } catch (err) {
+        console.error(`Failed to upload attachment ${att.id}:`, err);
+      }
     }
 
-    await pushToDrive();
-
-    updateState({
-      lastSyncAt: nowISO(),
-      isDirty: false,
-      syncInProgress: false
-    });
+    // Download missing remote attachments
+    const remoteList = await provider.listAttachments();
+    for (const remote of remoteList) {
+      const existing = await getAttachment(remote.id);
+      if (!existing) {
+        try {
+          const blob = await provider.downloadAttachment(remote.remoteId);
+          await createAttachment(
+            remote.itemId || remote.id.split('-')[0], // Extract itemId from filename if not stored
+            remote.filename,
+            blob,
+            remote.mimeType
+          );
+        } catch (err) {
+          console.error(`Failed to download attachment ${remote.id}:`, err);
+        }
+      }
+    }
   } catch (err) {
-    updateState({ syncInProgress: false, error: err.message });
-    console.error('Sync on open failed:', err);
-  } finally {
-    syncInProgress = false;
+    console.error('Attachment sync failed:', err);
   }
 }
 
@@ -79,251 +319,22 @@ export async function syncOnOpen() {
 // INTERNAL
 // =============================================================================
 
-function updateState(updates) {
-  state.syncState = updates;
-  updateSyncStatus(state.syncState);
-}
+/**
+ * Import merged data from sync engine
+ */
+async function importMergedData(data) {
+  if (!data) return;
 
-function queueSync() {
-  if (!isAuthenticated()) return;
-
-  if (syncInProgress) {
-    syncQueued = true;
-    return;
-  }
-
-  setTimeout(() => performSync(), 2000);
-}
-
-async function performSync() {
-  if (!isAuthenticated()) return;
-
-  try {
-    updateState({ syncInProgress: true, error: null });
-    syncInProgress = true;
-
-    await ensureSyncFile();
-    await pushToDrive();
-
-    updateState({
-      lastSyncAt: nowISO(),
-      isDirty: false,
-      syncInProgress: false
-    });
-
-    if (syncQueued) {
-      syncQueued = false;
-      queueSync();
-    }
-  } catch (err) {
-    updateState({ syncInProgress: false, error: err.message });
-    console.error('Background sync failed:', err);
-  } finally {
-    syncInProgress = false;
-  }
-}
-
-async function ensureSyncFile() {
-  if (fileId) return;
-
-  const folderId = await findOrCreateFolder(DRIVE_FOLDER_NAME);
-
-  const query = `name='${SYNC_FILE_NAME}' and '${folderId}' in parents and trashed=false`;
-  const response = await driveRequest(
-    `files?q=${encodeURIComponent(query)}&fields=files(id,name)`
-  );
-  const data = await response.json();
-
-  if (data.files && data.files.length > 0) {
-    fileId = data.files[0].id;
-    return;
-  }
-
-  // Create new file
-  const metadata = {
-    name: SYNC_FILE_NAME,
-    mimeType: 'application/json',
-    parents: [folderId]
-  };
-
-  const initialData = {
-    version: 1,
-    exported_at: nowISO(),
-    inventory: [],
-    visits: []
-  };
-
-  const formData = new FormData();
-  formData.append(
-    'metadata',
-    new Blob([JSON.stringify(metadata)], { type: 'application/json' })
-  );
-  formData.append(
-    'file',
-    new Blob([JSON.stringify(initialData)], { type: 'application/json' })
-  );
-
-  const createResponse = await fetch(
-    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-    {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${state.accessToken}` },
-      body: formData
-    }
-  );
-
-  if (!createResponse.ok) {
-    throw new Error(`Failed to create sync file: ${createResponse.status}`);
-  }
-
-  const createData = await createResponse.json();
-  fileId = createData.id;
-}
-
-async function findOrCreateFolder(name) {
-  const query = `name='${name}' and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-  const response = await driveRequest(
-    `files?q=${encodeURIComponent(query)}&fields=files(id,name)`
-  );
-  const data = await response.json();
-
-  if (data.files && data.files.length > 0) {
-    return data.files[0].id;
-  }
-
-  const createResponse = await driveRequest('files', {
-    method: 'POST',
-    body: JSON.stringify({
-      name,
-      mimeType: 'application/vnd.google-apps.folder'
-    })
-  });
-  const createData = await createResponse.json();
-  return createData.id;
-}
-
-async function pullFromDrive() {
-  if (!fileId) return null;
-
-  const response = await driveRequest(`files/${fileId}?alt=media`);
-  if (!response.ok) {
-    if (response.status === 404) {
-      fileId = null;
-      return null;
-    }
-    throw new Error(`Failed to pull from Drive: ${response.status}`);
-  }
-
-  return response.json();
-}
-
-async function mergeRemoteData(remote) {
-  const dirtyInventory = await getDirtyInventory();
-  const dirtyVisits = await getDirtyVisits();
-
-  const dirtyInventoryIds = new Set(dirtyInventory.map(i => i.id));
-  const dirtyVisitIds = new Set(dirtyVisits.map(v => v.id));
-
-  // Merge: keep local dirty items, take remote for non-dirty
-  const localInventory = await getAllInventory();
-  const localInventoryMap = new Map(localInventory.map(i => [i.id, i]));
-
-  const mergedInventory = [];
-
-  for (const remoteItem of remote.inventory || []) {
-    if (dirtyInventoryIds.has(remoteItem.id)) {
-      mergedInventory.push(localInventoryMap.get(remoteItem.id));
-    } else {
-      mergedInventory.push({ ...remoteItem, dirty: false });
-    }
-  }
-
-  for (const localItem of dirtyInventory) {
-    if (!remote.inventory?.some(r => r.id === localItem.id)) {
-      mergedInventory.push(localItem);
-    }
-  }
-
-  // Same for visits
-  const localVisits = await getAllVisits();
-  const localVisitsMap = new Map(localVisits.map(v => [v.id, v]));
-
-  const mergedVisits = [];
-
-  for (const remoteVisit of remote.visits || []) {
-    if (dirtyVisitIds.has(remoteVisit.id)) {
-      mergedVisits.push(localVisitsMap.get(remoteVisit.id));
-    } else {
-      mergedVisits.push({ ...remoteVisit, dirty: false });
-    }
-  }
-
-  for (const localVisit of dirtyVisits) {
-    if (!remote.visits?.some(r => r.id === localVisit.id)) {
-      mergedVisits.push(localVisit);
-    }
-  }
-
-  // Import merged data
   await importData({
-    version: 1,
-    inventory: mergedInventory,
-    visits: mergedVisits
+    version: data.version || 1,
+    inventory: data.inventory || [],
+    visits: data.visits || [],
+    stores: data.stores || []
   }, false);
 }
 
-async function pushToDrive() {
-  if (!fileId) return;
+// =============================================================================
+// EXPORTS FOR SETTINGS UI
+// =============================================================================
 
-  const inventory = await getAllInventory();
-  const visits = await getAllVisits();
-
-  const data = {
-    version: 1,
-    exported_at: nowISO(),
-    inventory,
-    visits
-  };
-
-  const response = await fetch(
-    `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`,
-    {
-      method: 'PATCH',
-      headers: {
-        Authorization: `Bearer ${state.accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(data)
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(`Failed to push to Drive: ${response.status}`);
-  }
-
-  // Mark synced
-  const dirtyInventoryIds = inventory.filter(i => i.dirty).map(i => i.id);
-  const dirtyVisitIds = visits.filter(v => v.dirty).map(v => v.id);
-
-  if (dirtyInventoryIds.length > 0) {
-    await markInventorySynced(dirtyInventoryIds);
-  }
-  if (dirtyVisitIds.length > 0) {
-    await markVisitsSynced(dirtyVisitIds);
-  }
-}
-
-async function driveRequest(endpoint, options = {}) {
-  if (!state.accessToken) {
-    throw new Error('Not authenticated');
-  }
-
-  return fetch(`https://www.googleapis.com/drive/v3/${endpoint}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${state.accessToken}`,
-      'Content-Type': 'application/json',
-      ...options.headers
-    }
-  });
-}
+export { provider, syncEngine };
