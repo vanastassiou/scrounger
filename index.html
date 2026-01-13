@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#1a1a2e">
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Thrift Inventory</title>
   <link rel="manifest" href="manifest.json">
@@ -85,6 +85,7 @@
         <div class="action-buttons">
           <button class="btn btn--primary btn--block" id="add-item-btn">Add item</button>
           <button class="btn btn--block" id="log-visit-btn">Log visit</button>
+          <button class="btn btn--block" id="list-for-sale-btn">List for sale</button>
         </div>
       </div>
 
@@ -141,7 +142,6 @@
       <div class="card">
         <h3 class="card-title">Dev tools</h3>
         <div class="action-buttons">
-          <button class="btn btn--block" id="seed-data-btn">Seed mock data</button>
           <button class="btn btn--block" id="clear-data-btn">Clear all data</button>
         </div>
       </div>
@@ -168,15 +168,13 @@
           <thead>
             <tr>
               <th data-sort="title">Title</th>
-              <th data-sort="category">Category</th>
-              <th data-sort="brand">Brand</th>
               <th data-sort="purchase_price">Cost</th>
               <th data-sort="status">Status</th>
-              <th data-sort="acquisition_date">Date</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody id="inventory-tbody">
-            <tr><td colspan="6" class="empty-state"><div class="empty-icon">I</div><p>Loading...</p></td></tr>
+            <tr><td colspan="4" class="empty-state"><div class="empty-icon">I</div><p>Loading...</p></td></tr>
           </tbody>
         </table>
       </div>
@@ -297,7 +295,6 @@
           <thead>
             <tr>
               <th data-sort="title">Item</th>
-              <th data-sort="category">Category</th>
               <th data-sort="status">Status</th>
               <th data-sort="purchase_price">Cost</th>
               <th data-sort="sold_price">Price</th>
@@ -308,7 +305,7 @@
           </thead>
           <tbody id="selling-tbody">
             <tr>
-              <td colspan="8" class="empty-state">
+              <td colspan="7" class="empty-state">
                 <div class="empty-icon">💰</div>
                 <p>No items in sales pipeline</p>
               </td>
@@ -332,22 +329,20 @@
         <fieldset class="form-section">
           <legend class="form-section-title">Basic info</legend>
 
-          <div class="form-group">
-            <label class="form-label" for="item-title">Title *</label>
-            <input type="text" class="form-input" id="item-title" name="title" required placeholder="e.g., Vintage silk blouse">
-          </div>
+          <!-- Hidden title field - auto-generated from brand, colour, material, subcategory -->
+          <input type="hidden" id="item-title" name="title">
 
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label" for="item-category">Category *</label>
+              <label class="form-label" for="item-category">Primary category *</label>
               <select class="form-select" id="item-category" name="category" required>
                 <option value="">Select...</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label" for="item-subcategory">Type</label>
-              <select class="form-select" id="item-subcategory" name="subcategory" disabled>
-                <option value="">Select category first</option>
+              <label class="form-label" for="item-subcategory">Secondary category *</label>
+              <select class="form-select" id="item-subcategory" name="subcategory" required disabled>
+                <option value="">Select primary first</option>
               </select>
             </div>
           </div>
@@ -358,8 +353,28 @@
               <input type="text" class="form-input" id="item-brand" name="brand" placeholder="e.g., Pendleton">
             </div>
             <div class="form-group">
-              <label class="form-label" for="item-era">Era</label>
-              <select class="form-select" id="item-era" name="era">
+              <label class="form-label" for="item-country">Country of manufacture</label>
+              <input type="text" class="form-input" id="item-country" name="country_of_manufacture" placeholder="e.g., Italy, Japan">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="item-era">Era</label>
+            <select class="form-select" id="item-era" name="era">
+              <option value="">Select...</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="item-primary-colour">Primary colour *</label>
+              <select class="form-select" id="item-primary-colour" name="primary_colour" required>
+                <option value="">Select...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="item-secondary-colour">Secondary colour</label>
+              <select class="form-select" id="item-secondary-colour" name="secondary_colour">
                 <option value="">Select...</option>
               </select>
             </div>
@@ -370,15 +385,20 @@
         <fieldset class="form-section">
           <legend class="form-section-title">Acquisition</legend>
 
-          <div class="form-group">
-            <label class="form-label" for="item-store">Store *</label>
-            <select class="form-select" id="item-store" name="store_id" required>
-              <option value="">Select store...</option>
-            </select>
+          <div class="form-group" id="store-field-group">
+            <label class="form-label" for="item-chain">Store *</label>
+            <div class="form-row">
+              <select class="form-select" id="item-chain" name="chain" required>
+                <option value="">Select chain...</option>
+              </select>
+              <select class="form-select" id="item-store" name="store_id" required disabled>
+                <option value="">Select location...</option>
+              </select>
+            </div>
           </div>
 
           <div class="form-row form-row--3">
-            <div class="form-group">
+            <div class="form-group" id="date-field-group">
               <label class="form-label" for="item-acquisition-date">Date *</label>
               <input type="date" class="form-input" id="item-acquisition-date" name="acquisition_date" required>
             </div>
@@ -397,15 +417,9 @@
         <details class="form-section form-section--collapsible">
           <summary class="form-section-title">Sizing</summary>
           <div class="form-section-content">
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label" for="item-labeled-size">Labeled size</label>
-                <input type="text" class="form-input" id="item-labeled-size" name="labeled_size" placeholder="e.g., M, 8, 38">
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="item-modern-size">Modern equivalent</label>
-                <input type="text" class="form-input" id="item-modern-size" name="modern_size_equivalent" placeholder="e.g., S, 4, 34">
-              </div>
+            <div class="form-group">
+              <label class="form-label" for="item-labeled-size">Labeled size</label>
+              <input type="text" class="form-input" id="item-labeled-size" name="labeled_size" placeholder="e.g., M, 8, 38">
             </div>
 
             <!-- Shoe-specific width -->
@@ -431,27 +445,23 @@
         <details class="form-section form-section--collapsible">
           <summary class="form-section-title">Materials</summary>
           <div class="form-section-content">
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label" for="item-material">Primary material *</label>
-                <input type="text" class="form-input" id="item-material" name="primary_material" placeholder="e.g., Silk, Leather, Sterling silver">
+            <div class="form-row form-row--flex">
+              <div class="form-group form-group--grow">
+                <label class="form-label" for="item-primary-material">Primary material *</label>
+                <select class="form-select" id="item-primary-material" name="primary_material_name" required>
+                  <option value="">Select...</option>
+                </select>
               </div>
-              <div class="form-group">
-                <label class="form-label" for="item-secondary-materials">Secondary</label>
-                <input type="text" class="form-input" id="item-secondary-materials" name="secondary_materials" placeholder="e.g., Lining: polyester">
+              <div class="form-group form-group--narrow">
+                <label class="form-label" for="item-primary-material-pct">%</label>
+                <input type="number" class="form-input" id="item-primary-material-pct" name="primary_material_percentage" min="1" max="100" value="100">
               </div>
             </div>
 
             <div class="form-group">
-              <label class="form-checkbox">
-                <input type="checkbox" name="material_verified" id="item-material-verified">
-                <span>Material verified (via label, testing, or hallmark)</span>
-              </label>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label" for="item-material-notes">Material notes</label>
-              <textarea class="form-textarea" id="item-material-notes" name="material_notes" rows="2" placeholder="Hand feel, weight, testing results..."></textarea>
+              <label class="form-label">Secondary materials</label>
+              <div id="secondary-materials-list" class="materials-list"></div>
+              <button type="button" class="btn btn--sm btn--outline" id="add-secondary-material">+ Add material</button>
             </div>
           </div>
         </details>
@@ -520,29 +530,12 @@
           </div>
         </details>
 
-        <!-- Intent & Pricing Section (collapsible) -->
+        <!-- Pricing Section (collapsible) -->
         <details class="form-section form-section--collapsible">
-          <summary class="form-section-title">Intent & pricing</summary>
+          <summary class="form-section-title">Pricing</summary>
           <div class="form-section-content">
-            <div class="form-row">
-              <div class="form-group">
-                <label class="form-label" for="item-intent">Intent</label>
-                <select class="form-select" id="item-intent" name="intent">
-                  <option value="">Select...</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label" for="item-status">Status</label>
-                <select class="form-select" id="item-status" name="status">
-                  <option value="">Select...</option>
-                </select>
-              </div>
-            </div>
-
-            <div id="resale-platforms-group" class="form-group" hidden>
-              <label class="form-label">Target platforms</label>
-              <div class="checkbox-group" id="platforms-checkboxes"></div>
-            </div>
+            <!-- Status is auto-set to 'unlisted' for new items -->
+            <input type="hidden" id="item-status" name="status" value="unlisted">
 
             <div class="form-row form-row--3">
               <div class="form-group">
@@ -588,44 +581,82 @@
     </div>
   </dialog>
 
-  <!-- Log Visit Dialog -->
-  <dialog id="log-visit-dialog" class="modal">
+  <!-- Log Visit Dialog (Multi-Step) -->
+  <dialog id="log-visit-dialog" class="modal modal--large">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Log visit</h2>
+        <h2 id="visit-modal-title">Log visit</h2>
         <button class="modal-close" aria-label="Close">&times;</button>
       </div>
-      <form id="visit-form">
-        <div class="form-group">
-          <label class="form-label" for="visit-store">Store *</label>
-          <select class="form-select" id="visit-store" name="store_id" required>
-            <option value="">Select store...</option>
-          </select>
-        </div>
 
-        <div class="form-group">
-          <label class="form-label" for="visit-date">Date *</label>
-          <input type="date" class="form-input" id="visit-date" name="date" required>
-        </div>
-
-        <div class="form-row">
+      <!-- Step 1: Store/Date Selection -->
+      <div id="visit-step-1" class="visit-step">
+        <form id="visit-step1-form">
           <div class="form-group">
-            <label class="form-label" for="visit-purchases">Items purchased</label>
-            <input type="number" class="form-input" id="visit-purchases" name="purchases_count" min="0" value="0">
+            <label class="form-label" for="visit-chain">Store *</label>
+            <div class="form-row">
+              <select class="form-select" id="visit-chain" name="chain" required>
+                <option value="">Select chain...</option>
+              </select>
+              <select class="form-select" id="visit-store" name="store_id" required disabled>
+                <option value="">Select location...</option>
+              </select>
+            </div>
           </div>
           <div class="form-group">
-            <label class="form-label" for="visit-spent">Total spent</label>
-            <input type="number" class="form-input" id="visit-spent" name="total_spent" step="0.01" min="0" value="0">
+            <label class="form-label" for="visit-date">Date *</label>
+            <input type="date" class="form-input" id="visit-date" name="date" required>
+          </div>
+          <button type="submit" class="btn btn--primary btn--block">Continue</button>
+        </form>
+      </div>
+
+      <!-- Step 2: Item Spreadsheet -->
+      <div id="visit-step-2" class="visit-step" hidden>
+        <div class="visit-header-info">
+          <button type="button" class="btn btn--sm" id="visit-back-btn">&larr; Back</button>
+          <span id="visit-context-label"></span>
+        </div>
+
+        <div class="visit-items-toolbar">
+          <button type="button" class="btn btn--primary" id="visit-add-item-btn">+ Add item</button>
+        </div>
+
+        <div id="visit-spreadsheet-container">
+          <div class="table-container">
+            <table class="table" id="visit-spreadsheet">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Category</th>
+                  <th>Brand</th>
+                  <th>Cost</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="visit-spreadsheet-tbody"></tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="3"><strong>Total</strong></td>
+                  <td id="visit-spreadsheet-total" colspan="2"><strong>$0.00</strong></td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="visit-notes">Notes</label>
-          <textarea class="form-textarea" id="visit-notes" name="notes" rows="3"></textarea>
+        <div class="empty-state" id="visit-empty-state">
+          <p>No items added yet</p>
+          <button type="button" class="btn btn--primary" id="visit-empty-add-btn">Add your first item</button>
         </div>
 
-        <button type="submit" class="btn btn--primary btn--block">Save visit</button>
-      </form>
+        <div class="form-actions">
+          <button type="button" class="btn" id="visit-cancel-btn">Cancel</button>
+          <button type="button" class="btn btn--primary" id="visit-complete-btn" disabled>
+            Complete visit
+          </button>
+        </div>
+      </div>
     </div>
   </dialog>
 
@@ -703,6 +734,17 @@
     </div>
   </dialog>
 
+  <!-- View Store Dialog -->
+  <dialog id="view-store-dialog" class="modal modal--large">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="view-store-title">Store Details</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div id="view-store-content" class="store-details"></div>
+    </div>
+  </dialog>
+
   <!-- Mark As Sold Dialog -->
   <dialog id="mark-sold-dialog" class="modal">
     <div class="modal-content">
@@ -777,6 +819,72 @@
         </div>
 
         <button type="submit" class="btn btn--primary btn--block">Confirm sale</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Select Item to List Dialog -->
+  <dialog id="select-item-dialog" class="modal">
+    <div class="modal-content modal-content--wide">
+      <div class="modal-header">
+        <h2>Select item to list for sale</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <input type="text" class="form-input" id="item-picker-search" placeholder="Search items...">
+        </div>
+        <div id="item-picker-list" class="item-picker-list">
+          <p class="text-muted">No items available to list</p>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Ship Item Dialog -->
+  <dialog id="ship-item-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Ship item</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <form id="ship-item-form">
+        <input type="hidden" id="ship-item-id" name="item_id">
+
+        <div class="form-group">
+          <label class="form-label">Item</label>
+          <div id="ship-item-title" class="text-muted"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="shipping-carrier">Carrier *</label>
+          <select class="form-select" id="shipping-carrier" name="shipping_carrier" required>
+            <option value="">Select...</option>
+            <option value="usps">USPS</option>
+            <option value="ups">UPS</option>
+            <option value="fedex">FedEx</option>
+            <option value="dhl">DHL</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="tracking-number">Tracking number</label>
+          <input type="text" class="form-input" id="tracking-number" name="tracking_number" placeholder="Enter tracking number">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="ship-date">Ship date *</label>
+            <input type="date" class="form-input" id="ship-date" name="ship_date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="ship-shipping-cost">Shipping cost</label>
+            <input type="number" class="form-input" id="ship-shipping-cost" name="shipping_cost" step="0.01" min="0" placeholder="0.00">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block">Mark as shipped</button>
       </form>
     </div>
   </dialog>

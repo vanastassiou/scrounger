@@ -1,488 +1,12 @@
 {
-  "meta": {
-    "document_type": "reference_data",
-    "domain": "thrift_store_sourcing",
-    "version": "1.0",
-    "created": "2026-01-03",
-    "purpose": "Jewelry brand valuation and hallmark identification guide"
-  },
-
-  "jewelry_brands": {
-    "fine_jewelry_houses": {
-      "description": "Major jewelry houses — precious metal pieces",
-      "multiplier_range": [5.0, 20.0],
-      "brands": {
-        "cartier": {"m": 15.0, "marks": ["CARTIER", "Cartier", serial numbers]},
-        "tiffany": {"m": 8.0, "marks": ["TIFFANY & CO", "T&CO", "Tiffany Studios"]},
-        "bulgari": {"m": 10.0, "marks": ["BVLGARI", "BULGARI"]},
-        "van_cleef_arpels": {"m": 15.0, "marks": ["VCA", "Van Cleef & Arpels"]},
-        "harry_winston": {"m": 15.0},
-        "chopard": {"m": 8.0},
-        "boucheron": {"m": 8.0},
-        "david_yurman": {"m": 4.0, "marks": ["DY", "D.Y.", "David Yurman"]},
-        "john_hardy": {"m": 3.0, "marks": ["JH", "John Hardy"]},
-        "lagos": {"m": 3.0, "marks": ["LAGOS", "Caviar" (line name)]},
-        "marco_bicego": {"m": 4.0},
-        "roberto_coin": {"m": 3.5, "marks": ["RC", "tiny ruby set inside"]},
-        "ippolita": {"m": 3.0}
-      }
-    },
-
-    "designer_fashion_jewelry": {
-      "description": "Fashion house jewelry — both precious and costume",
-      "multiplier_range": [2.0, 5.0],
-      "brands": {
-        "chanel": {"m": 4.0, "marks": ["CHANEL", "CC logo"], "notes": "Costume and fine both valuable"},
-        "hermes": {"m": 5.0, "marks": ["HERMES", "HERMÈS PARIS"], "notes": "Enamel bracelets, silver"},
-        "gucci": {"m": 3.0, "marks": ["GUCCI", "GG"]},
-        "dior": {"m": 3.5, "marks": ["CHR.DIOR", "CHRISTIAN DIOR", "Dior"]},
-        "ysl": {"m": 3.0, "marks": ["YSL", "YVES SAINT LAURENT"]},
-        "celine": {"m": 3.0, "marks": ["CELINE", "CÉLINE"]},
-        "givenchy": {"m": 2.5, "marks": ["GIVENCHY", "G logo"]},
-        "lanvin": {"m": 2.5},
-        "balenciaga": {"m": 2.5}
-      }
-    },
-
-    "vintage_costume_collectible": {
-      "description": "Signed vintage costume with high collector value",
-      "multiplier_range": [2.0, 8.0],
-      "brands": {
-        "miriam_haskell": {
-          "m": 6.0,
-          "era": "1920s-present",
-          "marks": ["Miriam Haskell", horseshoe mark],
-          "notes": "Baroque pearls, intricate beadwork. Early pieces unsigned."
-        },
-        "eisenberg": {
-          "m": 4.0,
-          "era": "1930s-present",
-          "marks": ["Eisenberg Original", "Eisenberg Ice", "E"],
-          "notes": "Original line most valuable. Ice line = rhinestones."
-        },
-        "trifari": {
-          "m": 3.0,
-          "era": "1930s-present",
-          "marks": ["Trifari", "TKF", crown mark],
-          "notes": "Crown Trifari most collectible. Alfred Philippe designs."
-        },
-        "weiss": {
-          "m": 3.5,
-          "era": "1942-1971",
-          "marks": ["WEISS", "Albert Weiss"],
-          "notes": "High quality rhinestones, Austrian crystals."
-        },
-        "schreiner": {
-          "m": 5.0,
-          "era": "1940s-1970s",
-          "marks": ["SCHREINER NEW YORK", often unsigned],
-          "notes": "Made for Dior, Givenchy. Inverted stones signature."
-        },
-        "hobe": {
-          "m": 3.0,
-          "era": "1920s-present",
-          "marks": ["HOBÉ", "Hobe"],
-          "notes": "Venetian glass, quality metalwork."
-        },
-        "coro": {
-          "m": 2.0,
-          "era": "1901-1979",
-          "marks": ["CORO", "Corocraft", "Vendome", "Francois"],
-          "notes": "Vendome and Francois lines higher value."
-        },
-        "lisner": {
-          "m": 2.5,
-          "era": "1930s-1979",
-          "marks": ["LISNER"],
-          "notes": "Leaf designs, quality rhinestones."
-        },
-        "kramer": {
-          "m": 2.5,
-          "era": "1943-1980s",
-          "marks": ["KRAMER", "Kramer of New York"],
-          "notes": "Made pieces for Dior."
-        },
-        "boucher": {
-          "m": 4.0,
-          "era": "1937-1970s",
-          "marks": ["MB" with phrygian cap, "BOUCHER"],
-          "notes": "Marcel Boucher. High quality, detailed work."
-        },
-        "hattie_carnegie": {
-          "m": 3.5,
-          "era": "1918-1976",
-          "marks": ["Hattie Carnegie", "HC"],
-          "notes": "Fashion designer's jewelry line."
-        },
-        "kenneth_jay_lane": {
-          "m": 3.0,
-          "era": "1963-present",
-          "marks": ["KJL", "Kenneth Jay Lane", "Kenneth Lane"],
-          "notes": "Celebrity favorite. Quality costume reproductions."
-        },
-        "stanley_hagler": {
-          "m": 5.0,
-          "era": "1950s-1990s",
-          "marks": ["Stanley Hagler NYC", "Ian St. Gielar"],
-          "notes": "Elaborate beadwork, shells, flowers."
-        },
-        "har": {
-          "m": 4.0,
-          "era": "1950s-1960s",
-          "marks": ["HAR"],
-          "notes": "Figural pieces, dragon series highly collectible."
-        },
-        "regency": {
-          "m": 3.0,
-          "era": "1950s-1970s",
-          "marks": ["REGENCY"],
-          "notes": "High quality rhinestones."
-        },
-        "sherman": {
-          "m": 4.0,
-          "era": "1947-1981",
-          "marks": ["SHERMAN", "Gustave Sherman"],
-          "notes": "Canadian! Swarovski crystals, never glued."
-        },
-        "alice_caviness": {
-          "m": 2.5,
-          "era": "1945-1990s",
-          "marks": ["Alice Caviness", "Alice"],
-          "notes": "Nature-inspired designs."
-        },
-        "hollycraft": {
-          "m": 3.0,
-          "era": "1948-late 1970s",
-          "marks": ["HOLLYCRAFT", dated pieces],
-          "notes": "Pastel rhinestones, often dated on back."
-        },
-        "joseff_hollywood": {
-          "m": 5.0,
-          "era": "1930s-present",
-          "marks": ["Joseff", "Joseff Hollywood"],
-          "notes": "Made for films. Russian gold finish signature."
-        },
-        "demario": {
-          "m": 3.5,
-          "era": "1945-1965",
-          "marks": ["DeMario", "DeMario NY"],
-          "notes": "Baroque pearls, antiqued finish."
-        },
-        "jomaz": {
-          "m": 3.0,
-          "era": "1946-1981",
-          "marks": ["JOMAZ", "Mazer Bros"],
-          "notes": "Mazer family company."
-        },
-        "christian_lacroix": {
-          "m": 3.5,
-          "era": "1987-present",
-          "marks": ["Christian Lacroix", "CL"],
-          "notes": "Baroque, colorful, oversized."
-        },
-        "robert_original": {
-          "m": 2.5,
-          "era": "1942-1979",
-          "marks": ["Original by Robert", "Robert"],
-          "notes": "Beadwork, glass pieces."
-        },
-        "napier": {
-          "m": 2.0,
-          "era": "1922-1999",
-          "marks": ["NAPIER"],
-          "notes": "Consistent quality. Gold-tone pieces."
-        },
-        "monet": {
-          "m": 1.8,
-          "era": "1937-present",
-          "marks": ["MONET"],
-          "notes": "Quality basics. Vintage more valuable."
-        }
-      }
-    },
-
-    "bakelite_early_plastic": {
-      "description": "Collectible vintage plastics",
-      "multiplier_range": [3.0, 10.0],
-      "types": {
-        "bakelite": {
-          "m": 6.0,
-          "era": "1907-1940s",
-          "tests": ["Simichrome test (yellow residue)", "Hot water smell (formaldehyde)", "409 test"],
-          "notes": "Carved, laminated, reverse-carved painted most valuable."
-        },
-        "catalin": {
-          "m": 5.0,
-          "era": "1930s-1940s",
-          "notes": "Cast phenolic, often marbled colors. Tests same as Bakelite."
-        },
-        "lucite": {
-          "m": 2.5,
-          "era": "1940s-1960s",
-          "notes": "Clear or colored acrylic. Carved, embedded objects."
-        },
-        "celluloid": {
-          "m": 3.0,
-          "era": "1870s-1940s",
-          "notes": "Early plastic. Flammable. Often imitated ivory/tortoise."
-        }
-      }
-    }
-  },
-
   "hallmarks": {
-    "usage_notes": {
-      "loupe_required": "10x minimum for reading hallmarks",
-      "location_tips": "Check inside bands, clasp plates, bail loops, back of settings, pin stems",
-      "wear_patterns": "Hallmarks on high-wear areas may be illegible"
-    },
-
-    "gold_purity_marks": {
-      "karat_system_north_america": {
-        "24K": {"purity": 99.9, "aka": ["999", "pure gold"]},
-        "22K": {"purity": 91.7, "aka": ["916", "917"]},
-        "18K": {"purity": 75.0, "aka": ["750"]},
-        "14K": {"purity": 58.3, "aka": ["585"]},
-        "10K": {"purity": 41.7, "aka": ["417"]},
-        "9K": {"purity": 37.5, "aka": ["375"], "notes": "Not legally gold in US/Canada but common in UK imports"}
-      },
-      "millesimal_system_europe": {
-        "999": "24K equivalent",
-        "916/917": "22K equivalent",
-        "750": "18K equivalent",
-        "585": "14K equivalent",
-        "417": "10K equivalent",
-        "375": "9K equivalent",
-        "333": "8K (German)"
-      }
-    },
-
-    "silver_marks": {
-      "sterling": {
-        "marks": ["925", "STERLING", "STER", ".925", "S925"],
-        "purity": 92.5
-      },
-      "coin_silver": {
-        "marks": ["900", "COIN"],
-        "purity": 90.0,
-        "notes": "Common in antique American pieces"
-      },
-      "britannia": {
-        "marks": ["958", "Britannia figure"],
-        "purity": 95.8,
-        "notes": "UK, higher purity than sterling"
-      },
-      "european_continental": {
-        "800": "European standard",
-        "830": "Scandinavian",
-        "835": "German/Dutch",
-        "875": "Russian (pre-1927)"
-      }
-    },
-
-    "platinum_palladium": {
-      "platinum": {
-        "marks": ["PLAT", "PT", "950PLAT", "900PLAT", "850PLAT", "PLATINUM"],
-        "notes": "Very heavy, naturally white, expensive"
-      },
-      "palladium": {
-        "marks": ["PD", "PALL", "500PD", "950PD"],
-        "notes": "Lighter than platinum, similar appearance"
-      }
-    },
-
-    "gold_alternatives": {
-      "gold_filled": {
-        "marks": ["GF", "1/20 14K GF", "1/10 12K GF", "GOLD FILLED"],
-        "notes": "Fraction = gold content by weight. 1/20 = 5% gold. Can last decades."
-      },
-      "rolled_gold": {
-        "marks": ["RGP", "R.G.P.", "ROLLED GOLD PLATE"],
-        "notes": "Thinner than gold filled."
-      },
-      "gold_plated": {
-        "marks": ["GP", "G.P.", "HGE", "GOLD PLATED", "ELECTROPLATE"],
-        "notes": "Thin layer, will wear. Minimal gold value."
-      },
-      "vermeil": {
-        "marks": ["VERMEIL"],
-        "notes": "Must be gold over sterling. Has silver value."
-      },
-      "gold_tone": {
-        "marks": ["GT", "G.T.", "GOLD TONE"],
-        "notes": "No gold content. Base metal."
-      }
-    },
-
-    "country_specific": {
-      "united_kingdom": {
-        "system": "Assay office marks + date letters + maker's marks",
-        "assay_offices": {
-          "london": {"mark": "leopard's head", "active": "1300-present"},
-          "birmingham": {"mark": "anchor", "active": "1773-present"},
-          "sheffield": {"mark": "rose/York rose", "active": "1773-present"},
-          "edinburgh": {"mark": "castle", "active": "1485-present"},
-          "chester": {"mark": "three wheat sheaves + sword", "active": "1686-1962", "notes": "Closed"},
-          "dublin": {"mark": "crowned harp", "active": "1638-present"}
-        },
-        "date_letters": {
-          "system": "Alphabetic cycle, font/shield shape changes each cycle",
-          "notes": "Complex system - reference chart needed for accurate dating"
-        },
-        "purity_marks": {
-          "gold": {
-            "crown_22": "22K (pre-1975)",
-            "crown_18": "18K (pre-1975)",
-            "crown_15": "15K (1854-1932)",
-            "crown_12": "12K (1854-1932)",
-            "crown_9": "9K (1854-present)",
-            "sun_symbol": "22K (modern)",
-            "orb_cross": "18K (modern)",
-            "figure_585": "14K (modern)",
-            "figure_375": "9K (modern)"
-          },
-          "silver": {
-            "lion_passant": "Sterling (English)",
-            "lion_rampant": "Sterling (Scottish)",
-            "britannia_figure": "Britannia silver 958"
-          }
-        }
-      },
-
-      "france": {
-        "system": "Eagle head (gold), Minerva head (silver) + maker's lozenge",
-        "gold_marks": {
-          "eagle_head_18k": "750, facing right",
-          "owl": "Import/foreign gold",
-          "rhinoceros": "Used 1838-1919"
-        },
-        "silver_marks": {
-          "minerva_head_1": "First standard (950)",
-          "minerva_head_2": "Second standard (800)",
-          "swan": "Small silver items"
-        },
-        "makers_mark": "Lozenge shape (diamond) with initials and symbol"
-      },
-
-      "italy": {
-        "system": "Star mark + number (province code) + maker code",
-        "format": "★ [1-95] XX (star, province number, maker initials)",
-        "purity": "Usually marked 750, 585, 375 for gold; 925, 800 for silver",
-        "notes": "Modern system since 1968. Older pieces may have different marks."
-      },
-
-      "germany": {
-        "system": "Crescent moon + crown (gold/silver), numeric purity",
-        "marks": {
-          "crescent_crown": "Precious metal guarantee",
-          "purity_numbers": "585, 750 (gold); 800, 835, 925 (silver)"
-        },
-        "notes": "Pre-1888 pieces have regional marks"
-      },
-
-      "austria_hungary": {
-        "historical_marks": {
-          "dog_head": "Pre-1866 gold",
-          "diana_head": "Pre-1922 silver",
-          "various_heads": "Complex system by era and region"
-        },
-        "notes": "Austro-Hungarian pieces highly collectible"
-      },
-
-      "russia_soviet": {
-        "imperial_era": {
-          "kokoshnik": "Woman's head in profile (1896-1927)",
-          "purity": "Zolotniki system: 56 = 14K, 72 = 18K, 84 = silver"
-        },
-        "soviet_era": {
-          "worker_head": "Hammer and sickle (1927-1958)",
-          "star_cccp": "Five-pointed star (1958-present)",
-          "purity": "Metric system: 375, 583, 750 (gold); 875, 916 (silver)"
-        },
-        "notes": "583 = Soviet 14K equivalent (slightly less than 585)"
-      },
-
-      "scandinavian": {
-        "denmark": {
-          "three_towers": "Copenhagen assay mark",
-          "maker_marks": "Registered with Copenhagen"
-        },
-        "sweden": {
-          "three_crowns": "National mark",
-          "S": "Silver"
-        },
-        "norway": {
-          "830S": "Common silver standard"
-        },
-        "finland": {
-          "crown": "National mark"
-        }
-      },
-
-      "mexico": {
-        "system": "Eagle marks + maker + silver standard",
-        "eagle_marks": {
-          "spread_eagle": "1948-1979, numbered",
-          "eagle_1": "1979-present, letters instead of numbers"
-        },
-        "silver_standard": "Usually 925 or 950",
-        "taxco": {
-          "notes": "Silver capital of Mexico. Look for 'Taxco' or 'TH' marks.",
-          "famous_makers": ["Margot de Taxco", "William Spratling", "Hector Aguilar", "Antonio Pineda", "Los Castillo"]
-        }
-      },
-
-      "united_states": {
-        "system": "No mandatory hallmarking. Maker's marks and purity stamps voluntary.",
-        "common_marks": {
-          "purity": "Usually karat (14K, 10K) or numeric (585, 925)",
-          "sterling": "STERLING, 925, .925"
-        },
-        "vintage_makers_to_know": [
-          "Gorham (lion, anchor, G)",
-          "Tiffany & Co",
-          "Reed & Barton",
-          "Wallace (deer)",
-          "International Silver",
-          "Georg Jensen USA"
-        ],
-        "native_american": {
-          "notes": "Usually unmarked or artist signed. Hallmarks rare.",
-          "authenticity": "Buy from reputable sources. Many fakes exist."
-        }
-      },
-
-      "canada": {
-        "system": "Similar to US - no mandatory hallmarking",
-        "common_marks": "Purity + maker's mark",
-        "birks": {
-          "marks": ["BIRKS", "BIRKS STERLING", "B" in shield],
-          "notes": "Major Canadian jeweler. Quality pieces."
-        }
-      },
-
-      "asian": {
-        "china_hong_kong": {
-          "chuk_kam": "Pure gold (999)",
-          "chinese_characters": "Often indicate purity in Chinese",
-          "notes": "HK uses chop marks. Mainland varies."
-        },
-        "japan": {
-          "flag_mark": "Japanese hallmark (modern)",
-          "numeric": "K18, K14 common markings"
-        },
-        "india": {
-          "bis_mark": "Bureau of Indian Standards hallmark",
-          "916": "22K (most common in Indian jewelry)"
-        },
-        "thailand": {
-          "baht_system": "Weight-based gold standard",
-          "965": "23K Thai gold standard"
-        }
-      }
-    },
-
     "common_fake_marks": {
+      "frequently_faked": [
+        "Cartier (check serial numbers against records)",
+        "Tiffany (should have \u00a9 Tiffany & Co, 925/750/etc)",
+        "Rolex",
+        "Mexican silver (fake eagle marks common)"
+      ],
       "warning_signs": [
         "Marks that rub off or are painted on",
         "Inconsistent marks (18K mark but piece is magnetic)",
@@ -490,32 +14,794 @@
         "Blurry or poorly struck marks",
         "Marks that don't match country of origin claim",
         "ITALY stamp without proper Italian hallmarks"
-      ],
-      "frequently_faked": [
-        "Cartier (check serial numbers against records)",
-        "Tiffany (should have © Tiffany & Co, 925/750/etc)",
-        "Rolex",
-        "Mexican silver (fake eagle marks common)"
       ]
     },
-
+    "country_specific": {
+      "asian": {
+        "china_hong_kong": {
+          "chinese_characters": "Often indicate purity in Chinese",
+          "chuk_kam": "Pure gold (999)",
+          "notes": "HK uses chop marks. Mainland varies."
+        },
+        "india": {
+          "916": "22K (most common in Indian jewelry)",
+          "bis_mark": "Bureau of Indian Standards hallmark"
+        },
+        "japan": {
+          "flag_mark": "Japanese hallmark (modern)",
+          "numeric": "K18, K14 common markings"
+        },
+        "thailand": {
+          "965": "23K Thai gold standard",
+          "baht_system": "Weight-based gold standard"
+        }
+      },
+      "austria_hungary": {
+        "historical_marks": {
+          "diana_head": "Pre-1922 silver",
+          "dog_head": "Pre-1866 gold",
+          "various_heads": "Complex system by era and region"
+        },
+        "notes": "Austro-Hungarian pieces highly collectible"
+      },
+      "canada": {
+        "birks": {
+          "marks": [
+            "BIRKS",
+            "BIRKS STERLING",
+            "B in shield"
+          ],
+          "notes": "Major Canadian jeweler. Quality pieces."
+        },
+        "common_marks": "Purity + maker's mark",
+        "system": "Similar to US - no mandatory hallmarking"
+      },
+      "france": {
+        "gold_marks": {
+          "eagle_head_18k": "750, facing right",
+          "owl": "Import/foreign gold",
+          "rhinoceros": "Used 1838-1919"
+        },
+        "makers_mark": "Lozenge shape (diamond) with initials and symbol",
+        "silver_marks": {
+          "minerva_head_1": "First standard (950)",
+          "minerva_head_2": "Second standard (800)",
+          "swan": "Small silver items"
+        },
+        "system": "Eagle head (gold), Minerva head (silver) + maker's lozenge"
+      },
+      "germany": {
+        "marks": {
+          "crescent_crown": "Precious metal guarantee",
+          "purity_numbers": "585, 750 (gold); 800, 835, 925 (silver)"
+        },
+        "notes": "Pre-1888 pieces have regional marks",
+        "system": "Crescent moon + crown (gold/silver), numeric purity"
+      },
+      "italy": {
+        "format": "\u2605 [1-95] XX (star, province number, maker initials)",
+        "notes": "Modern system since 1968. Older pieces may have different marks.",
+        "purity": "Usually marked 750, 585, 375 for gold; 925, 800 for silver",
+        "system": "Star mark + number (province code) + maker code"
+      },
+      "mexico": {
+        "eagle_marks": {
+          "eagle_1": "1979-present, letters instead of numbers",
+          "spread_eagle": "1948-1979, numbered"
+        },
+        "silver_standard": "Usually 925 or 950",
+        "system": "Eagle marks + maker + silver standard",
+        "taxco": {
+          "famous_makers": [
+            "Margot de Taxco",
+            "William Spratling",
+            "Hector Aguilar",
+            "Antonio Pineda",
+            "Los Castillo"
+          ],
+          "notes": "Silver capital of Mexico. Look for 'Taxco' or 'TH' marks."
+        }
+      },
+      "russia_soviet": {
+        "imperial_era": {
+          "kokoshnik": "Woman's head in profile (1896-1927)",
+          "purity": "Zolotniki system: 56 = 14K, 72 = 18K, 84 = silver"
+        },
+        "notes": "583 = Soviet 14K equivalent (slightly less than 585)",
+        "soviet_era": {
+          "purity": "Metric system: 375, 583, 750 (gold); 875, 916 (silver)",
+          "star_cccp": "Five-pointed star (1958-present)",
+          "worker_head": "Hammer and sickle (1927-1958)"
+        }
+      },
+      "scandinavian": {
+        "denmark": {
+          "maker_marks": "Registered with Copenhagen",
+          "three_towers": "Copenhagen assay mark"
+        },
+        "finland": {
+          "crown": "National mark"
+        },
+        "norway": {
+          "830S": "Common silver standard"
+        },
+        "sweden": {
+          "S": "Silver",
+          "three_crowns": "National mark"
+        }
+      },
+      "united_kingdom": {
+        "assay_offices": {
+          "birmingham": {
+            "active": "1773-present",
+            "mark": "anchor"
+          },
+          "chester": {
+            "active": "1686-1962",
+            "mark": "three wheat sheaves + sword",
+            "notes": "Closed"
+          },
+          "dublin": {
+            "active": "1638-present",
+            "mark": "crowned harp"
+          },
+          "edinburgh": {
+            "active": "1485-present",
+            "mark": "castle"
+          },
+          "london": {
+            "active": "1300-present",
+            "mark": "leopard's head"
+          },
+          "sheffield": {
+            "active": "1773-present",
+            "mark": "rose/York rose"
+          }
+        },
+        "date_letters": {
+          "notes": "Complex system - reference chart needed for accurate dating",
+          "system": "Alphabetic cycle, font/shield shape changes each cycle"
+        },
+        "purity_marks": {
+          "gold": {
+            "crown_12": "12K (1854-1932)",
+            "crown_15": "15K (1854-1932)",
+            "crown_18": "18K (pre-1975)",
+            "crown_22": "22K (pre-1975)",
+            "crown_9": "9K (1854-present)",
+            "figure_375": "9K (modern)",
+            "figure_585": "14K (modern)",
+            "orb_cross": "18K (modern)",
+            "sun_symbol": "22K (modern)"
+          },
+          "silver": {
+            "britannia_figure": "Britannia silver 958",
+            "lion_passant": "Sterling (English)",
+            "lion_rampant": "Sterling (Scottish)"
+          }
+        },
+        "system": "Assay office marks + date letters + maker's marks"
+      },
+      "united_states": {
+        "common_marks": {
+          "purity": "Usually karat (14K, 10K) or numeric (585, 925)",
+          "sterling": "STERLING, 925, .925"
+        },
+        "native_american": {
+          "authenticity": "Buy from reputable sources. Many fakes exist.",
+          "notes": "Usually unmarked or artist signed. Hallmarks rare."
+        },
+        "system": "No mandatory hallmarking. Maker's marks and purity stamps voluntary.",
+        "vintage_makers_to_know": [
+          "Gorham (lion, anchor, G)",
+          "Tiffany & Co",
+          "Reed & Barton",
+          "Wallace (deer)",
+          "International Silver",
+          "Georg Jensen USA"
+        ]
+      }
+    },
+    "gold_alternatives": {
+      "gold_filled": {
+        "marks": [
+          "GF",
+          "1/20 14K GF",
+          "1/10 12K GF",
+          "GOLD FILLED"
+        ],
+        "notes": "Fraction = gold content by weight. 1/20 = 5% gold. Can last decades."
+      },
+      "gold_plated": {
+        "marks": [
+          "GP",
+          "G.P.",
+          "HGE",
+          "GOLD PLATED",
+          "ELECTROPLATE"
+        ],
+        "notes": "Thin layer, will wear. Minimal gold value."
+      },
+      "gold_tone": {
+        "marks": [
+          "GT",
+          "G.T.",
+          "GOLD TONE"
+        ],
+        "notes": "No gold content. Base metal."
+      },
+      "rolled_gold": {
+        "marks": [
+          "RGP",
+          "R.G.P.",
+          "ROLLED GOLD PLATE"
+        ],
+        "notes": "Thinner than gold filled."
+      },
+      "vermeil": {
+        "marks": [
+          "VERMEIL"
+        ],
+        "notes": "Must be gold over sterling. Has silver value."
+      }
+    },
+    "gold_purity_marks": {
+      "karat_system_north_america": {
+        "10K": {
+          "aka": [
+            "417"
+          ],
+          "purity": 41.7
+        },
+        "14K": {
+          "aka": [
+            "585"
+          ],
+          "purity": 58.3
+        },
+        "18K": {
+          "aka": [
+            "750"
+          ],
+          "purity": 75.0
+        },
+        "22K": {
+          "aka": [
+            "916",
+            "917"
+          ],
+          "purity": 91.7
+        },
+        "24K": {
+          "aka": [
+            "999",
+            "pure gold"
+          ],
+          "purity": 99.9
+        },
+        "9K": {
+          "aka": [
+            "375"
+          ],
+          "notes": "Not legally gold in US/Canada but common in UK imports",
+          "purity": 37.5
+        }
+      },
+      "millesimal_system_europe": {
+        "333": "8K (German)",
+        "375": "9K equivalent",
+        "417": "10K equivalent",
+        "585": "14K equivalent",
+        "750": "18K equivalent",
+        "916/917": "22K equivalent",
+        "999": "24K equivalent"
+      }
+    },
+    "platinum_palladium": {
+      "palladium": {
+        "marks": [
+          "PD",
+          "PALL",
+          "500PD",
+          "950PD"
+        ],
+        "notes": "Lighter than platinum, similar appearance"
+      },
+      "platinum": {
+        "marks": [
+          "PLAT",
+          "PT",
+          "950PLAT",
+          "900PLAT",
+          "850PLAT",
+          "PLATINUM"
+        ],
+        "notes": "Very heavy, naturally white, expensive"
+      }
+    },
+    "silver_marks": {
+      "britannia": {
+        "marks": [
+          "958",
+          "Britannia figure"
+        ],
+        "notes": "UK, higher purity than sterling",
+        "purity": 95.8
+      },
+      "coin_silver": {
+        "marks": [
+          "900",
+          "COIN"
+        ],
+        "notes": "Common in antique American pieces",
+        "purity": 90.0
+      },
+      "european_continental": {
+        "800": "European standard",
+        "830": "Scandinavian",
+        "835": "German/Dutch",
+        "875": "Russian (pre-1927)"
+      },
+      "sterling": {
+        "marks": [
+          "925",
+          "STERLING",
+          "STER",
+          ".925",
+          "S925"
+        ],
+        "purity": 92.5
+      }
+    },
     "testing_priority": {
-      "in_store": [
-        "Magnet test (no attraction = could be precious)",
-        "Visual hallmark inspection with loupe",
-        "Weight assessment (gold is heavy)",
-        "Construction quality check"
-      ],
       "at_home": [
         "Detailed hallmark research",
         "Acid test (small scratch in hidden area)",
         "Electronic tester",
         "Specific gravity test"
       ],
+      "in_store": [
+        "Magnet test (no attraction = could be precious)",
+        "Visual hallmark inspection with loupe",
+        "Weight assessment (gold is heavy)",
+        "Construction quality check"
+      ],
       "professional": [
         "XRF testing (non-destructive, definitive)",
         "Gemological assessment"
       ]
+    },
+    "usage_notes": {
+      "location_tips": "Check inside bands, clasp plates, bail loops, back of settings, pin stems",
+      "loupe_required": "10x minimum for reading hallmarks",
+      "wear_patterns": "Hallmarks on high-wear areas may be illegible"
     }
+  },
+  "jewelry_brands": {
+    "bakelite_early_plastic": {
+      "description": "Collectible vintage plastics",
+      "multiplier_range": [
+        3.0,
+        10.0
+      ],
+      "types": {
+        "bakelite": {
+          "era": "1907-1940s",
+          "m": 6.0,
+          "notes": "Carved, laminated, reverse-carved painted most valuable.",
+          "tests": [
+            "Simichrome test (yellow residue)",
+            "Hot water smell (formaldehyde)",
+            "409 test"
+          ]
+        },
+        "catalin": {
+          "era": "1930s-1940s",
+          "m": 5.0,
+          "notes": "Cast phenolic, often marbled colors. Tests same as Bakelite."
+        },
+        "celluloid": {
+          "era": "1870s-1940s",
+          "m": 3.0,
+          "notes": "Early plastic. Flammable. Often imitated ivory/tortoise."
+        },
+        "lucite": {
+          "era": "1940s-1960s",
+          "m": 2.5,
+          "notes": "Clear or colored acrylic. Carved, embedded objects."
+        }
+      }
+    },
+    "designer_fashion_jewelry": {
+      "brands": {
+        "balenciaga": {
+          "m": 2.5
+        },
+        "celine": {
+          "m": 3.0,
+          "marks": [
+            "CELINE",
+            "C\u00c9LINE"
+          ]
+        },
+        "chanel": {
+          "m": 4.0,
+          "marks": [
+            "CHANEL",
+            "CC logo"
+          ],
+          "notes": "Costume and fine both valuable"
+        },
+        "dior": {
+          "m": 3.5,
+          "marks": [
+            "CHR.DIOR",
+            "CHRISTIAN DIOR",
+            "Dior"
+          ]
+        },
+        "givenchy": {
+          "m": 2.5,
+          "marks": [
+            "GIVENCHY",
+            "G logo"
+          ]
+        },
+        "gucci": {
+          "m": 3.0,
+          "marks": [
+            "GUCCI",
+            "GG"
+          ]
+        },
+        "hermes": {
+          "m": 5.0,
+          "marks": [
+            "HERMES",
+            "HERM\u00c8S PARIS"
+          ],
+          "notes": "Enamel bracelets, silver"
+        },
+        "lanvin": {
+          "m": 2.5
+        },
+        "ysl": {
+          "m": 3.0,
+          "marks": [
+            "YSL",
+            "YVES SAINT LAURENT"
+          ]
+        }
+      },
+      "description": "Fashion house jewelry \u2014 both precious and costume",
+      "multiplier_range": [
+        2.0,
+        5.0
+      ]
+    },
+    "fine_jewelry_houses": {
+      "brands": {
+        "boucheron": {
+          "m": 8.0
+        },
+        "bulgari": {
+          "m": 10.0,
+          "marks": [
+            "BVLGARI",
+            "BULGARI"
+          ]
+        },
+        "cartier": {
+          "m": 15.0,
+          "marks": [
+            "CARTIER",
+            "Cartier",
+            "serial numbers"
+          ]
+        },
+        "chopard": {
+          "m": 8.0
+        },
+        "david_yurman": {
+          "m": 4.0,
+          "marks": [
+            "DY",
+            "D.Y.",
+            "David Yurman"
+          ]
+        },
+        "harry_winston": {
+          "m": 15.0
+        },
+        "ippolita": {
+          "m": 3.0
+        },
+        "john_hardy": {
+          "m": 3.0,
+          "marks": [
+            "JH",
+            "John Hardy"
+          ]
+        },
+        "lagos": {
+          "m": 3.0,
+          "marks": [
+            "LAGOS",
+            "Caviar (line name)"
+          ]
+        },
+        "marco_bicego": {
+          "m": 4.0
+        },
+        "roberto_coin": {
+          "m": 3.5,
+          "marks": [
+            "RC",
+            "tiny ruby set inside"
+          ]
+        },
+        "tiffany": {
+          "m": 8.0,
+          "marks": [
+            "TIFFANY & CO",
+            "T&CO",
+            "Tiffany Studios"
+          ]
+        },
+        "van_cleef_arpels": {
+          "m": 15.0,
+          "marks": [
+            "VCA",
+            "Van Cleef & Arpels"
+          ]
+        }
+      },
+      "description": "Major jewelry houses \u2014 precious metal pieces",
+      "multiplier_range": [
+        5.0,
+        20.0
+      ]
+    },
+    "vintage_costume_collectible": {
+      "brands": {
+        "alice_caviness": {
+          "era": "1945-1990s",
+          "m": 2.5,
+          "marks": [
+            "Alice Caviness",
+            "Alice"
+          ],
+          "notes": "Nature-inspired designs."
+        },
+        "boucher": {
+          "era": "1937-1970s",
+          "m": 4.0,
+          "marks": [
+            "MB with phrygian cap",
+            "BOUCHER"
+          ],
+          "notes": "Marcel Boucher. High quality, detailed work."
+        },
+        "christian_lacroix": {
+          "era": "1987-present",
+          "m": 3.5,
+          "marks": [
+            "Christian Lacroix",
+            "CL"
+          ],
+          "notes": "Baroque, colorful, oversized."
+        },
+        "coro": {
+          "era": "1901-1979",
+          "m": 2.0,
+          "marks": [
+            "CORO",
+            "Corocraft",
+            "Vendome",
+            "Francois"
+          ],
+          "notes": "Vendome and Francois lines higher value."
+        },
+        "demario": {
+          "era": "1945-1965",
+          "m": 3.5,
+          "marks": [
+            "DeMario",
+            "DeMario NY"
+          ],
+          "notes": "Baroque pearls, antiqued finish."
+        },
+        "eisenberg": {
+          "era": "1930s-present",
+          "m": 4.0,
+          "marks": [
+            "Eisenberg Original",
+            "Eisenberg Ice",
+            "E"
+          ],
+          "notes": "Original line most valuable. Ice line = rhinestones."
+        },
+        "har": {
+          "era": "1950s-1960s",
+          "m": 4.0,
+          "marks": [
+            "HAR"
+          ],
+          "notes": "Figural pieces, dragon series highly collectible."
+        },
+        "hattie_carnegie": {
+          "era": "1918-1976",
+          "m": 3.5,
+          "marks": [
+            "Hattie Carnegie",
+            "HC"
+          ],
+          "notes": "Fashion designer's jewelry line."
+        },
+        "hobe": {
+          "era": "1920s-present",
+          "m": 3.0,
+          "marks": [
+            "HOB\u00c9",
+            "Hobe"
+          ],
+          "notes": "Venetian glass, quality metalwork."
+        },
+        "hollycraft": {
+          "era": "1948-late 1970s",
+          "m": 3.0,
+          "marks": [
+            "HOLLYCRAFT",
+            "dated pieces"
+          ],
+          "notes": "Pastel rhinestones, often dated on back."
+        },
+        "jomaz": {
+          "era": "1946-1981",
+          "m": 3.0,
+          "marks": [
+            "JOMAZ",
+            "Mazer Bros"
+          ],
+          "notes": "Mazer family company."
+        },
+        "joseff_hollywood": {
+          "era": "1930s-present",
+          "m": 5.0,
+          "marks": [
+            "Joseff",
+            "Joseff Hollywood"
+          ],
+          "notes": "Made for films. Russian gold finish signature."
+        },
+        "kenneth_jay_lane": {
+          "era": "1963-present",
+          "m": 3.0,
+          "marks": [
+            "KJL",
+            "Kenneth Jay Lane",
+            "Kenneth Lane"
+          ],
+          "notes": "Celebrity favorite. Quality costume reproductions."
+        },
+        "kramer": {
+          "era": "1943-1980s",
+          "m": 2.5,
+          "marks": [
+            "KRAMER",
+            "Kramer of New York"
+          ],
+          "notes": "Made pieces for Dior."
+        },
+        "lisner": {
+          "era": "1930s-1979",
+          "m": 2.5,
+          "marks": [
+            "LISNER"
+          ],
+          "notes": "Leaf designs, quality rhinestones."
+        },
+        "miriam_haskell": {
+          "era": "1920s-present",
+          "m": 6.0,
+          "marks": [
+            "Miriam Haskell",
+            "horseshoe mark"
+          ],
+          "notes": "Baroque pearls, intricate beadwork. Early pieces unsigned."
+        },
+        "monet": {
+          "era": "1937-present",
+          "m": 1.8,
+          "marks": [
+            "MONET"
+          ],
+          "notes": "Quality basics. Vintage more valuable."
+        },
+        "napier": {
+          "era": "1922-1999",
+          "m": 2.0,
+          "marks": [
+            "NAPIER"
+          ],
+          "notes": "Consistent quality. Gold-tone pieces."
+        },
+        "regency": {
+          "era": "1950s-1970s",
+          "m": 3.0,
+          "marks": [
+            "REGENCY"
+          ],
+          "notes": "High quality rhinestones."
+        },
+        "robert_original": {
+          "era": "1942-1979",
+          "m": 2.5,
+          "marks": [
+            "Original by Robert",
+            "Robert"
+          ],
+          "notes": "Beadwork, glass pieces."
+        },
+        "schreiner": {
+          "era": "1940s-1970s",
+          "m": 5.0,
+          "marks": [
+            "SCHREINER NEW YORK",
+            "often unsigned"
+          ],
+          "notes": "Made for Dior, Givenchy. Inverted stones signature."
+        },
+        "sherman": {
+          "era": "1947-1981",
+          "m": 4.0,
+          "marks": [
+            "SHERMAN",
+            "Gustave Sherman"
+          ],
+          "notes": "Canadian! Swarovski crystals, never glued."
+        },
+        "stanley_hagler": {
+          "era": "1950s-1990s",
+          "m": 5.0,
+          "marks": [
+            "Stanley Hagler NYC",
+            "Ian St. Gielar"
+          ],
+          "notes": "Elaborate beadwork, shells, flowers."
+        },
+        "trifari": {
+          "era": "1930s-present",
+          "m": 3.0,
+          "marks": [
+            "Trifari",
+            "TKF",
+            "crown mark"
+          ],
+          "notes": "Crown Trifari most collectible. Alfred Philippe designs."
+        },
+        "weiss": {
+          "era": "1942-1971",
+          "m": 3.5,
+          "marks": [
+            "WEISS",
+            "Albert Weiss"
+          ],
+          "notes": "High quality rhinestones, Austrian crystals."
+        }
+      },
+      "description": "Signed vintage costume with high collector value",
+      "multiplier_range": [
+        2.0,
+        8.0
+      ]
+    }
+  },
+  "meta": {
+    "created": "2026-01-03",
+    "document_type": "reference_data",
+    "domain": "thrift_store_sourcing",
+    "purpose": "Jewelry brand valuation and hallmark identification guide",
+    "version": "1.0"
   }
 }
