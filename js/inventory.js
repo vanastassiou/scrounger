@@ -33,9 +33,6 @@ let visitContext = null; // Stores storeId/date when opened from visit workflow
 // =============================================================================
 
 export async function initInventory() {
-  await migrateMaterialsToStructured();
-  await migrateItemTitles();
-  await migrateFlawSpellings();
   await loadInventory();
   setupEventHandlers();
   setupFormOptions();
@@ -44,162 +41,6 @@ export async function initInventory() {
 async function loadInventory() {
   inventoryData = await getAllInventory();
   renderInventoryTable();
-}
-
-// =============================================================================
-// MIGRATION - Regenerate titles for existing items
-// =============================================================================
-
-async function migrateItemTitles() {
-  const items = await getAllInventory();
-  let migratedCount = 0;
-
-  for (const item of items) {
-    // Get material name (handle both structured and legacy string)
-    let materialName = null;
-    if (item.primary_material) {
-      if (typeof item.primary_material === 'object' && item.primary_material.name) {
-        materialName = item.primary_material.name;
-      } else if (typeof item.primary_material === 'string') {
-        // Try to normalize legacy string to a material option
-        const normalized = item.primary_material.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z_]/g, '');
-        if (MATERIAL_OPTIONS.includes(normalized)) {
-          materialName = normalized;
-        }
-      }
-    }
-
-    // Generate new title
-    const newTitle = generateItemTitle(
-      item.brand,
-      item.primary_colour,
-      materialName,
-      item.subcategory
-    );
-
-    // Only update if title changed and we have enough data to generate a meaningful title
-    if (newTitle !== item.title && newTitle !== 'Untitled item') {
-      await updateInventoryItem(item.id, { title: newTitle });
-      migratedCount++;
-    }
-  }
-
-  if (migratedCount > 0) {
-    console.log(`Migrated ${migratedCount} item titles to new format`);
-  }
-}
-
-// =============================================================================
-// MIGRATION - Convert string materials to structured percentage format
-// =============================================================================
-
-async function migrateMaterialsToStructured() {
-  const items = await getAllInventory();
-  let migratedCount = 0;
-
-  for (const item of items) {
-    const updates = {};
-
-    // Migrate primary_material if it's a string
-    if (item.primary_material && typeof item.primary_material === 'string') {
-      const parsed = parseMaterialString(item.primary_material);
-      if (parsed) {
-        updates.primary_material = parsed;
-      }
-    }
-
-    // Apply updates if any
-    if (Object.keys(updates).length > 0) {
-      await updateInventoryItem(item.id, updates);
-      migratedCount++;
-    }
-  }
-
-  if (migratedCount > 0) {
-    console.log(`Migrated ${migratedCount} items to structured material format`);
-  }
-}
-
-/**
- * Parse a material string into structured format.
- * Examples:
- *   "100% cashmere" → { name: "cashmere", percentage: 100 }
- *   "Cashmere" → { name: "cashmere", percentage: 100 }
- *   "100% Merino wool" → { name: "merino_wool", percentage: 100 }
- */
-function parseMaterialString(str) {
-  if (!str) return null;
-
-  // Try to match "XX% material" pattern
-  const percentMatch = str.match(/^(\d+)%\s*(.+)$/i);
-  if (percentMatch) {
-    const percentage = parseInt(percentMatch[1]);
-    const materialName = normalizeMaterialName(percentMatch[2].trim());
-    return { name: materialName, percentage };
-  }
-
-  // No percentage - assume 100%
-  const materialName = normalizeMaterialName(str.trim());
-  return { name: materialName, percentage: 100 };
-}
-
-/**
- * Normalize material name to snake_case format matching MATERIAL_OPTIONS.
- */
-function normalizeMaterialName(str) {
-  // Convert to lowercase and replace spaces/special chars with underscores
-  let normalized = str.toLowerCase()
-    .replace(/[']/g, '')  // Remove apostrophes (lamb's -> lambs)
-    .replace(/\s+/g, '_')
-    .replace(/[^a-z_]/g, '');
-
-  // Map common variations to canonical names
-  const aliases = {
-    'lambs_wool': 'lambswool',
-    'lamb_wool': 'lambswool',
-    'merino': 'merino_wool',
-    'patent': 'patent_leather',
-    'pony': 'pony_hair'
-  };
-
-  return aliases[normalized] || normalized;
-}
-
-// =============================================================================
-// MIGRATION - Update flaw types to Canadian spelling
-// =============================================================================
-
-async function migrateFlawSpellings() {
-  const items = await getAllInventory();
-  let migratedCount = 0;
-
-  // Map American spellings to Canadian
-  const spellingMap = {
-    'discoloration': 'discolouration',
-    'odor': 'odour'
-  };
-
-  for (const item of items) {
-    if (!item.flaws || !Array.isArray(item.flaws)) continue;
-
-    let needsUpdate = false;
-    const updatedFlaws = item.flaws.map(flaw => {
-      if (spellingMap[flaw.type]) {
-        needsUpdate = true;
-        return { ...flaw, type: spellingMap[flaw.type] };
-      }
-      return flaw;
-    });
-
-    if (needsUpdate) {
-      await updateInventoryItem(item.id, { flaws: updatedFlaws });
-      migratedCount++;
-    }
-  }
-
-  if (migratedCount > 0) {
-    console.log(`Migrated ${migratedCount} items to Canadian flaw spellings`);
-  }
 }
 
 function setupEventHandlers() {
@@ -477,11 +318,23 @@ function formatMaterialString(str) {
 }
 
 // Generate auto-title from item components
-function generateItemTitle(brand, colour, material, subcategory) {
+function generateItemTitle(brand, colour, materials, subcategory) {
   const parts = [];
   if (brand) parts.push(brand);
   if (colour) parts.push(formatColour(colour).toLowerCase());
-  if (material) parts.push(formatMaterial(material).toLowerCase());
+
+  // Handle materials - can be single string, array of strings, or array of {name} objects
+  if (materials) {
+    const materialList = Array.isArray(materials) ? materials : [materials];
+    const formatted = materialList
+      .map(m => typeof m === 'object' && m.name ? m.name : m)
+      .filter(Boolean)
+      .map(m => formatMaterial(m).toLowerCase());
+    if (formatted.length > 0) {
+      parts.push(formatted.join('/'));
+    }
+  }
+
   if (subcategory) parts.push(formatStatus(subcategory).toLowerCase());
   return parts.join(' ') || 'Untitled item';
 }
@@ -1129,11 +982,16 @@ async function handleItemSubmit(e) {
   const primaryMaterialName = formData.get('primary_material_name') || null;
   const primaryMaterialPct = parseInt(formData.get('primary_material_percentage')) || 100;
 
-  // Auto-generate title from components
-  const title = generateItemTitle(brand, primaryColour, primaryMaterialName, subcategory);
-
   // Collect secondary materials
   const secondaryMaterials = collectSecondaryMaterials();
+
+  // Build materials array for title (primary + secondary names)
+  const allMaterials = [];
+  if (primaryMaterialName) allMaterials.push(primaryMaterialName);
+  secondaryMaterials.forEach(m => { if (m.name) allMaterials.push(m.name); });
+
+  // Auto-generate title from components
+  const title = generateItemTitle(brand, primaryColour, allMaterials, subcategory);
 
   // Build item object
   const item = {

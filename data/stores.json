@@ -297,6 +297,13 @@
       "tier": "B"
     },
     {
+      "chain": "private",
+      "hidden": true,
+      "id": "private_sale_leslie",
+      "name": "Private Sale",
+      "notes": "Private sale source."
+    },
+    {
       "accepts_donations": true,
       "address": "706 Sixth Ave, New Westminster, BC V3M 2B3",
       "chain": "hospital_auxiliary",
@@ -475,6 +482,19 @@
       "name": "Salvation Army - Port Coquitlam",
       "notes": "Located in Shaughnessy Station Mall. Tri-Cities location worth checking.",
       "phone": "604-468-7214",
+      "tier": "B"
+    },
+    {
+      "accepts_donations": true,
+      "address": "Edmonton, AB",
+      "chain": "salvation_army",
+      "hours": {
+        "verify": true
+      },
+      "id": "sa_edmonton",
+      "name": "Salvation Army - Edmonton",
+      "notes": "Edmonton location. Outside regular coverage area.",
+      "phone": null,
       "tier": "B"
     },
     {

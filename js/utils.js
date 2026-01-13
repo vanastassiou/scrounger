@@ -339,8 +339,11 @@ export function createChainStoreDropdown({ chainSelector, storeSelector, getAllS
 
   if (!chainSelect || !storeSelect || allStores.length === 0) return;
 
+  // Filter out hidden stores
+  const visibleStores = allStores.filter(s => !s.hidden);
+
   // Get unique chains sorted alphabetically
-  const chains = [...new Set(allStores.map(s => s.chain).filter(Boolean))]
+  const chains = [...new Set(visibleStores.map(s => s.chain).filter(Boolean))]
     .sort((a, b) => formatChainName(a).localeCompare(formatChainName(b)));
 
   // Populate chain dropdown
@@ -363,7 +366,7 @@ export function createChainStoreDropdown({ chainSelector, storeSelector, getAllS
     }
 
     // Get stores for selected chain
-    const chainStores = allStores
+    const chainStores = visibleStores
       .filter(s => s.chain === selectedChain)
       .sort((a, b) => a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 
