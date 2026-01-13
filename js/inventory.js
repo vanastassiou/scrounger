@@ -3,12 +3,12 @@
 // =============================================================================
 
 import { state } from './state.js';
-import { getAllInventory, getInventoryStats, getInventoryItem, createInventoryItem, updateInventoryItem, deleteInventoryItem } from './db.js';
+import { getAllInventory, getInventoryStats, getInventoryItem, createInventoryItem, updateInventoryItem, deleteInventoryItem, createAttachment, getAttachmentsByItem } from './db.js';
 import { showToast, createModalController } from './ui.js';
 import {
   $, $$, formatCurrency, formatDate, capitalize, formatStatus, formatPackaging, escapeHtml,
   createSortableTable, sortData, createFilterButtons, emptyStateRow,
-  createChainStoreDropdown, formatChainName, getLocationName
+  createChainStoreDropdown, formatChainName, getLocationName, compressImage
 } from './utils.js';
 import {
   CATEGORIES, SUBCATEGORIES, STATUS_OPTIONS, CONDITION_OPTIONS, ERA_OPTIONS,
@@ -16,6 +16,7 @@ import {
   FLAW_TYPES, FLAW_SEVERITY, WIDTH_OPTIONS, MEASUREMENT_FIELDS,
   COLOUR_OPTIONS, MATERIAL_OPTIONS
 } from './config.js';
+import { queueSync } from './sync.js';
 
 let inventoryData = [];
 let sortColumn = 'created_at';
@@ -24,9 +25,13 @@ let filterCategory = null;
 let searchTerm = '';
 let currentFlaws = [];
 let currentSecondaryMaterials = []; // For structured secondary materials
+let pendingPhotos = []; // Array of {blob, filename, mimeType, type}
 let editingItemId = null;
 let modalOnSave = null;
 let visitContext = null; // Stores storeId/date when opened from visit workflow
+
+// Photo type options for the dropdown
+const PHOTO_TYPES = ['front', 'back', 'detail', 'label', 'flaw', 'hallmark', 'closure', 'measurement', 'styled'];
 
 // =============================================================================
 // INITIALIZATION
@@ -135,6 +140,9 @@ function setupEventHandlers() {
   if (cancelBtn) {
     cancelBtn.addEventListener('click', () => addItemModal?.close());
   }
+
+  // Photo capture
+  initPhotoCapture();
 }
 
 // =============================================================================
@@ -572,6 +580,124 @@ function updateFlawData() {
 }
 
 // =============================================================================
+// PHOTO CAPTURE
+// =============================================================================
+
+function initPhotoCapture() {
+  const captureBtn = $('#photo-capture-btn');
+  const uploadBtn = $('#photo-upload-btn');
+  const fileInput = $('#photo-file-input');
+
+  if (!fileInput) return;
+
+  captureBtn?.addEventListener('click', () => {
+    fileInput.setAttribute('capture', 'environment');
+    fileInput.click();
+  });
+
+  uploadBtn?.addEventListener('click', () => {
+    fileInput.removeAttribute('capture');
+    fileInput.click();
+  });
+
+  fileInput.addEventListener('change', handlePhotoSelect);
+
+  // Handle photo grid clicks (remove, type change)
+  const grid = $('#photo-preview-grid');
+  if (grid) {
+    grid.addEventListener('click', handlePhotoGridClick);
+    grid.addEventListener('change', handlePhotoTypeChange);
+  }
+}
+
+async function handlePhotoSelect(e) {
+  const files = Array.from(e.target.files);
+  if (files.length === 0) return;
+
+  for (const file of files) {
+    try {
+      const blob = await compressImage(file, 1200, 0.85);
+      pendingPhotos.push({
+        blob,
+        filename: file.name.replace(/\.[^/.]+$/, '.jpg'), // Change extension to .jpg
+        mimeType: 'image/jpeg',
+        type: 'detail' // Default type
+      });
+    } catch (err) {
+      console.error('Failed to compress image:', err);
+      showToast('Failed to process image');
+    }
+  }
+
+  renderPhotoPreview();
+  e.target.value = ''; // Reset for re-selection
+}
+
+function handlePhotoGridClick(e) {
+  const removeBtn = e.target.closest('.photo-remove-btn');
+  if (removeBtn) {
+    const index = parseInt(removeBtn.dataset.index, 10);
+    // Revoke URL to prevent memory leak
+    const photo = pendingPhotos[index];
+    if (photo?._previewUrl) {
+      URL.revokeObjectURL(photo._previewUrl);
+    }
+    pendingPhotos.splice(index, 1);
+    renderPhotoPreview();
+  }
+}
+
+function handlePhotoTypeChange(e) {
+  const select = e.target.closest('.photo-type-select');
+  if (select) {
+    const index = parseInt(select.dataset.index, 10);
+    if (pendingPhotos[index]) {
+      pendingPhotos[index].type = select.value;
+    }
+  }
+}
+
+function renderPhotoPreview() {
+  const grid = $('#photo-preview-grid');
+  if (!grid) return;
+
+  if (pendingPhotos.length === 0) {
+    grid.innerHTML = '<p class="text-muted">No photos added</p>';
+    return;
+  }
+
+  grid.innerHTML = pendingPhotos.map((photo, index) => {
+    // Create preview URL if not exists
+    if (!photo._previewUrl) {
+      photo._previewUrl = URL.createObjectURL(photo.blob);
+    }
+
+    return `
+      <div class="photo-preview-item" data-index="${index}">
+        <img src="${photo._previewUrl}" alt="Photo ${index + 1}">
+        <select class="photo-type-select" data-index="${index}">
+          ${PHOTO_TYPES.map(type => `
+            <option value="${type}" ${photo.type === type ? 'selected' : ''}>${capitalize(type)}</option>
+          `).join('')}
+        </select>
+        <button type="button" class="photo-remove-btn" data-index="${index}">&times;</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function clearPendingPhotos() {
+  // Revoke all preview URLs to prevent memory leaks
+  pendingPhotos.forEach(photo => {
+    if (photo._previewUrl) {
+      URL.revokeObjectURL(photo._previewUrl);
+    }
+  });
+  pendingPhotos = [];
+  renderPhotoPreview();
+}
+
+// =============================================================================
 // RENDERING
 // =============================================================================
 
@@ -915,6 +1041,9 @@ function resetItemForm() {
   currentSecondaryMaterials = [];
   renderSecondaryMaterialsList();
 
+  // Reset photos
+  clearPendingPhotos();
+
   // Reset colour dropdowns
   const primaryColour = $('#item-primary-colour');
   const secondaryColour = $('#item-secondary-colour');
@@ -1078,13 +1207,27 @@ async function handleItemSubmit(e) {
   }
 
   try {
+    let savedItem;
     if (editingItemId) {
-      await updateInventoryItem(editingItemId, item);
+      savedItem = await updateInventoryItem(editingItemId, item);
       showToast('Item updated');
     } else {
-      await createInventoryItem(item);
+      savedItem = await createInventoryItem(item);
       showToast('Item saved');
     }
+
+    // Save pending photos as attachments
+    if (pendingPhotos.length > 0 && savedItem?.id) {
+      const itemId = savedItem.id;
+      for (const photo of pendingPhotos) {
+        // Include photo type in filename: type_originalname.jpg
+        const filename = `${photo.type}_${photo.filename}`;
+        await createAttachment(itemId, filename, photo.blob, photo.mimeType);
+      }
+      // Queue sync for attachments
+      queueSync();
+    }
+    clearPendingPhotos();
 
     // Restore store/date field visibility and required attribute
     visitContext = null;
@@ -1166,6 +1309,9 @@ export async function openViewItemModal(itemId) {
     return;
   }
 
+  // Load photos for this item
+  const photos = await getAttachmentsByItem(itemId);
+
   // Update title
   const titleEl = $('#view-item-title');
   if (titleEl) {
@@ -1175,17 +1321,40 @@ export async function openViewItemModal(itemId) {
   // Render content
   const contentEl = $('#view-item-content');
   if (contentEl) {
-    contentEl.innerHTML = renderItemDetails(item);
+    contentEl.innerHTML = renderItemDetails(item, photos);
   }
 
   viewItemModal.open();
 }
 
-function renderItemDetails(item) {
+function renderItemDetails(item, photos = []) {
   const store = state.getStore(item.store_id);
   const storeName = store?.name || '-';
 
   const sections = [];
+
+  // Photo gallery (if photos exist)
+  if (photos.length > 0) {
+    const galleryHtml = photos.map(photo => {
+      const url = URL.createObjectURL(photo.blob);
+      // Extract photo type from filename (format: type_originalname.jpg)
+      const typeMatch = photo.filename?.match(/^([^_]+)_/);
+      const photoType = typeMatch ? capitalize(typeMatch[1]) : '';
+      return `
+        <div class="gallery-item">
+          <img src="${url}" alt="${escapeHtml(photo.filename || 'Photo')}">
+          ${photoType ? `<span class="gallery-item-type">${photoType}</span>` : ''}
+        </div>
+      `;
+    }).join('');
+
+    sections.push(`
+      <section class="detail-section">
+        <h3 class="detail-section-title">Photos</h3>
+        <div class="item-photo-gallery">${galleryHtml}</div>
+      </section>
+    `);
+  }
 
   // Format category as: Primary (Secondary)
   const categoryDisplay = item.subcategory

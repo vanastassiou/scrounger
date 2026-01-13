@@ -387,3 +387,55 @@ export function createChainStoreDropdown({ chainSelector, storeSelector, getAllS
     }
   });
 }
+
+// =============================================================================
+// IMAGE UTILITIES
+// =============================================================================
+
+/**
+ * Compress and resize an image file.
+ * @param {File} file - Image file to compress
+ * @param {number} [maxDimension=1200] - Maximum width or height
+ * @param {number} [quality=0.85] - JPEG quality (0-1)
+ * @returns {Promise<Blob>} Compressed image blob
+ */
+export function compressImage(file, maxDimension = 1200, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      const canvas = document.createElement('canvas');
+      let { width, height } = img;
+
+      // Scale down if needed
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = (height / width) * maxDimension;
+          width = maxDimension;
+        } else {
+          width = (width / height) * maxDimension;
+          height = maxDimension;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => resolve(blob),
+        'image/jpeg',
+        quality
+      );
+    };
+
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load image'));
+    };
+
+    img.src = url;
+  });
+}
