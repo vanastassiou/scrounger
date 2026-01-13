@@ -629,6 +629,19 @@
           </div>
         </details>
 
+        <!-- Photos Section (collapsible) -->
+        <details class="form-section form-section--collapsible">
+          <summary class="form-section-title">Photos</summary>
+          <div class="form-section-content">
+            <input type="file" id="photo-file-input" accept="image/*" capture="environment" multiple hidden>
+            <div class="photo-buttons">
+              <button type="button" class="btn btn--primary" id="photo-capture-btn">Take photo</button>
+              <button type="button" class="btn" id="photo-upload-btn">Upload from gallery</button>
+            </div>
+            <div id="photo-preview-grid" class="photo-grid"></div>
+          </div>
+        </details>
+
         <!-- Description Section -->
         <fieldset class="form-section">
           <legend class="form-section-title">Description</legend>
