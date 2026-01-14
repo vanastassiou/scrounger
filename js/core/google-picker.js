@@ -63,10 +63,12 @@ export async function pickFolder(clientId, apiKey, title = 'Select a folder') {
   await loadPickerApi();
 
   return new Promise((resolve) => {
-    const view = new google.picker.DocsView(google.picker.ViewId.FOLDERS)
-      .setSelectFolderEnabled(true)
+    // Use DocsView with folder navigation (hierarchical tree view)
+    const view = new google.picker.DocsView()
       .setIncludeFolders(true)
-      .setMimeTypes('application/vnd.google-apps.folder');
+      .setSelectFolderEnabled(true)
+      .setMimeTypes('application/vnd.google-apps.folder')
+      .setParent('root');
 
     const picker = new google.picker.PickerBuilder()
       .setAppId(clientId.split('-')[0])
@@ -74,6 +76,7 @@ export async function pickFolder(clientId, apiKey, title = 'Select a folder') {
       .setDeveloperKey(apiKey)
       .addView(view)
       .setTitle(title)
+      .enableFeature(google.picker.Feature.NAV_HIDDEN) // Hide side nav for cleaner look
       .setCallback((data) => {
         if (data.action === google.picker.Action.PICKED) {
           const folder = data.docs[0];
@@ -180,18 +183,19 @@ export async function createFolder(name, parentId = null) {
 }
 
 /**
- * Find a folder by name in the root of Google Drive, or create it
+ * Find a folder by name, or create it
  * @param {string} name - Folder name to find or create
+ * @param {string} [parentId] - Parent folder ID (defaults to 'root')
  * @returns {Promise<{id: string, name: string}>} Found or created folder
  */
-export async function findOrCreateFolderByName(name) {
+export async function findOrCreateFolderByName(name, parentId = 'root') {
   const token = getToken('google');
   if (!token) {
     throw new Error('Not authenticated with Google');
   }
 
-  // Search for existing folder by name in root
-  const query = `name='${name}' and mimeType='application/vnd.google-apps.folder' and 'root' in parents and trashed=false`;
+  // Search for existing folder by name in parent
+  const query = `name='${name}' and mimeType='application/vnd.google-apps.folder' and '${parentId}' in parents and trashed=false`;
   const searchResponse = await fetch(
     `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)`,
     {
@@ -216,6 +220,6 @@ export async function findOrCreateFolderByName(name) {
     };
   }
 
-  // Otherwise create it
-  return createFolder(name);
+  // Otherwise create it in the specified parent
+  return createFolder(name, parentId === 'root' ? null : parentId);
 }

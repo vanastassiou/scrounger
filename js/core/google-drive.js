@@ -4,7 +4,7 @@
  */
 
 import { getToken, startAuth, handleCallback, isAuthenticated, logout } from './oauth.js';
-import { getSavedFolder, pickFolder, saveFolder, clearFolder, findOrCreateFolderByName } from './google-picker.js';
+import { getSavedFolder, pickFolder, saveFolder, clearFolder, findOrCreateFolderByName, createFolder } from './google-picker.js';
 
 const SCOPES = [
   'https://www.googleapis.com/auth/drive.file'
@@ -83,14 +83,23 @@ export function createGoogleDriveProvider(config) {
   /**
    * Set folder by name (finds existing or creates new)
    * @param {string} folderName - Name of folder to use
+   * @param {string} [parentId] - Parent folder ID (defaults to root)
    */
-  async function setFolderByName(folderName) {
-    const folder = await findOrCreateFolderByName(folderName);
+  async function setFolderByName(folderName, parentId) {
+    const folder = await findOrCreateFolderByName(folderName, parentId);
     saveFolder(domain, folder);
     // Reset cached IDs when folder changes
     fileId = null;
     attachmentsFolderId = null;
     return folder;
+  }
+
+  /**
+   * Pick a folder (without setting it as sync folder)
+   * Used for selecting a parent folder
+   */
+  async function pickParentFolder() {
+    return pickFolder(clientId, apiKey, 'Select parent folder');
   }
 
   /**
@@ -396,6 +405,7 @@ export function createGoogleDriveProvider(config) {
     handleAuthCallback,
     disconnect,
     selectFolder,
+    pickParentFolder,
     setFolderByName,
     getFolder,
     removeFolder,

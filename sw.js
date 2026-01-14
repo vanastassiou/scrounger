@@ -2,7 +2,7 @@
 // SERVICE WORKER
 // =============================================================================
 
-const CACHE_NAME = 'thrift-inventory-v1';
+const CACHE_NAME = 'thrift-inventory-v3';
 const ASSETS = [
   '/',
   '/index.html',
@@ -48,6 +48,17 @@ self.addEventListener('activate', (event) => {
 // Fetch: cache-first for assets, network-first for API
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
+
+  // Let navigation requests pass through (OAuth callbacks, etc.)
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        // Fall back to cached index.html if network fails
+        return caches.match('/index.html');
+      })
+    );
+    return;
+  }
 
   // Network-first for Google APIs
   if (url.hostname.includes('googleapis.com')) {

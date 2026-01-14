@@ -138,12 +138,14 @@ export function getFolder() {
 }
 
 /**
- * Set sync folder by name
+ * Set sync folder by name (finds existing or creates new)
+ * @param {string} folderName - Name of folder
+ * @param {string} [parentId] - Parent folder ID (defaults to root)
  */
-export async function setFolder(folderName) {
+export async function setFolder(folderName, parentId) {
   if (!provider) return null;
   try {
-    const folder = await provider.setFolderByName(folderName);
+    const folder = await provider.setFolderByName(folderName, parentId);
     showToast(`Sync folder set to "${folder.name}"`);
     return folder;
   } catch (err) {
@@ -165,6 +167,19 @@ export async function selectFolder() {
     return folder;
   } catch (err) {
     showToast('Failed to select folder: ' + err.message, 'error');
+    return null;
+  }
+}
+
+/**
+ * Open folder picker to select a parent (doesn't set as sync folder)
+ */
+export async function pickParentFolder() {
+  if (!provider) return null;
+  try {
+    return await provider.pickParentFolder();
+  } catch (err) {
+    showToast('Failed to pick folder: ' + err.message, 'error');
     return null;
   }
 }

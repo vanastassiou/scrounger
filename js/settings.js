@@ -13,6 +13,7 @@ import {
   getFolder,
   setFolder,
   selectFolder,
+  pickParentFolder,
   removeFolder,
   getLastSync,
   getSyncStatus,
@@ -21,6 +22,9 @@ import {
 import { clearAllData, exportAllData, importData } from './db.js';
 import { showToast } from './ui.js';
 import { formatRelativeTime } from './utils.js';
+
+// State for create folder flow
+let selectedParentFolder = null;
 
 // =============================================================================
 // INITIALIZATION
@@ -93,9 +97,11 @@ function updateSettingsUI() {
   const folderInput = document.getElementById('sync-folder-input');
   const folderStatus = document.getElementById('sync-folder-status');
   const step2Status = document.getElementById('sync-step-2-status');
-  const setFolderBtn = document.getElementById('btn-set-folder');
   const pickFolderBtn = document.getElementById('btn-pick-folder');
   const removeFolderBtn = document.getElementById('btn-remove-folder');
+  const pickParentBtn = document.getElementById('btn-pick-parent');
+  const createFolderBtn = document.getElementById('btn-create-folder');
+  const parentFolderName = document.getElementById('sync-parent-folder-name');
 
   if (step2) {
     step2.classList.toggle('sync-step--disabled', !connected);
@@ -103,15 +109,18 @@ function updateSettingsUI() {
 
   if (folderInput) {
     folderInput.disabled = !connected;
-    if (folder) {
-      folderInput.value = folder.name;
-    }
   }
 
-  if (setFolderBtn) setFolderBtn.disabled = !connected;
   if (pickFolderBtn) pickFolderBtn.disabled = !connected;
+  if (pickParentBtn) pickParentBtn.disabled = !connected;
+  if (createFolderBtn) createFolderBtn.disabled = !connected;
   if (removeFolderBtn) {
     removeFolderBtn.disabled = !connected || !folderConfigured;
+  }
+
+  // Update parent folder display
+  if (parentFolderName) {
+    parentFolderName.textContent = selectedParentFolder ? selectedParentFolder.name : 'My Drive (root)';
   }
 
   if (folderStatus) {
@@ -186,8 +195,9 @@ function bindSettingsEvents() {
   document.getElementById('btn-connect')?.addEventListener('click', handleConnectClick);
 
   // Folder management
-  document.getElementById('btn-set-folder')?.addEventListener('click', handleSetFolder);
   document.getElementById('btn-pick-folder')?.addEventListener('click', handlePickFolder);
+  document.getElementById('btn-pick-parent')?.addEventListener('click', handlePickParent);
+  document.getElementById('btn-create-folder')?.addEventListener('click', handleCreateFolder);
   document.getElementById('btn-remove-folder')?.addEventListener('click', handleRemoveFolder);
 
   // Sync button
@@ -209,7 +219,34 @@ async function handleConnectClick() {
   }
 }
 
-async function handleSetFolder() {
+async function handlePickFolder() {
+  const btn = document.getElementById('btn-pick-folder');
+  if (btn) btn.disabled = true;
+
+  try {
+    await selectFolder();
+    updateSettingsUI();
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function handlePickParent() {
+  const btn = document.getElementById('btn-pick-parent');
+  if (btn) btn.disabled = true;
+
+  try {
+    const folder = await pickParentFolder();
+    if (folder) {
+      selectedParentFolder = folder;
+      updateSettingsUI();
+    }
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+async function handleCreateFolder() {
   const input = document.getElementById('sync-folder-input');
   const folderName = input?.value.trim();
 
@@ -218,23 +255,20 @@ async function handleSetFolder() {
     return;
   }
 
-  const btn = document.getElementById('btn-set-folder');
+  const btn = document.getElementById('btn-create-folder');
   if (btn) btn.disabled = true;
 
   try {
-    await setFolder(folderName);
-    updateSettingsUI();
-  } finally {
-    if (btn) btn.disabled = false;
-  }
-}
-
-async function handlePickFolder() {
-  const btn = document.getElementById('btn-pick-folder');
-  if (btn) btn.disabled = true;
-
-  try {
-    await selectFolder();
+    const parentId = selectedParentFolder?.id || undefined;
+    const folder = await setFolder(folderName, parentId);
+    if (folder) {
+      // Reset state
+      selectedParentFolder = null;
+      if (input) input.value = '';
+      // Close the details
+      const details = document.getElementById('sync-create-folder-details');
+      if (details) details.open = false;
+    }
     updateSettingsUI();
   } finally {
     if (btn) btn.disabled = false;
