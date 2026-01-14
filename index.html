@@ -36,16 +36,10 @@
     .page { display: none; }
     html[data-tab="dashboard"] #dashboard,
     html[data-tab="inventory"] #inventory,
-    html[data-tab="stores"] #stores,
-    html[data-tab="visits"] #visits,
-    html[data-tab="selling"] #selling,
     html[data-tab="references"] #references,
     html[data-tab="settings"] #settings { display: block; }
     html[data-tab="dashboard"] .tab[data-tab="dashboard"],
     html[data-tab="inventory"] .tab[data-tab="inventory"],
-    html[data-tab="stores"] .tab[data-tab="stores"],
-    html[data-tab="visits"] .tab[data-tab="visits"],
-    html[data-tab="selling"] .tab[data-tab="selling"],
     html[data-tab="references"] .tab[data-tab="references"],
     html[data-tab="settings"] .tab[data-tab="settings"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
   </style>
@@ -59,9 +53,6 @@
   <nav class="tabs">
     <button class="tab" data-tab="dashboard">Home</button>
     <button class="tab" data-tab="inventory">Inventory</button>
-    <button class="tab" data-tab="stores">Stores</button>
-    <button class="tab" data-tab="visits">Visits</button>
-    <button class="tab" data-tab="selling">Selling</button>
     <button class="tab" data-tab="references">Ref</button>
     <button class="tab" data-tab="settings">Settings</button>
   </nav>
@@ -161,167 +152,131 @@
         <h2>Inventory</h2>
       </div>
 
-      <div class="filter-row">
-        <button class="filter-btn active" data-category="all">All</button>
-        <button class="filter-btn" data-category="clothing">Clothing</button>
-        <button class="filter-btn" data-category="shoes">Shoes</button>
-        <button class="filter-btn" data-category="jewelry">Jewelry</button>
-        <button class="filter-btn" data-category="accessories">Accessories</button>
+      <!-- Sub-navigation for Inventory -->
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-inv-view="collection">Collection</button>
+        <button class="sub-tab" data-inv-view="selling">Selling</button>
       </div>
 
-      <input type="text" class="form-input" id="inventory-search" placeholder="Search items...">
-
-      <div class="table-container">
-        <table class="table" id="inventory-table">
-          <thead>
-            <tr>
-              <th data-sort="title">Title</th>
-              <th data-sort="purchase_price">Cost</th>
-              <th data-sort="status">Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="inventory-tbody">
-            <tr><td colspan="4" class="empty-state"><div class="empty-icon">I</div><p>Loading...</p></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div id="inventory-count" class="text-muted"></div>
-    </section>
-
-    <!-- Stores -->
-    <section id="stores" class="page">
-      <div class="page-header">
-        <h2>Stores</h2>
-        <button class="btn btn--primary" id="add-store-btn">Add store</button>
-      </div>
-
-      <div class="filter-row">
-        <button class="filter-btn active" data-tier="all">All</button>
-        <button class="filter-btn" data-tier="S">S</button>
-        <button class="filter-btn" data-tier="A">A</button>
-        <button class="filter-btn" data-tier="B">B</button>
-        <button class="filter-btn" data-tier="C">C</button>
-      </div>
-
-      <div class="table-container">
-        <table class="table" id="stores-table">
-          <thead>
-            <tr>
-              <th data-sort="name">Name</th>
-              <th data-sort="tier">Tier</th>
-              <th data-sort="visits">Visits</th>
-              <th data-sort="hit_rate">Hit Rate</th>
-            </tr>
-          </thead>
-          <tbody id="stores-tbody">
-            <tr><td colspan="4" class="empty-state"><div class="empty-icon">S</div><p>Loading...</p></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div id="store-count" class="text-muted"></div>
-    </section>
-
-    <!-- Visits -->
-    <section id="visits" class="page">
-      <div class="page-header">
-        <h2>Visits</h2>
-      </div>
-
-      <div id="visits-list" class="card-list"></div>
-    </section>
-
-    <!-- Selling -->
-    <section id="selling" class="page">
-      <div class="page-header">
-        <h2>Selling</h2>
-      </div>
-
-      <!-- Analytics Dashboard -->
-      <div class="selling-stats-grid">
-        <div class="stat-card">
-          <div class="stat-value" id="selling-stat-revenue">$0</div>
-          <div class="stat-label">Revenue</div>
+      <!-- Collection View -->
+      <div id="inv-collection-view" class="inv-view">
+        <div class="filter-row">
+          <button class="filter-btn active" data-category="all">All</button>
+          <button class="filter-btn" data-category="clothing">Clothing</button>
+          <button class="filter-btn" data-category="shoes">Shoes</button>
+          <button class="filter-btn" data-category="jewelry">Jewelry</button>
+          <button class="filter-btn" data-category="accessories">Accessories</button>
         </div>
-        <div class="stat-card">
-          <div class="stat-value" id="selling-stat-profit">$0</div>
-          <div class="stat-label">Profit</div>
+
+        <input type="text" class="form-input" id="inventory-search" placeholder="Search items...">
+
+        <div class="table-container">
+          <table class="table" id="inventory-table">
+            <thead>
+              <tr>
+                <th data-sort="title">Title</th>
+                <th data-sort="purchase_price">Cost</th>
+                <th data-sort="status">Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inventory-tbody">
+              <tr><td colspan="4" class="empty-state"><div class="empty-icon">I</div><p>Loading...</p></td></tr>
+            </tbody>
+          </table>
         </div>
-        <div class="stat-card">
-          <div class="stat-value" id="selling-stat-margin">0%</div>
-          <div class="stat-label">Margin</div>
+        <div id="inventory-count" class="text-muted"></div>
+      </div>
+
+      <!-- Selling View -->
+      <div id="inv-selling-view" class="inv-view" style="display: none;">
+        <!-- Analytics Dashboard -->
+        <div class="selling-stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="selling-stat-revenue">$0</div>
+            <div class="stat-label">Revenue</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="selling-stat-profit">$0</div>
+            <div class="stat-label">Profit</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="selling-stat-margin">0%</div>
+            <div class="stat-label">Margin</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="selling-stat-sold">0</div>
+            <div class="stat-label">Items sold</div>
+          </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-value" id="selling-stat-sold">0</div>
-          <div class="stat-label">Items sold</div>
+
+        <!-- Pipeline Status Filters -->
+        <div class="filter-row">
+          <button class="filter-btn active" data-status="all">All pipeline</button>
+          <button class="filter-btn" data-status="unlisted">Unlisted</button>
+          <button class="filter-btn" data-status="photographed">Photographed</button>
+          <button class="filter-btn" data-status="listed">Listed</button>
+          <button class="filter-btn" data-status="pending_sale">Pending</button>
+          <button class="filter-btn" data-status="packaged">Packaged</button>
+          <button class="filter-btn" data-status="shipped">Shipped</button>
+          <button class="filter-btn" data-status="confirmed_received">Confirmed</button>
+          <button class="filter-btn" data-status="sold">Sold</button>
         </div>
+
+        <!-- Additional Filters -->
+        <div class="filter-row">
+          <label class="filter-label">Platform:</label>
+          <select class="filter-select" id="platform-filter">
+            <option value="all">All platforms</option>
+            <option value="poshmark">Poshmark</option>
+            <option value="ebay">eBay</option>
+            <option value="etsy">Etsy</option>
+            <option value="depop">Depop</option>
+            <option value="vestiaire_collective">Vestiaire Collective</option>
+            <option value="therealreal">The RealReal</option>
+            <option value="grailed">Grailed</option>
+            <option value="other">Other</option>
+          </select>
+
+          <label class="filter-label">Date:</label>
+          <select class="filter-select" id="date-range-filter">
+            <option value="all">All time</option>
+            <option value="7d">Last 7 days</option>
+            <option value="30d">Last 30 days</option>
+            <option value="90d">Last 90 days</option>
+            <option value="ytd">Year to date</option>
+          </select>
+        </div>
+
+        <!-- Search -->
+        <input type="text" class="form-input" id="selling-search" placeholder="Search items...">
+
+        <!-- Pipeline Table -->
+        <div class="table-container">
+          <table class="table" id="selling-table">
+            <thead>
+              <tr>
+                <th data-sort="title">Item</th>
+                <th data-sort="status">Status</th>
+                <th data-sort="purchase_price">Cost</th>
+                <th data-sort="sold_price">Price</th>
+                <th data-sort="profit">Profit</th>
+                <th data-sort="sold_platform">Platform</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="selling-tbody">
+              <tr>
+                <td colspan="7" class="empty-state">
+                  <div class="empty-icon">💰</div>
+                  <p>No items in sales pipeline</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="selling-count" class="text-muted"></div>
       </div>
-
-      <!-- Pipeline Status Filters -->
-      <div class="filter-row">
-        <button class="filter-btn active" data-status="all">All pipeline</button>
-        <button class="filter-btn" data-status="unlisted">Unlisted</button>
-        <button class="filter-btn" data-status="photographed">Photographed</button>
-        <button class="filter-btn" data-status="listed">Listed</button>
-        <button class="filter-btn" data-status="pending_sale">Pending</button>
-        <button class="filter-btn" data-status="packaged">Packaged</button>
-        <button class="filter-btn" data-status="shipped">Shipped</button>
-        <button class="filter-btn" data-status="confirmed_received">Confirmed</button>
-        <button class="filter-btn" data-status="sold">Sold</button>
-      </div>
-
-      <!-- Additional Filters -->
-      <div class="filter-row">
-        <label class="filter-label">Platform:</label>
-        <select class="filter-select" id="platform-filter">
-          <option value="all">All platforms</option>
-          <option value="poshmark">Poshmark</option>
-          <option value="ebay">eBay</option>
-          <option value="etsy">Etsy</option>
-          <option value="depop">Depop</option>
-          <option value="facebook_marketplace">Facebook Marketplace</option>
-          <option value="local_consignment">Local Consignment</option>
-          <option value="other">Other</option>
-        </select>
-
-        <label class="filter-label">Date:</label>
-        <select class="filter-select" id="date-range-filter">
-          <option value="all">All time</option>
-          <option value="7d">Last 7 days</option>
-          <option value="30d">Last 30 days</option>
-          <option value="90d">Last 90 days</option>
-          <option value="ytd">Year to date</option>
-        </select>
-      </div>
-
-      <!-- Search -->
-      <input type="text" class="form-input" id="selling-search" placeholder="Search items...">
-
-      <!-- Pipeline Table -->
-      <div class="table-container">
-        <table class="table" id="selling-table">
-          <thead>
-            <tr>
-              <th data-sort="title">Item</th>
-              <th data-sort="status">Status</th>
-              <th data-sort="purchase_price">Cost</th>
-              <th data-sort="sold_price">Price</th>
-              <th data-sort="profit">Profit</th>
-              <th data-sort="sold_platform">Platform</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="selling-tbody">
-            <tr>
-              <td colspan="7" class="empty-state">
-                <div class="empty-icon">💰</div>
-                <p>No items in sales pipeline</p>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <div id="selling-count" class="text-muted"></div>
     </section>
 
     <!-- References -->
@@ -332,12 +287,51 @@
 
       <!-- Sub-navigation for References -->
       <div class="sub-tabs">
-        <button class="sub-tab active" data-ref-view="brands">Brands</button>
+        <button class="sub-tab active" data-ref-view="stores">Stores</button>
+        <button class="sub-tab" data-ref-view="visits">Visits</button>
+        <button class="sub-tab" data-ref-view="brands">Brands</button>
         <button class="sub-tab" data-ref-view="platforms">Platforms</button>
       </div>
 
+      <!-- Stores View -->
+      <div id="ref-stores-view" class="ref-view">
+        <div class="view-header">
+          <button class="btn btn--primary" id="add-store-btn">Add store</button>
+        </div>
+
+        <div class="filter-row">
+          <button class="filter-btn active" data-tier="all">All</button>
+          <button class="filter-btn" data-tier="S">S</button>
+          <button class="filter-btn" data-tier="A">A</button>
+          <button class="filter-btn" data-tier="B">B</button>
+          <button class="filter-btn" data-tier="C">C</button>
+        </div>
+
+        <div class="table-container">
+          <table class="table" id="stores-table">
+            <thead>
+              <tr>
+                <th data-sort="name">Name</th>
+                <th data-sort="tier">Tier</th>
+                <th data-sort="visits">Visits</th>
+                <th data-sort="hit_rate">Hit Rate</th>
+              </tr>
+            </thead>
+            <tbody id="stores-tbody">
+              <tr><td colspan="4" class="empty-state"><div class="empty-icon">S</div><p>Loading...</p></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="store-count" class="text-muted"></div>
+      </div>
+
+      <!-- Visits View -->
+      <div id="ref-visits-view" class="ref-view" style="display: none;">
+        <div id="visits-list" class="card-list"></div>
+      </div>
+
       <!-- Brands View -->
-      <div id="ref-brands-view" class="ref-view">
+      <div id="ref-brands-view" class="ref-view" style="display: none;">
         <div class="filter-row">
           <button class="filter-btn active" data-category="all">All</button>
           <button class="filter-btn" data-category="clothing">Clothing</button>
@@ -377,9 +371,25 @@
       <div id="ref-platforms-view" class="ref-view" style="display: none;">
         <input type="text" class="form-input" id="platform-search" placeholder="Search platforms...">
 
-        <div id="platforms-grid" class="platforms-grid">
-          <div class="empty-state"><div class="empty-icon">P</div><p>Loading...</p></div>
+        <div class="table-container">
+          <table class="table" id="platforms-table">
+            <thead>
+              <tr>
+                <th data-sort="name">Name</th>
+                <th data-sort="demographic">Demographic</th>
+                <th>Item Types</th>
+                <th>Fees</th>
+                <th>Pros</th>
+                <th>Cons</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="platforms-tbody">
+              <tr><td colspan="7" class="empty-state"><div class="empty-icon">P</div><p>Loading...</p></td></tr>
+            </tbody>
+          </table>
         </div>
+        <div id="platforms-count" class="text-muted"></div>
       </div>
     </section>
 

@@ -48,7 +48,10 @@ function isInPipeline(status) {
 }
 
 function navigateToSelling() {
-  document.querySelector('.tab[data-tab="selling"]')?.click();
+  // Switch to inventory tab, then to selling sub-tab
+  document.querySelector('.tab[data-tab="inventory"]')?.click();
+  const sellingTab = document.querySelector('.sub-tab[data-inv-view="selling"]');
+  if (sellingTab) sellingTab.click();
 }
 
 /**
@@ -163,6 +166,34 @@ export async function initInventory() {
   await loadInventory();
   setupEventHandlers();
   setupFormOptions();
+  setupInventorySubTabs();
+}
+
+function setupInventorySubTabs() {
+  const subTabs = $$('.sub-tab[data-inv-view]');
+  subTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      subTabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const view = tab.dataset.invView;
+
+      const collectionView = $('#inv-collection-view');
+      const sellingView = $('#inv-selling-view');
+
+      if (view === 'collection') {
+        if (collectionView) collectionView.style.display = '';
+        if (sellingView) sellingView.style.display = 'none';
+      } else {
+        if (collectionView) collectionView.style.display = 'none';
+        if (sellingView) sellingView.style.display = '';
+      }
+    });
+  });
+}
+
+export function switchToSellingView() {
+  const sellingTab = $('.sub-tab[data-inv-view="selling"]');
+  if (sellingTab) sellingTab.click();
 }
 
 async function loadInventory() {
