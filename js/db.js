@@ -22,7 +22,7 @@ export function resetDB() {
 export async function clearAllData() {
   try {
     const db = await openDB();
-    const tx = db.transaction(['inventory', 'visits', 'stores', 'settings', 'attachments'], 'readwrite');
+    const tx = db.transaction(['inventory', 'visits', 'stores', 'settings', 'attachments', 'archive'], 'readwrite');
 
     await Promise.all([
       new Promise((resolve, reject) => {
@@ -47,6 +47,11 @@ export async function clearAllData() {
       }),
       new Promise((resolve, reject) => {
         const req = tx.objectStore('attachments').clear();
+        req.onsuccess = resolve;
+        req.onerror = () => reject(req.error);
+      }),
+      new Promise((resolve, reject) => {
+        const req = tx.objectStore('archive').clear();
         req.onsuccess = resolve;
         req.onerror = () => reject(req.error);
       })
@@ -101,6 +106,10 @@ export function openDB() {
         const attachmentStore = db.createObjectStore('attachments', { keyPath: 'id' });
         attachmentStore.createIndex('itemId', 'itemId', { unique: false });
         attachmentStore.createIndex('synced', 'synced', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('archive')) {
+        db.createObjectStore('archive', { keyPath: 'id' });
       }
     };
   });
@@ -189,7 +198,7 @@ export async function setSetting(key, value) {
 
 /**
  * Import baseline inventory from JSON data (runs once per version).
- * Skips items that already exist (by title + store_id + acquisition_date).
+ * Uses stable IDs from the JSON file for sync compatibility.
  */
 export async function importBaselineInventory(items, version) {
   try {
@@ -199,26 +208,20 @@ export async function importBaselineInventory(items, version) {
     }
 
     const existingItems = await getAllFromStore('inventory');
-    const existingKeys = new Set(
-      existingItems.map(i => `${i.title}__${i.store_id}__${i.acquisition_date}`)
-    );
+    const existingIds = new Set(existingItems.map(i => i.id));
 
     const now = nowISO();
     let imported = 0;
 
     for (const item of items) {
-      const key = `${item.title}__${item.store_id}__${item.acquisition_date}`;
-      if (existingKeys.has(key)) continue;
+      if (!item.id || existingIds.has(item.id)) continue;
 
       const record = {
         ...item,
-        id: generateId(),
-        source: 'baseline',
         created_at: now,
         updated_at: now,
         dirty: false
       };
-      delete record.baseline_id; // Remove baseline tracking field
       await addRecord('inventory', record);
       imported++;
     }
@@ -265,7 +268,7 @@ export async function computeVisitsFromInventory() {
     }
 
     return Array.from(visitsMap.values())
-      .sort((a, b) => b.date.localeCompare(a.date));
+      .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   } catch (err) {
     return handleError(err, 'Failed to compute visits from inventory', []);
   }
@@ -337,7 +340,7 @@ export async function getInventoryItem(id) {
 export async function getAllInventory() {
   try {
     const items = await getAllFromStore('inventory');
-    return items.sort((a, b) => b.created_at.localeCompare(a.created_at));
+    return items.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
   } catch (err) {
     return handleError(err, 'Failed to get inventory', []);
   }
@@ -615,7 +618,7 @@ export async function deleteVisit(id) {
 export async function getAllVisits() {
   try {
     const visits = await getAllFromStore('visits');
-    return visits.sort((a, b) => b.date.localeCompare(a.date));
+    return visits.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   } catch (err) {
     return handleError(err, 'Failed to get visits', []);
   }
@@ -626,7 +629,7 @@ export async function getVisitsByStore(storeId) {
     const store = await getStore('visits');
     const index = store.index('store_id');
     const visits = await promisify(index.getAll(storeId));
-    return visits.sort((a, b) => b.date.localeCompare(a.date));
+    return visits.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
   } catch (err) {
     return handleError(err, `Failed to get visits for store ${storeId}`, []);
   }
@@ -759,7 +762,7 @@ export async function deleteUserStore(id) {
 export async function getAllUserStores() {
   try {
     const stores = await getAllFromStore('stores');
-    return stores.sort((a, b) => a.name.localeCompare(b.name));
+    return stores.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
   } catch (err) {
     return handleError(err, 'Failed to get user stores', []);
   }
@@ -789,20 +792,20 @@ export async function exportAllData() {
 }
 
 export async function importData(data, merge = false) {
-  if (!data.version || (!data.inventory && !data.visits)) {
-    throw new Error('Invalid backup file');
+  if (!data.inventory && !data.stores) {
+    throw new Error('Invalid import file - no inventory or stores found');
   }
 
   try {
     const db = await openDB();
-    const tx = db.transaction(['inventory', 'visits'], 'readwrite');
+    const tx = db.transaction(['inventory', 'stores'], 'readwrite');
 
     const inventoryStore = tx.objectStore('inventory');
-    const visitStore = tx.objectStore('visits');
+    const storesStore = tx.objectStore('stores');
 
     if (!merge) {
       await promisify(inventoryStore.clear());
-      await promisify(visitStore.clear());
+      await promisify(storesStore.clear());
     }
 
     if (data.inventory) {
@@ -811,9 +814,9 @@ export async function importData(data, merge = false) {
       }
     }
 
-    if (data.visits) {
-      for (const visit of data.visits) {
-        visitStore.put(visit);
+    if (data.stores) {
+      for (const store of data.stores) {
+        storesStore.put(store);
       }
     }
 
@@ -927,9 +930,8 @@ export async function getAttachmentsByItem(itemId) {
 
 export async function getPendingAttachments() {
   try {
-    const store = await getStore('attachments');
-    const index = store.index('synced');
-    return promisify(index.getAll(false));
+    const all = await getAllFromStore('attachments');
+    return all.filter(att => !att.synced);
   } catch (err) {
     return handleError(err, 'Failed to get pending attachments', []);
   }
@@ -969,5 +971,70 @@ export async function getAllAttachments() {
     return await getAllFromStore('attachments');
   } catch (err) {
     return handleError(err, 'Failed to get all attachments', []);
+  }
+}
+
+// =============================================================================
+// ARCHIVE CRUD
+// =============================================================================
+
+/**
+ * Archive a sold item. Moves it from inventory to archive store.
+ * Item must have status 'sold' before archiving.
+ */
+export async function archiveItem(itemId) {
+  try {
+    const item = await getInventoryItem(itemId);
+    if (!item) {
+      throw new Error('Item not found');
+    }
+    if (item.status !== 'sold') {
+      throw new Error('Item must be sold before archiving');
+    }
+
+    const archivedItem = {
+      ...item,
+      archived_at: nowISO()
+    };
+
+    await addRecord('archive', archivedItem);
+    await deleteInventoryItem(itemId);
+    return archivedItem;
+  } catch (err) {
+    console.error('Failed to archive item:', err);
+    throw err;
+  }
+}
+
+/**
+ * Get all archived items.
+ */
+export async function getAllArchived() {
+  try {
+    const items = await getAllFromStore('archive');
+    return items.sort((a, b) => (b.archived_at || '').localeCompare(a.archived_at || ''));
+  } catch (err) {
+    return handleError(err, 'Failed to get archived items', []);
+  }
+}
+
+/**
+ * Export archive as JSON for inventory-archive.json
+ */
+export async function exportArchive() {
+  try {
+    const items = await getAllFromStore('archive');
+    return {
+      meta: {
+        version: '1.0',
+        document_type: 'inventory_archive',
+        exported_at: nowISO(),
+        item_count: items.length
+      },
+      items
+    };
+  } catch (err) {
+    console.error('Failed to export archive:', err);
+    throw err;
   }
 }
