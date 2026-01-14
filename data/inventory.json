@@ -1,12 +1,14 @@
 {
   "meta": {
-    "version": "1.0",
+    "version": "1.1",
     "created": "2026-01-12",
     "document_type": "inventory_data",
-    "item_count": 47
+    "item_count": 47,
+    "note": "v1.1: Added stable IDs for sync compatibility"
   },
   "items": [
     {
+      "id": "07be4243-7b4fe9-7fe42-fbe4-0000000005fd",
       "title": "Jonathan Simkhai mustard cashmere sweater",
       "category": "clothing",
       "subcategory": "sweater",
@@ -16,105 +18,133 @@
       "purchase_price": 7.49,
       "labeled_size": "M",
       "primary_colour": "mustard",
-      "primary_material": { "name": "cashmere", "percentage": 100 },
+      "primary_material": {
+        "name": "cashmere",
+        "percentage": 100
+      },
       "status": "unlisted",
       "description": "Mustard yellow sweater",
       "packaging": "poly_mailer"
     },
     {
+      "id": "98fdb03d-98f70ce-98bdb0-90fdb-0000000098c0",
       "title": "Lord & Taylor black cashmere sweater",
       "category": "clothing",
       "subcategory": "sweater",
       "brand": "Lord & Taylor",
       "store_id": "vv_boutique_downtown",
       "acquisition_date": "2025-11-17",
-      "purchase_price": 10.0,
+      "purchase_price": 10,
       "labeled_size": "XXL",
       "primary_colour": "black",
-      "primary_material": { "name": "cashmere", "percentage": 100 },
+      "primary_material": {
+        "name": "cashmere",
+        "percentage": 100
+      },
       "country_of_manufacture": "Bangladesh",
       "status": "unlisted",
       "description": "Black turtleneck sweater",
       "packaging": "poly_mailer_large"
     },
     {
+      "id": "3153e81a-315954c-3113e8-3953e-000000003949",
       "title": "Ellen Tracy aubergine merino wool sweater",
       "category": "clothing",
       "subcategory": "sweater",
       "brand": "Ellen Tracy",
       "store_id": "vv_boutique_downtown",
       "acquisition_date": "2025-11-17",
-      "purchase_price": 10.0,
+      "purchase_price": 10,
       "labeled_size": "L",
       "primary_colour": "aubergine",
-      "primary_material": { "name": "merino_wool", "percentage": 100 },
+      "primary_material": {
+        "name": "merino_wool",
+        "percentage": 100
+      },
       "country_of_manufacture": "Cambodia",
       "status": "unlisted",
       "description": "Aubergine sweater with button collar detail",
       "packaging": "poly_mailer"
     },
     {
+      "id": "7bf10c0f-7bfbb0d-7bb10c-73f10-0000000077fe",
       "title": "Renee Tener for Jeanne Pierre magenta lambswool sweater",
       "category": "clothing",
       "subcategory": "sweater",
       "brand": "Renee Tener for Jeanne Pierre",
       "store_id": "vv_boutique_downtown",
       "acquisition_date": "2025-11-17",
-      "purchase_price": 10.0,
+      "purchase_price": 10,
       "labeled_size": "L",
       "primary_colour": "magenta",
-      "primary_material": { "name": "lambswool", "percentage": 100 },
+      "primary_material": {
+        "name": "lambswool",
+        "percentage": 100
+      },
       "country_of_manufacture": "Hong Kong",
       "status": "unlisted",
       "description": "Magenta cardigan",
       "packaging": "poly_mailer"
     },
     {
+      "id": "cc6036b9-cc6a8a6-cc2036-c4603-00000000cad9",
       "title": "Anne Klein 2 cream silk jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "Anne Klein 2",
       "store_id": "vv_queensborough",
       "acquisition_date": "2025-12-18",
-      "purchase_price": 12.0,
+      "purchase_price": 12,
       "labeled_size": "8",
       "primary_colour": "cream",
-      "primary_material": { "name": "silk", "percentage": 100 },
+      "primary_material": {
+        "name": "silk",
+        "percentage": 100
+      },
       "status": "unlisted",
       "description": "Cream collarless blazer",
       "packaging": "poly_mailer"
     },
     {
+      "id": "c46a1d85-c460a15-c42a1d-cc6a1-00000000c9ef",
       "title": "Aquascutum cream wool jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "Aquascutum",
       "store_id": "vv_queensborough",
       "acquisition_date": "2025-12-18",
-      "purchase_price": 20.0,
+      "purchase_price": 20,
       "labeled_size": "Unspecified",
       "primary_colour": "cream",
-      "primary_material": { "name": "wool", "percentage": 100 },
+      "primary_material": {
+        "name": "wool",
+        "percentage": 100
+      },
       "status": "unlisted",
       "description": "Cream wool blazer",
       "packaging": "poly_mailer"
     },
     {
+      "id": "8d041934-8d0ea5e-8d4419-85041-000000008430",
       "title": "Holt Renfrew black velvet jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "Holt Renfrew",
       "store_id": "vv_queensborough",
       "acquisition_date": "2025-12-18",
-      "purchase_price": 10.0,
+      "purchase_price": 10,
       "labeled_size": "M",
       "primary_colour": "black",
-      "primary_material": { "name": "velvet", "percentage": 100 },
+      "primary_material": {
+        "name": "velvet",
+        "percentage": 100
+      },
       "status": "unlisted",
       "description": "Black velvet jacket with satin seam bindings and toggle closures",
       "packaging": "box_12x10x4"
     },
     {
+      "id": "975ef165-97544db-971ef1-9f5ef-00000000963b",
       "title": "The Alpaca Experience by Du Store Alpaca aubergine alpaca sweater",
       "category": "clothing",
       "subcategory": "sweater",
@@ -124,129 +154,176 @@
       "purchase_price": 4.5,
       "labeled_size": "XS",
       "primary_colour": "aubergine",
-      "primary_material": { "name": "alpaca", "percentage": 100 },
+      "primary_material": {
+        "name": "alpaca",
+        "percentage": 100
+      },
       "status": "unlisted",
       "description": "Aubergine ribbed cardigan",
       "packaging": "poly_mailer"
     },
     {
+      "id": "052008a8-52ab47-56008-d200-000000000d88",
       "title": "Jones New York Separates aubergine merino wool sweater",
       "category": "clothing",
       "subcategory": "sweater",
       "brand": "Jones New York Separates",
       "store_id": "mcc_abbotsford_centre",
       "acquisition_date": "2025-12-20",
-      "purchase_price": 12.0,
+      "purchase_price": 12,
       "primary_colour": "aubergine",
-      "primary_material": { "name": "merino_wool", "percentage": 100 },
+      "primary_material": {
+        "name": "merino_wool",
+        "percentage": 100
+      },
       "country_of_manufacture": "China",
       "status": "unlisted",
       "description": "Aubergine ribbed turtleneck",
       "packaging": "poly_mailer"
     },
     {
+      "id": "b23cd4de-b236680-b27cd4-ba3cd-00000000b6e2",
       "title": "Noelle Rouine Paris burgundy cashmere/wool sweater",
       "category": "clothing",
       "subcategory": "sweater",
       "brand": "Noelle Rouine Paris",
       "store_id": "private_sale",
       "acquisition_date": "2025-12-26",
-      "purchase_price": 5.0,
+      "purchase_price": 5,
       "primary_colour": "burgundy",
-      "primary_material": { "name": "cashmere", "percentage": 20 },
-      "secondary_materials": [{ "name": "wool", "percentage": 80 }],
+      "primary_material": {
+        "name": "cashmere",
+        "percentage": 20
+      },
+      "secondary_materials": [
+        {
+          "name": "wool",
+          "percentage": 80
+        }
+      ],
       "country_of_manufacture": "Hong Kong",
       "status": "unlisted",
       "description": "Peur Specifique sweater in burgundy",
       "packaging": "poly_mailer"
     },
     {
+      "id": "ef524ebe-ef58f26-ef124e-e7524-00000000e1ec",
       "title": "Russ Signature wool sweater",
       "category": "clothing",
       "subcategory": "sweater",
       "brand": "Russ Signature",
       "store_id": "private_sale",
       "acquisition_date": "2025-12-26",
-      "purchase_price": 5.0,
+      "purchase_price": 5,
       "labeled_size": "2X",
-      "primary_material": { "name": "wool", "percentage": 100 },
+      "primary_material": {
+        "name": "wool",
+        "percentage": 100
+      },
       "country_of_manufacture": "Hong Kong",
       "status": "unlisted",
       "description": "Wool cardigan; possibly felted/shrunken",
       "packaging": "poly_mailer_large"
     },
     {
+      "id": "946d5442-9467e89-942d54-9c6d5-00000000902f",
       "title": "Ellen Tracy aubergine merino wool sweater",
       "category": "clothing",
       "subcategory": "sweater",
       "brand": "Ellen Tracy",
       "store_id": "private_sale",
       "acquisition_date": "2025-12-26",
-      "purchase_price": 10.0,
+      "purchase_price": 10,
       "labeled_size": "L",
       "primary_colour": "aubergine",
-      "primary_material": { "name": "merino_wool", "percentage": 100 },
+      "primary_material": {
+        "name": "merino_wool",
+        "percentage": 100
+      },
       "country_of_manufacture": "Cambodia",
       "status": "unlisted",
       "description": "Aubergine sweater with button collar detail",
       "packaging": "poly_mailer"
     },
     {
+      "id": "40cc3c60-40c680b-408c3c-48cc3-000000004cac",
       "title": "Melanie Lyne red wool/cashmere jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "Melanie Lyne",
       "store_id": "sa_edmonton",
       "acquisition_date": "2025-12-27",
-      "purchase_price": 20.0,
+      "purchase_price": 20,
       "labeled_size": "16",
       "primary_colour": "red",
-      "primary_material": { "name": "wool", "percentage": 50 },
-      "secondary_materials": [{ "name": "cashmere", "percentage": 50 }],
+      "primary_material": {
+        "name": "wool",
+        "percentage": 50
+      },
+      "secondary_materials": [
+        {
+          "name": "cashmere",
+          "percentage": 50
+        }
+      ],
       "status": "unlisted",
       "description": "Bright red coat with black buttons",
       "packaging": "box_16x12x4"
     },
     {
+      "id": "8f86cefa-8f8c722-8fc6ce-8786c-00000000817c",
       "title": "Danier red leather jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "Danier",
       "store_id": "sa_coquitlam",
       "acquisition_date": "2026-01-02",
-      "purchase_price": 20.0,
+      "purchase_price": 20,
       "labeled_size": "M",
       "primary_colour": "red",
-      "primary_material": { "name": "leather", "percentage": 100 },
+      "primary_material": {
+        "name": "leather",
+        "percentage": 100
+      },
       "country_of_manufacture": "Canada",
       "status": "unlisted",
       "description": "Red leather blazer",
       "packaging": "box_14x10x4"
     },
     {
+      "id": "273c6b6f-2736d7b-277c6b-2f3c6-000000002c53",
       "title": "Giannini Fashion Collection tan cashmere/wool jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "Giannini Fashion Collection",
       "store_id": "vv_queensborough",
       "acquisition_date": "2026-01-08",
-      "purchase_price": 27.0,
+      "purchase_price": 27,
       "labeled_size": "S",
       "primary_colour": "tan",
-      "primary_material": { "name": "cashmere", "percentage": 75 },
-      "secondary_materials": [{ "name": "wool", "percentage": 25 }],
+      "primary_material": {
+        "name": "cashmere",
+        "percentage": 75
+      },
+      "secondary_materials": [
+        {
+          "name": "wool",
+          "percentage": 25
+        }
+      ],
       "status": "unlisted",
       "description": "Tan coat",
       "packaging": "box_16x12x4"
     },
     {
+      "id": "05608420-56a38f-52084-d608-000000000140",
       "title": "Gloverall tan jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "Gloverall",
       "store_id": "vv_queensborough",
       "acquisition_date": "2026-01-08",
-      "purchase_price": 21.0,
+      "purchase_price": 21,
       "labeled_size": "British 34",
       "primary_colour": "tan",
       "status": "unlisted",
@@ -254,6 +331,7 @@
       "packaging": "box_16x14x6"
     },
     {
+      "id": "0352d884-358645-312d8-b52d-000000000bd6",
       "title": "Pat Perkins Original cream wool jacket",
       "category": "clothing",
       "subcategory": "jacket",
@@ -263,59 +341,80 @@
       "purchase_price": 10.49,
       "labeled_size": "S",
       "primary_colour": "cream",
-      "primary_material": { "name": "wool", "percentage": 100 },
+      "primary_material": {
+        "name": "wool",
+        "percentage": 100
+      },
       "country_of_manufacture": "England",
       "status": "unlisted",
       "description": "Cream long overcoat with red/green tartan detail and scarf",
       "packaging": "box_16x12x4"
     },
     {
+      "id": "e43227ea-e4389b3-e47227-ec322-00000000e3d8",
       "title": "Opera black leather jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "Opera",
       "store_id": "vv_queensborough",
       "acquisition_date": "2026-01-08",
-      "purchase_price": 20.0,
+      "purchase_price": 20,
       "labeled_size": "Korean 15",
       "primary_colour": "black",
-      "primary_material": { "name": "leather", "percentage": 100 },
+      "primary_material": {
+        "name": "leather",
+        "percentage": 100
+      },
       "country_of_manufacture": "Korea",
       "status": "unlisted",
       "description": "Black leather jacket",
       "packaging": "box_14x10x4"
     },
     {
+      "id": "1143a75f-11491b8-1103a7-1943a-00000000161c",
       "title": "Lucian Matis black poly/rayon dress",
       "category": "clothing",
       "subcategory": "dress",
       "brand": "Lucian Matis",
       "store_id": "vv_queensborough",
       "acquisition_date": "2026-01-08",
-      "purchase_price": 28.0,
+      "purchase_price": 28,
       "primary_colour": "black",
-      "primary_material": { "name": "polyester", "percentage": 50 },
-      "secondary_materials": [{ "name": "rayon", "percentage": 50 }],
+      "primary_material": {
+        "name": "polyester",
+        "percentage": 50
+      },
+      "secondary_materials": [
+        {
+          "name": "rayon",
+          "percentage": 50
+        }
+      ],
       "status": "unlisted",
       "description": "Black cocktail dress with beaded collar and cuff detail",
       "packaging": "box_12x10x4"
     },
     {
+      "id": "5619b3e5-56130f3-5659b3-5e19b-0000000055fc",
       "title": "Moiselle aubergine silk dress",
       "category": "clothing",
       "subcategory": "dress",
       "brand": "Moiselle",
       "store_id": "vv_queensborough",
       "acquisition_date": "2026-01-08",
-      "purchase_price": 23.0,
+      "purchase_price": 23,
       "labeled_size": "38",
       "primary_colour": "aubergine",
-      "primary_material": { "name": "silk", "percentage": 100 },
+      "primary_material": {
+        "name": "silk",
+        "percentage": 100
+      },
       "status": "unlisted",
       "description": "Aubergine silk dress with polyester sequin detail",
       "packaging": "box_12x10x4"
     },
     {
+      "id": "9893855e-9899398-98d385-90938-000000009dcd",
       "title": "Bardot black lace dress",
       "category": "clothing",
       "subcategory": "dress",
@@ -325,27 +424,35 @@
       "purchase_price": 20.49,
       "labeled_size": "UK 16",
       "primary_colour": "black",
-      "primary_material": { "name": "lace", "percentage": 100 },
+      "primary_material": {
+        "name": "lace",
+        "percentage": 100
+      },
       "status": "unlisted",
       "description": "Black lace over nude sleeveless cocktail dress",
       "packaging": "poly_mailer"
     },
     {
+      "id": "dd497900-dd43c5d-dd0979-d5497-00000000d449",
       "title": "Aidan Mattox black lace dress",
       "category": "clothing",
       "subcategory": "dress",
       "brand": "Aidan Mattox",
       "store_id": "vv_queensborough",
       "acquisition_date": "2026-01-08",
-      "purchase_price": 23.0,
+      "purchase_price": 23,
       "labeled_size": "EU 32",
       "primary_colour": "black",
-      "primary_material": { "name": "lace", "percentage": 100 },
+      "primary_material": {
+        "name": "lace",
+        "percentage": 100
+      },
       "status": "unlisted",
       "description": "Black lace cocktail dress",
       "packaging": "poly_mailer"
     },
     {
+      "id": "83535fe9-8359e33-83135f-8b535-000000008cba",
       "title": "Eileen Fisher red silk/cotton sweater",
       "category": "clothing",
       "subcategory": "sweater",
@@ -355,13 +462,22 @@
       "purchase_price": 11.79,
       "labeled_size": "XL",
       "primary_colour": "red",
-      "primary_material": { "name": "silk", "percentage": 80 },
-      "secondary_materials": [{ "name": "cotton", "percentage": 20 }],
+      "primary_material": {
+        "name": "silk",
+        "percentage": 80
+      },
+      "secondary_materials": [
+        {
+          "name": "cotton",
+          "percentage": 20
+        }
+      ],
       "status": "unlisted",
       "description": "Red oversized sweater",
       "packaging": "poly_mailer_large"
     },
     {
+      "id": "4e463bdc-4e4c870-4e063b-46463-00000000459a",
       "title": "Episode by Carolyn Freeman brown wool/cashmere sweater",
       "category": "clothing",
       "subcategory": "sweater",
@@ -371,21 +487,30 @@
       "purchase_price": 16.49,
       "labeled_size": "M",
       "primary_colour": "brown",
-      "primary_material": { "name": "wool", "percentage": 70 },
-      "secondary_materials": [{ "name": "cashmere", "percentage": 30 }],
+      "primary_material": {
+        "name": "wool",
+        "percentage": 70
+      },
+      "secondary_materials": [
+        {
+          "name": "cashmere",
+          "percentage": 30
+        }
+      ],
       "country_of_manufacture": "Hong Kong",
       "status": "unlisted",
       "description": "Chocolate brown cardigan",
       "packaging": "poly_mailer"
     },
     {
+      "id": "48bd7e46-48b7c29-48fd7e-40bd7-0000000046fb",
       "title": "Fly London beige pumps",
       "category": "shoes",
       "subcategory": "pumps",
       "brand": "Fly London",
       "store_id": "rch_auxiliary",
       "acquisition_date": "2026-01-09",
-      "purchase_price": 25.0,
+      "purchase_price": 25,
       "labeled_size": "EU 38",
       "primary_colour": "beige",
       "country_of_manufacture": "Portugal",
@@ -394,6 +519,7 @@
       "packaging": "box_12x8x4"
     },
     {
+      "id": "71287aa7-7122c67-71687a-79287-000000007b8f",
       "title": "Frye cognac leather boots",
       "category": "shoes",
       "subcategory": "boots",
@@ -403,19 +529,23 @@
       "purchase_price": 37.5,
       "labeled_size": "~10",
       "primary_colour": "cognac",
-      "primary_material": { "name": "leather", "percentage": 100 },
+      "primary_material": {
+        "name": "leather",
+        "percentage": 100
+      },
       "status": "unlisted",
       "description": "Cognac knee-high heeled boots",
       "packaging": "box_16x8x6_boot"
     },
     {
+      "id": "2379cfaa-2373737-2339cf-2b79c-000000002cd3",
       "title": "Ingledews grey oxfords",
       "category": "shoes",
       "subcategory": "oxfords",
       "brand": "Ingledews",
       "store_id": "rch_auxiliary",
       "acquisition_date": "2026-01-09",
-      "purchase_price": 8.0,
+      "purchase_price": 8,
       "labeled_size": "EU 39",
       "primary_colour": "grey",
       "secondary_colour": "black",
@@ -425,13 +555,14 @@
       "packaging": "box_12x8x4"
     },
     {
+      "id": "ae5c4ce8-ae56f03-ae1c4c-a65c4-00000000a2b4",
       "title": "Ingledews gunmetal booties",
       "category": "shoes",
       "subcategory": "booties",
       "brand": "Ingledews",
       "store_id": "rch_auxiliary",
       "acquisition_date": "2026-01-09",
-      "purchase_price": 6.0,
+      "purchase_price": 6,
       "labeled_size": "EU 39",
       "primary_colour": "gunmetal",
       "country_of_manufacture": "Italy",
@@ -440,26 +571,28 @@
       "packaging": "box_12x8x4"
     },
     {
+      "id": "65e4ff38-65ee43e-65a4ff-6de4f-000000006adc",
       "title": "Miz Mooz boots",
       "category": "shoes",
       "subcategory": "boots",
       "brand": "Miz Mooz",
       "store_id": "rch_auxiliary",
       "acquisition_date": "2026-01-09",
-      "purchase_price": 12.0,
+      "purchase_price": 12,
       "labeled_size": "9",
       "status": "unlisted",
       "description": "Zip-up ankle boots with eyelet detail",
       "packaging": "box_12x8x4"
     },
     {
+      "id": "ea4d2b1c-ea4797c-ea0d2b-e24d2-00000000e151",
       "title": "Carlo Rosetti burgundy oxfords",
       "category": "shoes",
       "subcategory": "oxfords",
       "brand": "Carlo Rosetti",
       "store_id": "st_barnabas",
       "acquisition_date": "2026-01-10",
-      "purchase_price": 15.0,
+      "purchase_price": 15,
       "labeled_size": "6.5",
       "primary_colour": "burgundy",
       "secondary_colour": "purple",
@@ -469,13 +602,14 @@
       "packaging": "box_12x8x4"
     },
     {
+      "id": "ce94acd5-ce9e100-ced4ac-c694a-00000000c241",
       "title": "Think! oxblood boots",
       "category": "shoes",
       "subcategory": "boots",
       "brand": "Think!",
       "store_id": "raps_granville",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 4.0,
+      "purchase_price": 4,
       "labeled_size": "35",
       "primary_colour": "oxblood",
       "country_of_manufacture": "Italy",
@@ -484,13 +618,14 @@
       "packaging": "box_12x8x4"
     },
     {
+      "id": "9bb6dd2e-9bbc61f-9bf6dd-93b6d-000000009698",
       "title": "Wonders black booties",
       "category": "shoes",
       "subcategory": "booties",
       "brand": "Wonders",
       "store_id": "raps_granville",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 4.0,
+      "purchase_price": 4,
       "labeled_size": "40",
       "primary_colour": "black",
       "country_of_manufacture": "Spain",
@@ -499,13 +634,14 @@
       "packaging": "box_12x8x4"
     },
     {
+      "id": "510c25a8-5106997-514c25-590c2-0000000054a4",
       "title": "Chie Mihara black mary janes",
       "category": "shoes",
       "subcategory": "mary_janes",
       "brand": "Chie Mihara",
       "store_id": "raps_granville",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 4.0,
+      "purchase_price": 4,
       "labeled_size": "38",
       "primary_colour": "black",
       "country_of_manufacture": "Spain",
@@ -514,22 +650,41 @@
       "packaging": "box_12x8x4"
     },
     {
+      "id": "3ab7617f-3abddda-3af761-32b76-000000003bc8",
       "title": "Marc Aurel green wool/cotton/angora/silk/linen/viscose jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "Marc Aurel",
       "store_id": "raps_granville",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 12.0,
+      "purchase_price": 12,
       "labeled_size": "36",
       "primary_colour": "green",
-      "primary_material": { "name": "wool", "percentage": 30 },
+      "primary_material": {
+        "name": "wool",
+        "percentage": 30
+      },
       "secondary_materials": [
-        { "name": "cotton", "percentage": 20 },
-        { "name": "angora", "percentage": 15 },
-        { "name": "silk", "percentage": 15 },
-        { "name": "linen", "percentage": 10 },
-        { "name": "viscose", "percentage": 10 }
+        {
+          "name": "cotton",
+          "percentage": 20
+        },
+        {
+          "name": "angora",
+          "percentage": 15
+        },
+        {
+          "name": "silk",
+          "percentage": 15
+        },
+        {
+          "name": "linen",
+          "percentage": 10
+        },
+        {
+          "name": "viscose",
+          "percentage": 10
+        }
       ],
       "country_of_manufacture": "Germany",
       "status": "unlisted",
@@ -537,75 +692,92 @@
       "packaging": "box_16x12x4"
     },
     {
+      "id": "f3977de0-f39dc13-f3d77d-fb977-00000000fe77",
       "title": "Sesto Golf by Sherry cognac leather golf shoes",
       "category": "shoes",
       "subcategory": "golf_shoes",
       "brand": "Sesto Golf by Sherry",
       "store_id": "steveston_treasure",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 30.0,
+      "purchase_price": 30,
       "labeled_size": "Men's 9.5",
       "primary_colour": "cognac",
-      "primary_material": { "name": "leather", "percentage": 100 },
+      "primary_material": {
+        "name": "leather",
+        "percentage": 100
+      },
       "country_of_manufacture": "Italy",
       "status": "unlisted",
       "description": "Cognac golf shoes with woven detail",
       "packaging": "box_14x10x5"
     },
     {
+      "id": "eaf4186a-eafea4b-eab418-e2f41-00000000e29e",
       "title": "John Fluevog black leather boots",
       "category": "shoes",
       "subcategory": "boots",
       "brand": "John Fluevog",
       "store_id": "steveston_treasure",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 20.0,
+      "purchase_price": 20,
       "labeled_size": "5",
       "primary_colour": "black",
-      "primary_material": { "name": "leather", "percentage": 100 },
+      "primary_material": {
+        "name": "leather",
+        "percentage": 100
+      },
       "status": "unlisted",
       "description": "Dalai ankle boots with gray laced-up detail",
       "packaging": "box_12x8x4"
     },
     {
+      "id": "fd55f734-fd5f4be-fd15f7-f555f-00000000fa61",
       "title": "Danier black leather jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "Danier",
       "store_id": "richmond_hospital_aux",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 12.0,
+      "purchase_price": 12,
       "labeled_size": "XS",
       "primary_colour": "black",
-      "primary_material": { "name": "leather", "percentage": 100 },
+      "primary_material": {
+        "name": "leather",
+        "percentage": 100
+      },
       "status": "unlisted",
       "description": "Black leather jacket with gray zippers and lining",
       "packaging": "box_14x10x4"
     },
     {
+      "id": "d829c5a8-d823797-d869c5-d029c-00000000dd81",
       "title": "black leather boots",
       "category": "shoes",
       "subcategory": "boots",
       "brand": null,
       "store_id": "richmond_hospital_aux",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 12.0,
+      "purchase_price": 12,
       "labeled_size": "37",
       "primary_colour": "black",
-      "primary_material": { "name": "leather", "percentage": 100 },
+      "primary_material": {
+        "name": "leather",
+        "percentage": 100
+      },
       "country_of_manufacture": "Italy",
       "status": "unlisted",
       "description": "Black riding boots",
       "packaging": "box_16x8x6_boot"
     },
     {
+      "id": "88b0e615-88ba5ac-88f0e6-80b0e-000000008ea5",
       "title": "Evan Picone black pumps",
       "category": "shoes",
       "subcategory": "pumps",
       "brand": "Evan Picone",
       "store_id": "richmond_hospital_aux",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 6.0,
+      "purchase_price": 6,
       "labeled_size": "7.5 narrow",
       "primary_colour": "black",
       "country_of_manufacture": "Spain",
@@ -614,13 +786,14 @@
       "packaging": "box_12x8x4"
     },
     {
+      "id": "f717264a-f71d9a9-f75726-ff172-00000000f15d",
       "title": "Fera Giacomo black pumps",
       "category": "shoes",
       "subcategory": "pumps",
       "brand": "Fera Giacomo",
       "store_id": "richmond_hospital_aux",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 18.0,
+      "purchase_price": 18,
       "labeled_size": "38",
       "primary_colour": "black",
       "country_of_manufacture": "Italy",
@@ -629,13 +802,14 @@
       "packaging": "box_12x8x4"
     },
     {
+      "id": "cbaf3b87-cba5875-cbef3b-c3af3-00000000c028",
       "title": "Roots black boots",
       "category": "shoes",
       "subcategory": "boots",
       "brand": "Roots",
       "store_id": "vv_richmond",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 35.0,
+      "purchase_price": 35,
       "labeled_size": "6.5",
       "primary_colour": "black",
       "status": "unlisted",
@@ -643,6 +817,7 @@
       "packaging": "box_12x8x4"
     },
     {
+      "id": "82abc0e4-82a17c3-82ebc0-8aabc-00000000824f",
       "title": "Babaton camel wool jacket",
       "category": "clothing",
       "subcategory": "jacket",
@@ -652,85 +827,113 @@
       "purchase_price": 38.49,
       "labeled_size": "S",
       "primary_colour": "camel",
-      "primary_material": { "name": "wool", "percentage": 100 },
+      "primary_material": {
+        "name": "wool",
+        "percentage": 100
+      },
       "status": "unlisted",
       "description": "The Connor coat in camel",
       "packaging": "box_16x12x4"
     },
     {
+      "id": "0f9868b3-f92d46-fd868-7986-00000000072b",
       "title": "Escada by Margaretha Ley red cashmere jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "Escada by Margaretha Ley",
       "store_id": "vv_richmond",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 18.0,
+      "purchase_price": 18,
       "labeled_size": "40",
       "primary_colour": "red",
-      "primary_material": { "name": "cashmere", "percentage": 100 },
+      "primary_material": {
+        "name": "cashmere",
+        "percentage": 100
+      },
       "country_of_manufacture": "Germany",
       "status": "unlisted",
       "description": "Red blazer with black buttons",
       "packaging": "box_14x10x4"
     },
     {
+      "id": "06f9f249-6f34e9-6b9f2-ef9f-0000000004b0",
       "title": "Escada by Margaretha Ley aubergine wool/elastane jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "Escada by Margaretha Ley",
       "store_id": "vv_richmond",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 18.0,
+      "purchase_price": 18,
       "labeled_size": "38",
       "primary_colour": "aubergine",
-      "primary_material": { "name": "wool", "percentage": 98 },
-      "secondary_materials": [{ "name": "elastane", "percentage": 2 }],
+      "primary_material": {
+        "name": "wool",
+        "percentage": 98
+      },
+      "secondary_materials": [
+        {
+          "name": "elastane",
+          "percentage": 2
+        }
+      ],
       "country_of_manufacture": "Germany",
       "status": "unlisted",
       "description": "Aubergine blazer with black velvet collar and epaulette details",
       "packaging": "box_14x10x4"
     },
     {
+      "id": "d209115e-d203ad8-d24911-da091-00000000d357",
       "title": "Nanette Lepore olive wool jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "Nanette Lepore",
       "store_id": "vv_richmond",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 45.0,
+      "purchase_price": 45,
       "labeled_size": "10",
       "primary_colour": "olive",
-      "primary_material": { "name": "wool", "percentage": 100 },
+      "primary_material": {
+        "name": "wool",
+        "percentage": 100
+      },
       "status": "unlisted",
       "description": "Olive green wool frock coat. New with tags",
       "packaging": "box_16x12x4"
     },
     {
+      "id": "66efeb09-66e557d-66afeb-6eefe-000000006de6",
       "title": "UB Leather Collection cream wool jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "UB Leather Collection",
       "store_id": "vv_richmond",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 35.0,
+      "purchase_price": 35,
       "labeled_size": "S",
       "primary_colour": "cream",
-      "primary_material": { "name": "wool", "percentage": 100 },
+      "primary_material": {
+        "name": "wool",
+        "percentage": 100
+      },
       "country_of_manufacture": "China",
       "status": "unlisted",
       "description": "Cream wool coat",
       "packaging": "box_16x12x4"
     },
     {
+      "id": "a71723c8-a71d9f1-a75723-af172-00000000a4df",
       "title": "Highland Queen wool jacket",
       "category": "clothing",
       "subcategory": "jacket",
       "brand": "Highland Queen",
       "store_id": "vv_richmond",
       "acquisition_date": "2026-01-11",
-      "purchase_price": 15.0,
+      "purchase_price": 15,
       "labeled_size": "M",
-      "primary_material": { "name": "wool", "percentage": 100 },
+      "primary_material": {
+        "name": "wool",
+        "percentage": 100
+      },
       "country_of_manufacture": "Canada",
       "status": "unlisted",
       "description": "Pure wool blazer",

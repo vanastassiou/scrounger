@@ -349,6 +349,135 @@ async function importMergedData(data) {
 }
 
 // =============================================================================
+// BACKUP EXPORT/IMPORT
+// =============================================================================
+
+/**
+ * Export data to Google Drive as a backup file
+ */
+export async function exportToDrive() {
+  if (!provider || !isConnected()) {
+    throw new Error('Not connected to Google Drive');
+  }
+
+  if (!isFolderConfigured()) {
+    throw new Error('No sync folder configured');
+  }
+
+  const data = await exportAllData();
+  const folder = getFolder();
+  const filename = `thrifting-backup-${new Date().toISOString().split('T')[0]}.json`;
+
+  // Upload backup file to the sync folder
+  const json = JSON.stringify(data, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+
+  const token = await getAccessToken();
+  if (!token) {
+    throw new Error('No access token');
+  }
+
+  const metadata = {
+    name: filename,
+    parents: [folder.id],
+    mimeType: 'application/json'
+  };
+
+  const form = new FormData();
+  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+  form.append('file', blob);
+
+  const response = await fetch(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
+    {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: form
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to upload backup to Google Drive');
+  }
+
+  return filename;
+}
+
+/**
+ * List backup files in Google Drive
+ */
+export async function listDriveBackups() {
+  if (!provider || !isConnected() || !isFolderConfigured()) {
+    return [];
+  }
+
+  const folder = getFolder();
+  const token = await getAccessToken();
+  if (!token) {
+    return [];
+  }
+
+  const query = `'${folder.id}' in parents and name contains 'thrifting-backup' and mimeType='application/json' and trashed=false`;
+  const response = await fetch(
+    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&orderBy=createdTime desc&fields=files(id,name,createdTime,size)`,
+    {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }
+  );
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const result = await response.json();
+  return result.files || [];
+}
+
+/**
+ * Import data from a Google Drive backup file
+ */
+export async function importFromDrive(fileId) {
+  if (!provider || !isConnected()) {
+    throw new Error('Not connected to Google Drive');
+  }
+
+  const token = await getAccessToken();
+  if (!token) {
+    throw new Error('No access token');
+  }
+
+  const response = await fetch(
+    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
+    {
+      headers: { 'Authorization': `Bearer ${token}` }
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error('Failed to download backup from Google Drive');
+  }
+
+  const data = await response.json();
+  return data;
+}
+
+/**
+ * Get access token from provider
+ */
+function getAccessToken() {
+  // Access the token from the oauth module
+  const tokenData = localStorage.getItem('token-google');
+  if (!tokenData) return null;
+
+  try {
+    const parsed = JSON.parse(tokenData);
+    return parsed.accessToken;
+  } catch {
+    return null;
+  }
+}
+
+// =============================================================================
 // EXPORTS FOR SETTINGS UI
 // =============================================================================
 

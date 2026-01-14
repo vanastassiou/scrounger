@@ -13,7 +13,6 @@ import { getTierSortOrder } from './config.js';
 import { openViewItemModal } from './inventory.js';
 
 let storesData = [];
-let userStoresData = [];
 let statsMap = new Map();
 let filterTier = null;
 let sortColumn = 'name';
@@ -30,24 +29,12 @@ export async function initStores() {
 }
 
 export async function loadStores() {
-  // Load static stores
-  if (!state.storesDB) {
-    try {
-      const response = await fetch('data/stores.json');
-      state.storesDB = await response.json();
-    } catch (err) {
-      console.error('Failed to load stores:', err);
-      return;
-    }
-  }
+  // Load all stores from IndexedDB (synced from Google Drive)
+  const allStores = await getAllUserStores();
+  state.stores = allStores;
 
-  // Load user-created stores
-  userStoresData = await getAllUserStores();
-  state.userStores = userStoresData;
-
-  // Merge static and user stores, excluding hidden stores from display
-  const staticStores = (state.storesDB.stores || []).filter(s => !s.hidden);
-  storesData = [...staticStores, ...userStoresData];
+  // Filter out hidden stores for display
+  storesData = allStores.filter(s => !s.hidden);
 
   statsMap = await getAllStoreStats();
   renderStoresTable();

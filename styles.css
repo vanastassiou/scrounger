@@ -973,6 +973,21 @@
   .text-success { color: var(--color-success); }
   .text-warning { color: var(--color-warning); }
   .text-error { color: var(--color-error); }
+  .text-danger { color: var(--color-error); }
+}
+
+/* Setup wizard - prevent closing */
+#setup-wizard-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.8);
+}
+
+#setup-wizard-dialog .modal-header {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+#setup-wizard-dialog .modal-body {
+  padding-top: var(--space-sm);
 }
 
 /* =============================================================================
@@ -1215,6 +1230,69 @@
 
 .modal-body {
   padding: 0 var(--space-md) var(--space-md);
+}
+
+.modal-body ul {
+  margin: var(--space-sm) 0;
+  padding-left: var(--space-lg);
+}
+
+.modal-body li {
+  margin-bottom: var(--space-xs);
+}
+
+.modal-footer {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+  padding: var(--space-md);
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-md);
+}
+
+.text-danger {
+  color: var(--color-danger, #dc3545);
+}
+
+/* Option buttons (export/import dialogs) */
+.option-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.option-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  text-align: left;
+  padding: var(--space-md);
+}
+
+.option-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.option-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.option-text strong {
+  font-size: 1rem;
+}
+
+.option-text small {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
 }
 
 .item-picker-list {

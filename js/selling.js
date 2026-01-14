@@ -9,7 +9,8 @@ import {
   getSellingAnalytics,
   markItemAsSold,
   getInventoryItem,
-  updateInventoryItem
+  updateInventoryItem,
+  archiveItem
 } from './db.js';
 import { showToast, createModalController } from './ui.js';
 import {
@@ -462,7 +463,8 @@ async function handleMarkAsSoldSubmit(e) {
 
   try {
     await markItemAsSold(itemId, soldData);
-    showToast('Item marked as sold', 'success');
+    await archiveItem(itemId);
+    showToast('Item sold and archived', 'success');
     markSoldModal.close();
     await loadPipeline();
     await renderAnalytics();

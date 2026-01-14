@@ -17,14 +17,26 @@ import {
   removeFolder,
   getLastSync,
   getSyncStatus,
-  syncNow
+  syncNow,
+  exportToDrive,
+  listDriveBackups,
+  importFromDrive
 } from './sync.js';
 import { clearAllData, exportAllData, importData } from './db.js';
-import { showToast } from './ui.js';
+import { showToast, createModalController } from './ui.js';
 import { formatRelativeTime } from './utils.js';
 
 // State for create folder flow
 let selectedParentFolder = null;
+
+// Modals
+let clearDataModal = null;
+let exportModal = null;
+let importModal = null;
+let importConfirmModal = null;
+
+// Pending import data
+let pendingImportData = null;
 
 // =============================================================================
 // INITIALIZATION
@@ -33,6 +45,9 @@ let selectedParentFolder = null;
 export async function initSettings() {
   // Initialize sync module
   const syncEnabled = await initSync();
+
+  // Initialize modals
+  initModals();
 
   // Bind event handlers
   bindSettingsEvents();
@@ -43,6 +58,43 @@ export async function initSettings() {
   // If sync is enabled and configured, update status periodically
   if (syncEnabled) {
     setInterval(updateSettingsUI, 30000); // Every 30 seconds
+  }
+}
+
+function initModals() {
+  // Clear data modal
+  const clearDataDialog = document.getElementById('clear-data-dialog');
+  if (clearDataDialog) {
+    clearDataModal = createModalController(clearDataDialog);
+    document.getElementById('clear-data-cancel')?.addEventListener('click', () => clearDataModal.close());
+    document.getElementById('clear-data-confirm')?.addEventListener('click', executeClearData);
+  }
+
+  // Export modal
+  const exportDialog = document.getElementById('export-dialog');
+  if (exportDialog) {
+    exportModal = createModalController(exportDialog);
+    document.getElementById('export-local')?.addEventListener('click', handleExportLocal);
+    document.getElementById('export-drive')?.addEventListener('click', handleExportDrive);
+  }
+
+  // Import modal
+  const importDialog = document.getElementById('import-dialog');
+  if (importDialog) {
+    importModal = createModalController(importDialog);
+    document.getElementById('import-local')?.addEventListener('click', handleImportLocal);
+    document.getElementById('import-drive')?.addEventListener('click', handleImportDrive);
+  }
+
+  // Import confirm modal
+  const importConfirmDialog = document.getElementById('import-confirm-dialog');
+  if (importConfirmDialog) {
+    importConfirmModal = createModalController(importConfirmDialog);
+    document.getElementById('import-confirm-cancel')?.addEventListener('click', () => {
+      pendingImportData = null;
+      importConfirmModal.close();
+    });
+    document.getElementById('import-confirm-ok')?.addEventListener('click', executeImport);
   }
 }
 
@@ -184,6 +236,25 @@ function updateSettingsUI() {
   if (step3Status) {
     step3Status.textContent = lastSync ? 'Active' : 'Ready';
   }
+
+  // Update export/import Drive buttons
+  const exportDriveBtn = document.getElementById('export-drive');
+  const importDriveBtn = document.getElementById('import-drive');
+  const exportDriveStatus = document.getElementById('export-drive-status');
+  const importDriveStatus = document.getElementById('import-drive-status');
+
+  if (exportDriveBtn) {
+    exportDriveBtn.disabled = !canSync;
+  }
+  if (importDriveBtn) {
+    importDriveBtn.disabled = !canSync;
+  }
+  if (exportDriveStatus) {
+    exportDriveStatus.textContent = canSync ? `Save to ${folder?.name || 'Google Drive'}` : 'Connect Google Drive first';
+  }
+  if (importDriveStatus) {
+    importDriveStatus.textContent = canSync ? `Import from ${folder?.name || 'Google Drive'}` : 'Connect Google Drive first';
+  }
 }
 
 // =============================================================================
@@ -301,7 +372,23 @@ async function handleSyncNow() {
   }
 }
 
-async function handleExportData() {
+function handleExportData() {
+  if (exportModal) {
+    updateSettingsUI(); // Update Drive button state
+    exportModal.open();
+  }
+}
+
+function handleImportData() {
+  if (importModal) {
+    updateSettingsUI(); // Update Drive button state
+    importModal.open();
+  }
+}
+
+async function handleExportLocal() {
+  if (exportModal) exportModal.close();
+
   try {
     const data = await exportAllData();
     const json = JSON.stringify(data, null, 2);
@@ -321,28 +408,49 @@ async function handleExportData() {
   }
 }
 
-async function handleImportData() {
+async function handleExportDrive() {
+  if (exportModal) exportModal.close();
+
+  const btn = document.getElementById('export-drive');
+  if (btn) {
+    btn.disabled = true;
+  }
+
+  try {
+    const filename = await exportToDrive();
+    showToast(`Backup saved to Google Drive: ${filename}`);
+  } catch (err) {
+    console.error('Export to Drive failed:', err);
+    showToast('Export to Drive failed: ' + err.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function handleImportLocal() {
+  if (importModal) importModal.close();
+
   const input = document.createElement('input');
   input.type = 'file';
   input.accept = '.json';
+  input.multiple = true; // Allow selecting multiple files
 
   input.onchange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
     try {
-      const text = await file.text();
-      const data = JSON.parse(text);
+      // Parse all selected files
+      const parsedFiles = await Promise.all(
+        files.map(async (file) => {
+          const text = await file.text();
+          return { name: file.name, data: JSON.parse(text) };
+        })
+      );
 
-      if (!confirm(`Import ${data.inventory?.length || 0} items and ${data.visits?.length || 0} visits? This will replace existing data.`)) {
-        return;
-      }
-
-      await importData(data, false);
-      showToast('Data imported');
-
-      // Reload the page to refresh all data
-      window.location.reload();
+      // Normalize and merge all files into one import
+      const normalized = normalizeImportData(parsedFiles);
+      showImportConfirm(normalized);
     } catch (err) {
       console.error('Import failed:', err);
       showToast('Import failed: ' + err.message, 'error');
@@ -352,9 +460,144 @@ async function handleImportData() {
   input.click();
 }
 
-async function handleClearData() {
-  if (!confirm('Clear ALL data? This cannot be undone.')) return;
-  if (!confirm('Are you sure? All inventory, visits, and stores will be deleted.')) return;
+/**
+ * Normalize various JSON formats into standard import format.
+ * Supports:
+ * - inventory.json: { meta: {...}, items: [...] }
+ * - stores.json: { stores: [...] }
+ * - Standard backup: { version, inventory, stores }
+ *
+ * Note: Visits are not imported - they are derived from inventory data.
+ */
+function normalizeImportData(parsedFiles) {
+  const result = {
+    version: 1,
+    inventory: [],
+    stores: []
+  };
+
+  for (const { name, data } of parsedFiles) {
+    // Detect format and extract data
+
+    // inventory.json format: { meta: {...}, items: [...] }
+    if (data.items && Array.isArray(data.items)) {
+      result.inventory.push(...data.items);
+      continue;
+    }
+
+    // stores.json format: { stores: [...] }
+    if (data.stores && Array.isArray(data.stores) && !data.inventory) {
+      result.stores.push(...data.stores);
+      continue;
+    }
+
+    // Standard backup format: { version, inventory, stores }
+    if (data.version !== undefined || data.inventory) {
+      if (data.inventory) result.inventory.push(...data.inventory);
+      if (data.stores) result.stores.push(...data.stores);
+      // Visits intentionally ignored - derived from inventory
+      continue;
+    }
+
+    // Unknown format - try to detect if it's an array of items or stores
+    if (Array.isArray(data)) {
+      // Check first item to guess type
+      const sample = data[0];
+      if (sample) {
+        if (sample.title || sample.brand || sample.purchase_price !== undefined) {
+          // Looks like inventory items
+          result.inventory.push(...data);
+        } else if (sample.tier || sample.address || sample.chain) {
+          // Looks like stores
+          result.stores.push(...data);
+        }
+      }
+      continue;
+    }
+
+    console.warn(`Unknown format in ${name}, skipping`);
+  }
+
+  return result;
+}
+
+async function handleImportDrive() {
+  if (importModal) importModal.close();
+
+  try {
+    const backups = await listDriveBackups();
+
+    if (backups.length === 0) {
+      showToast('No backups found in Google Drive', 'error');
+      return;
+    }
+
+    // For now, use the most recent backup
+    // TODO: Could add a picker to select from multiple backups
+    const latestBackup = backups[0];
+
+    const data = await importFromDrive(latestBackup.id);
+    showImportConfirm(data, latestBackup.name);
+  } catch (err) {
+    console.error('Import from Drive failed:', err);
+    showToast('Import from Drive failed: ' + err.message, 'error');
+  }
+}
+
+function showImportConfirm(data, sourceName = 'local file') {
+  pendingImportData = data;
+
+  const summaryEl = document.getElementById('import-summary');
+  if (summaryEl) {
+    summaryEl.innerHTML = `
+      <li><strong>${data.inventory?.length || 0}</strong> inventory items</li>
+      <li><strong>${data.stores?.length || 0}</strong> stores</li>
+    `;
+  }
+
+  if (importConfirmModal) {
+    importConfirmModal.open();
+  }
+}
+
+async function executeImport() {
+  if (!pendingImportData) return;
+
+  const confirmBtn = document.getElementById('import-confirm-ok');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Importing...';
+  }
+
+  try {
+    await importData(pendingImportData, false);
+    showToast('Data imported');
+    window.location.reload();
+  } catch (err) {
+    console.error('Import failed:', err);
+    showToast('Import failed: ' + err.message, 'error');
+    if (importConfirmModal) importConfirmModal.close();
+  } finally {
+    pendingImportData = null;
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Import';
+    }
+  }
+}
+
+function handleClearData() {
+  if (clearDataModal) {
+    clearDataModal.open();
+  }
+}
+
+async function executeClearData() {
+  const confirmBtn = document.getElementById('clear-data-confirm');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Deleting...';
+  }
 
   try {
     await clearAllData();
@@ -365,6 +608,12 @@ async function handleClearData() {
   } catch (err) {
     console.error('Clear failed:', err);
     showToast('Clear failed', 'error');
+    if (clearDataModal) clearDataModal.close();
+  } finally {
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Delete everything';
+    }
   }
 }
 

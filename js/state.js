@@ -3,9 +3,8 @@
 // =============================================================================
 // Simple module-level state. No reactive proxies - just plain objects.
 
-let _storesDB = null;
+let _stores = [];
 let _storesIndex = null;
-let _userStores = [];
 let _selectedDate = new Date().toISOString().split('T')[0];
 let _syncState = {
   lastSyncAt: null,
@@ -16,36 +15,38 @@ let _syncState = {
 
 function rebuildStoresIndex() {
   _storesIndex = new Map();
-  if (_storesDB?.stores) {
-    _storesDB.stores.forEach(s => _storesIndex.set(s.id, s));
-  }
-  _userStores.forEach(s => _storesIndex.set(s.id, s));
+  _stores.forEach(s => _storesIndex.set(s.id, s));
 }
 
 export const state = {
-  // Stores database (loaded from JSON)
-  get storesDB() { return _storesDB; },
+  // All stores (from IndexedDB, synced from Google Drive)
+  get stores() { return _stores; },
+  set stores(data) {
+    _stores = data || [];
+    rebuildStoresIndex();
+  },
+
+  // Legacy aliases for compatibility
+  get storesDB() { return { stores: _stores }; },
   set storesDB(data) {
-    _storesDB = data;
+    // Accept both { stores: [...] } format and raw array
+    _stores = Array.isArray(data) ? data : (data?.stores || []);
     rebuildStoresIndex();
   },
-
-  // User-created stores (from IndexedDB)
-  get userStores() { return _userStores; },
+  get userStores() { return _stores; },
   set userStores(stores) {
-    _userStores = stores || [];
+    _stores = stores || [];
     rebuildStoresIndex();
   },
 
-  // Quick lookup for store by ID (checks both static and user stores)
+  // Quick lookup for store by ID
   getStore(id) {
     return _storesIndex?.get(id) ?? null;
   },
 
-  // Get all stores (static + user)
+  // Get all stores
   getAllStores() {
-    const staticStores = _storesDB?.stores || [];
-    return [...staticStores, ..._userStores];
+    return _stores;
   },
 
   // Selected date for visit logging
