@@ -352,6 +352,13 @@
     color: var(--color-text-muted);
   }
 
+  .form-hint {
+    display: block;
+    margin-top: var(--space-xs);
+    font-size: 0.75rem;
+    color: var(--color-primary);
+  }
+
   .form-input,
   .form-select,
   .form-textarea {

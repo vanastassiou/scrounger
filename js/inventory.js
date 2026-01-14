@@ -36,6 +36,9 @@ const PHOTO_TYPES = ['front', 'back', 'detail', 'label', 'flaw', 'hallmark', 'cl
 // Start Selling modal state
 let startSellingModal = null;
 
+// Brands data cache for resale value suggestions
+let brandsLookup = null;
+
 // =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
@@ -46,6 +49,110 @@ function isInPipeline(status) {
 
 function navigateToSelling() {
   document.querySelector('.tab[data-tab="selling"]')?.click();
+}
+
+/**
+ * Load and flatten brands data for quick lookup.
+ * Returns a Map of normalized brand names to their multipliers.
+ */
+async function loadBrandsLookup() {
+  if (brandsLookup) return brandsLookup;
+
+  try {
+    const response = await fetch('/data/brands-clothing-shoes.json');
+    const data = await response.json();
+    brandsLookup = new Map();
+
+    // Recursively extract brand multipliers from nested structure
+    function extractBrands(obj, path = '') {
+      if (!obj || typeof obj !== 'object') return;
+
+      // If this object has an 'm' property, it's a brand entry
+      if (typeof obj.m === 'number') {
+        const brandName = path.split('.').pop();
+        if (brandName) {
+          const normalized = normalizeBrandName(brandName);
+          brandsLookup.set(normalized, { multiplier: obj.m, tips: obj.tips || null });
+
+          // Also add alternate names if present
+          if (obj.alt && Array.isArray(obj.alt)) {
+            for (const alt of obj.alt) {
+              brandsLookup.set(normalizeBrandName(alt), { multiplier: obj.m, tips: obj.tips || null });
+            }
+          }
+        }
+        return;
+      }
+
+      // Recurse into nested objects
+      for (const [key, value] of Object.entries(obj)) {
+        if (typeof value === 'object' && value !== null) {
+          extractBrands(value, path ? `${path}.${key}` : key);
+        }
+      }
+    }
+
+    extractBrands(data);
+    console.log(`Loaded ${brandsLookup.size} brands for resale suggestions`);
+    return brandsLookup;
+  } catch (err) {
+    console.error('Failed to load brands data:', err);
+    return new Map();
+  }
+}
+
+/**
+ * Normalize brand name for matching (lowercase, remove special chars).
+ */
+function normalizeBrandName(name) {
+  return name.toLowerCase()
+    .replace(/[_\-\s]+/g, '') // Remove underscores, hyphens, spaces
+    .replace(/[^a-z0-9]/g, ''); // Remove other special chars
+}
+
+/**
+ * Look up a brand and return its multiplier and tips.
+ * @param {string} brand - The brand name to look up
+ * @returns {Promise<{multiplier: number, tips: string|null}|null>}
+ */
+async function getBrandMultiplier(brand) {
+  if (!brand) return null;
+
+  const lookup = await loadBrandsLookup();
+  const normalized = normalizeBrandName(brand);
+
+  // Try exact match first
+  if (lookup.has(normalized)) {
+    return lookup.get(normalized);
+  }
+
+  // Try partial match (brand contains or is contained by a known brand)
+  for (const [key, value] of lookup) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Calculate suggested resale value based on purchase price and brand multiplier.
+ */
+async function calculateSuggestedResaleValue(item) {
+  if (!item.purchase_price) return null;
+
+  const brandInfo = await getBrandMultiplier(item.brand);
+  if (!brandInfo) return null;
+
+  const purchaseCost = (item.purchase_price || 0) + (item.tax_paid || 0);
+  const suggestedValue = Math.round(purchaseCost * brandInfo.multiplier * 100) / 100;
+
+  return {
+    value: suggestedValue,
+    multiplier: brandInfo.multiplier,
+    tips: brandInfo.tips
+  };
 }
 
 // =============================================================================
@@ -1589,8 +1696,31 @@ export async function openStartSellingModal(itemId) {
   $('#start-selling-item-id').value = itemId;
   $('#start-selling-item-title').textContent = item.title || 'Untitled';
   $('#start-selling-status').value = 'unlisted';
-  $('#start-selling-est-value').value = item.estimated_resale_value || '';
   $('#start-selling-min-price').value = item.minimum_acceptable_price || '';
+
+  // Calculate suggested resale value from brand data
+  const suggestionEl = $('#start-selling-suggestion');
+  const estValueInput = $('#start-selling-est-value');
+
+  if (item.estimated_resale_value) {
+    // Use existing value if set
+    estValueInput.value = item.estimated_resale_value;
+    if (suggestionEl) suggestionEl.textContent = '';
+  } else {
+    // Try to calculate from brand multiplier
+    const suggestion = await calculateSuggestedResaleValue(item);
+    if (suggestion) {
+      estValueInput.value = suggestion.value;
+      if (suggestionEl) {
+        let hint = `Suggested: ${formatCurrency(suggestion.value)} (${suggestion.multiplier}× cost)`;
+        if (suggestion.tips) hint += ` — ${suggestion.tips}`;
+        suggestionEl.textContent = hint;
+      }
+    } else {
+      estValueInput.value = '';
+      if (suggestionEl) suggestionEl.textContent = '';
+    }
+  }
 
   startSellingModal.open();
 }
