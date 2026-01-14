@@ -18,7 +18,7 @@ import {
   selectFolder,
   syncOnOpen
 } from './sync.js';
-import { clearAllData, getItemsNotInPipeline, exportArchive, getAllArchived } from './db.js';
+import { clearAllData, getItemsNotInPipeline, exportArchive, getAllArchived, bulkUpdateStatus } from './db.js';
 import { escapeHtml } from './utils.js';
 
 // =============================================================================
@@ -223,6 +223,7 @@ function handleClearData() {
 window.clearAllData = clearAllData;
 window.exportArchive = exportArchive;
 window.getAllArchived = getAllArchived;
+window.bulkUpdateStatus = bulkUpdateStatus;
 
 // =============================================================================
 // SELECT ITEM DIALOG (List for Sale)
