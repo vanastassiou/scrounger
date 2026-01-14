@@ -400,19 +400,26 @@ function setupSubTabs() {
     brands: $('#ref-brands-view'),
     platforms: $('#ref-platforms-view')
   };
+  const validViews = Object.keys(views);
+
+  function activateView(view) {
+    subTabs.forEach(t => t.classList.toggle('active', t.dataset.refView === view));
+    currentView = view;
+    Object.entries(views).forEach(([key, el]) => {
+      if (el) el.style.display = key === view ? '' : 'none';
+    });
+    localStorage.setItem('referencesSubTab', view);
+  }
 
   subTabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      subTabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      currentView = tab.dataset.refView;
-
-      // Hide all views, show selected
-      Object.entries(views).forEach(([key, view]) => {
-        if (view) view.style.display = key === currentView ? '' : 'none';
-      });
-    });
+    tab.addEventListener('click', () => activateView(tab.dataset.refView));
   });
+
+  // Restore saved sub-tab
+  const saved = localStorage.getItem('referencesSubTab');
+  if (saved && validViews.includes(saved)) {
+    activateView(saved);
+  }
 
   // Platform search
   const platformSearch = $('#platform-search');

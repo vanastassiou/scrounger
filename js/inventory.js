@@ -171,24 +171,25 @@ export async function initInventory() {
 
 function setupInventorySubTabs() {
   const subTabs = $$('.sub-tab[data-inv-view]');
+  const collectionView = $('#inv-collection-view');
+  const sellingView = $('#inv-selling-view');
+
+  function activateView(view) {
+    subTabs.forEach(t => t.classList.toggle('active', t.dataset.invView === view));
+    if (collectionView) collectionView.style.display = view === 'collection' ? '' : 'none';
+    if (sellingView) sellingView.style.display = view === 'selling' ? '' : 'none';
+    localStorage.setItem('inventorySubTab', view);
+  }
+
   subTabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      subTabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      const view = tab.dataset.invView;
-
-      const collectionView = $('#inv-collection-view');
-      const sellingView = $('#inv-selling-view');
-
-      if (view === 'collection') {
-        if (collectionView) collectionView.style.display = '';
-        if (sellingView) sellingView.style.display = 'none';
-      } else {
-        if (collectionView) collectionView.style.display = 'none';
-        if (sellingView) sellingView.style.display = '';
-      }
-    });
+    tab.addEventListener('click', () => activateView(tab.dataset.invView));
   });
+
+  // Restore saved sub-tab
+  const saved = localStorage.getItem('inventorySubTab');
+  if (saved && (saved === 'collection' || saved === 'selling')) {
+    activateView(saved);
+  }
 }
 
 export function switchToSellingView() {
