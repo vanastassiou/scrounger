@@ -777,13 +777,15 @@ export async function exportAllData() {
     const inventory = await getAllFromStore('inventory');
     const visits = await getAllFromStore('visits');
     const stores = await getAllFromStore('stores');
+    const archive = await getAllFromStore('archive');
 
     return {
-      version: 1,
+      version: 2,
       exported_at: nowISO(),
       inventory,
       visits,
-      stores
+      stores,
+      archive
     };
   } catch (err) {
     console.error('Failed to export data:', err);
@@ -798,14 +800,16 @@ export async function importData(data, merge = false) {
 
   try {
     const db = await openDB();
-    const tx = db.transaction(['inventory', 'stores'], 'readwrite');
+    const tx = db.transaction(['inventory', 'stores', 'archive'], 'readwrite');
 
     const inventoryStore = tx.objectStore('inventory');
     const storesStore = tx.objectStore('stores');
+    const archiveStore = tx.objectStore('archive');
 
     if (!merge) {
       await promisify(inventoryStore.clear());
       await promisify(storesStore.clear());
+      await promisify(archiveStore.clear());
     }
 
     if (data.inventory) {
@@ -817,6 +821,12 @@ export async function importData(data, merge = false) {
     if (data.stores) {
       for (const store of data.stores) {
         storesStore.put(store);
+      }
+    }
+
+    if (data.archive) {
+      for (const item of data.archive) {
+        archiveStore.put(item);
       }
     }
 
@@ -1037,4 +1047,33 @@ export async function exportArchive() {
     console.error('Failed to export archive:', err);
     throw err;
   }
+}
+
+/**
+ * Bulk update all inventory items to a new status.
+ * @param {string} newStatus - The status to set on all items
+ * @returns {Promise<number>} - Number of items updated
+ */
+export async function bulkUpdateStatus(newStatus) {
+  const db = await openDB();
+  const tx = db.transaction('inventory', 'readwrite');
+  const store = tx.objectStore('inventory');
+  const items = await promisify(store.getAll());
+
+  let count = 0;
+  for (const item of items) {
+    item.status = newStatus;
+    item.updatedAt = nowISO();
+    item.dirty = true;
+    store.put(item);
+    count++;
+  }
+
+  await new Promise((resolve, reject) => {
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+
+  console.log(`Updated ${count} items to status: ${newStatus}`);
+  return count;
 }

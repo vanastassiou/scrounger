@@ -344,7 +344,8 @@ async function importMergedData(data) {
     version: data.version || 1,
     inventory: data.inventory || [],
     visits: data.visits || [],
-    stores: data.stores || []
+    stores: data.stores || [],
+    archive: data.archive || []
   }, false);
 }
 

@@ -900,6 +900,7 @@
     text-transform: capitalize;
   }
 
+  .status--in_collection { background: #6366f1; color: white; }
   .status--unlisted { background: var(--color-surface-elevated); }
   .status--photographed { background: #8b5cf6; color: white; }
   .status--listed { background: var(--color-primary); color: white; }
@@ -909,6 +910,8 @@
   .status--confirmed_received { background: #84cc16; color: white; }
   .status--sold { background: var(--color-success); color: white; }
   .status--kept { background: var(--color-warning); color: black; }
+  .status--returned { background: #ef4444; color: white; }
+  .status--donated { background: #a855f7; color: white; }
 
   /* Empty State */
   .empty-state {

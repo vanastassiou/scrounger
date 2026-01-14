@@ -14,7 +14,7 @@ import {
   CATEGORIES, SUBCATEGORIES, STATUS_OPTIONS, CONDITION_OPTIONS, ERA_OPTIONS,
   METAL_TYPES, CLOSURE_TYPES, JEWELRY_TESTS,
   FLAW_TYPES, FLAW_SEVERITY, WIDTH_OPTIONS, MEASUREMENT_FIELDS,
-  COLOUR_OPTIONS, MATERIAL_OPTIONS
+  COLOUR_OPTIONS, MATERIAL_OPTIONS, PIPELINE_STATUSES
 } from './config.js';
 import { queueSync } from './sync.js';
 
@@ -32,6 +32,21 @@ let visitContext = null; // Stores storeId/date when opened from visit workflow
 
 // Photo type options for the dropdown
 const PHOTO_TYPES = ['front', 'back', 'detail', 'label', 'flaw', 'hallmark', 'closure', 'measurement', 'styled'];
+
+// Start Selling modal state
+let startSellingModal = null;
+
+// =============================================================================
+// HELPER FUNCTIONS
+// =============================================================================
+
+function isInPipeline(status) {
+  return PIPELINE_STATUSES.includes(status);
+}
+
+function navigateToSelling() {
+  document.querySelector('.tab[data-tab="selling"]')?.click();
+}
 
 // =============================================================================
 // INITIALIZATION
@@ -101,6 +116,24 @@ function setupEventHandlers() {
             await renderInventoryStats();
           }
         });
+        return;
+      }
+
+      // Start selling button click
+      const startSellBtn = e.target.closest('.start-selling-btn');
+      if (startSellBtn) {
+        e.preventDefault();
+        const itemId = startSellBtn.dataset.id;
+        openStartSellingModal(itemId);
+        return;
+      }
+
+      // View in selling button click
+      const viewSellBtn = e.target.closest('.view-in-selling-btn');
+      if (viewSellBtn) {
+        e.preventDefault();
+        navigateToSelling();
+        return;
       }
     });
   }
@@ -732,16 +765,30 @@ function renderInventoryTable() {
     return;
   }
 
-  tbody.innerHTML = filtered.map(item => `
-    <tr data-id="${item.id}">
-      <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
-      <td>${formatCurrency(item.purchase_price || 0)}</td>
-      <td><span class="status status--${item.status}">${formatStatus(item.status)}</span></td>
-      <td class="table-actions">
-        <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
-      </td>
-    </tr>
-  `).join('');
+  tbody.innerHTML = filtered.map(item => {
+    const inPipeline = isInPipeline(item.status);
+    let sellButton = '';
+
+    if (item.status === 'sold') {
+      // No sell button for sold items
+    } else if (inPipeline) {
+      sellButton = `<button class="btn btn--sm view-in-selling-btn" data-id="${item.id}">View in Selling</button>`;
+    } else {
+      sellButton = `<button class="btn btn--sm btn--primary start-selling-btn" data-id="${item.id}">Sell</button>`;
+    }
+
+    return `
+      <tr data-id="${item.id}">
+        <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
+        <td>${formatCurrency(item.purchase_price || 0)}</td>
+        <td><span class="status status--${item.status}">${formatStatus(item.status)}</span></td>
+        <td class="table-actions">
+          <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
+          ${sellButton}
+        </td>
+      </tr>
+    `;
+  }).join('');
 
   // Update count
   const countEl = $('#inventory-count');
@@ -1065,7 +1112,7 @@ function resetItemForm() {
   if (dateInput) dateInput.value = today;
 
   const statusInput = $('#item-status');
-  if (statusInput) statusInput.value = 'unlisted';
+  if (statusInput) statusInput.value = 'in_collection';
 
   const conditionInput = $('#item-condition');
   if (conditionInput) conditionInput.value = 'good';
@@ -1163,8 +1210,8 @@ async function handleItemSubmit(e) {
     minimum_acceptable_price: parseFloat(formData.get('minimum_acceptable_price')) || null,
     brand_premium_multiplier: parseFloat(formData.get('brand_premium_multiplier')) || 1.0,
 
-    // Status (auto-set to unlisted for new items)
-    status: formData.get('status') || 'unlisted',
+    // Status (auto-set to in_collection for new items)
+    status: formData.get('status') || 'in_collection',
 
     // Description
     description: formData.get('description')?.trim() || null
@@ -1512,4 +1559,74 @@ function renderItemDetails(item, photos = []) {
   }
 
   return sections.join('');
+}
+
+// =============================================================================
+// START SELLING MODAL
+// =============================================================================
+
+export async function openStartSellingModal(itemId) {
+  const dialog = $('#start-selling-dialog');
+  if (!dialog) return;
+
+  if (!startSellingModal) {
+    startSellingModal = createModalController(dialog);
+
+    // Setup form submission handler once
+    const form = $('#start-selling-form');
+    if (form) {
+      form.addEventListener('submit', handleStartSellingSubmit);
+    }
+  }
+
+  const item = await getInventoryItem(itemId);
+  if (!item) {
+    showToast('Item not found');
+    return;
+  }
+
+  // Populate form
+  $('#start-selling-item-id').value = itemId;
+  $('#start-selling-item-title').textContent = item.title || 'Untitled';
+  $('#start-selling-status').value = 'unlisted';
+  $('#start-selling-est-value').value = item.estimated_resale_value || '';
+  $('#start-selling-min-price').value = item.minimum_acceptable_price || '';
+
+  startSellingModal.open();
+}
+
+async function handleStartSellingSubmit(e) {
+  e.preventDefault();
+
+  const formData = new FormData(e.target);
+  const itemId = formData.get('item_id');
+  const status = formData.get('status');
+  const estimatedValue = parseFloat(formData.get('estimated_resale_value')) || null;
+  const minPrice = parseFloat(formData.get('minimum_acceptable_price')) || null;
+
+  try {
+    const updates = { status };
+    if (estimatedValue !== null) {
+      updates.estimated_resale_value = estimatedValue;
+    }
+    if (minPrice !== null) {
+      updates.minimum_acceptable_price = minPrice;
+    }
+
+    await updateInventoryItem(itemId, updates);
+    showToast('Item added to selling pipeline');
+    startSellingModal.close();
+
+    // Refresh inventory table
+    await loadInventory();
+
+    // Queue sync
+    queueSync();
+
+    // Navigate to Selling tab
+    navigateToSelling();
+  } catch (err) {
+    console.error('Failed to start selling:', err);
+    showToast('Failed to add item to pipeline');
+  }
 }

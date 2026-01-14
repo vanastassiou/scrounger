@@ -33,6 +33,7 @@ export const SUBCATEGORIES = {
 };
 
 export const STATUS_OPTIONS = [
+  'in_collection',
   'unlisted',
   'photographed',
   'listed',

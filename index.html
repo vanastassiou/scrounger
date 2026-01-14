@@ -905,6 +905,45 @@
     </div>
   </dialog>
 
+  <!-- Start Selling Dialog -->
+  <dialog id="start-selling-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Start selling</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <form id="start-selling-form">
+        <input type="hidden" id="start-selling-item-id" name="item_id">
+
+        <div class="form-group">
+          <label class="form-label">Item</label>
+          <div id="start-selling-item-title" class="text-muted"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="start-selling-status">Starting status *</label>
+          <select class="form-select" id="start-selling-status" name="status" required>
+            <option value="unlisted">Unlisted (needs photos)</option>
+            <option value="photographed">Photographed (ready to list)</option>
+            <option value="listed">Listed (already posted)</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="start-selling-est-value">Estimated resale value</label>
+          <input type="number" class="form-input" id="start-selling-est-value" name="estimated_resale_value" step="0.01" min="0" placeholder="0.00">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="start-selling-min-price">Minimum acceptable price</label>
+          <input type="number" class="form-input" id="start-selling-min-price" name="minimum_acceptable_price" step="0.01" min="0" placeholder="0.00">
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block">Add to selling pipeline</button>
+      </form>
+    </div>
+  </dialog>
+
   <!-- Select Item to List Dialog -->
   <dialog id="select-item-dialog" class="modal">
     <div class="modal-content modal-content--wide">
@@ -1059,7 +1098,7 @@
         <p>This will permanently delete:</p>
         <ul class="clear-data-list">
           <li><strong>All inventory items</strong> and their photos</li>
-          <li><strong>All store visits</strong> you've logged</li>
+          <li><strong>All sold/archived items</strong></li>
           <li><strong>Custom stores</strong> you've added</li>
           <li><strong>App settings</strong> and preferences</li>
         </ul>
