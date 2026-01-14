@@ -60,7 +60,7 @@ function processClothingBrands(clothingBrands, category) {
         name: formatBrandName(key),
         key,
         tier: 'S',
-        multiplier: brand.m,
+        multiplier: brand.multiplier,
         notes: brand.notes || '',
         tips: brand.tips || '',
         alt: brand.alt || [],
@@ -76,7 +76,7 @@ function processClothingBrands(clothingBrands, category) {
         name: formatBrandName(key),
         key,
         tier: 'A',
-        multiplier: brand.m,
+        multiplier: brand.multiplier,
         notes: brand.notes || '',
         tips: brand.tips || '',
         alt: brand.alt || [],
@@ -92,7 +92,7 @@ function processClothingBrands(clothingBrands, category) {
         name: formatBrandName(key),
         key,
         tier: 'B',
-        multiplier: brand.m,
+        multiplier: brand.multiplier,
         notes: brand.notes || '',
         tips: brand.tips || '',
         alt: brand.alt || [],
@@ -108,7 +108,7 @@ function processClothingBrands(clothingBrands, category) {
         name: formatBrandName(key),
         key,
         tier: 'vintage',
-        multiplier: brand.m,
+        multiplier: brand.multiplier,
         notes: brand.notes || '',
         tips: brand.tips || '',
         era: brand.era || '',
@@ -126,7 +126,7 @@ function processClothingBrands(clothingBrands, category) {
             name: formatBrandName(key),
             key,
             tier: sub === 'vintage' ? 'vintage' : 'A',
-            multiplier: brand.m,
+            multiplier: brand.multiplier,
             notes: brand.notes || '',
             tips: brand.tips || '',
             category
@@ -145,7 +145,7 @@ function processClothingBrands(clothingBrands, category) {
             name: formatBrandName(key),
             key,
             tier: sub === 'vintage_premium' ? 'vintage' : 'A',
-            multiplier: brand.m,
+            multiplier: brand.multiplier,
             notes: brand.notes || '',
             tips: brand.tips || '',
             category
@@ -153,6 +153,22 @@ function processClothingBrands(clothingBrands, category) {
         });
       }
     });
+
+    // Japanese selvedge - different structure (brands array with parent multiplier)
+    const selvedge = clothingBrands.denim.japanese_selvedge;
+    if (selvedge?.brands) {
+      selvedge.brands.forEach(brandName => {
+        brandsData.push({
+          name: formatBrandName(brandName),
+          key: brandName,
+          tier: 'S',
+          multiplier: selvedge.multiplier,
+          notes: selvedge.authenticity_notes || '',
+          tips: '',
+          category
+        });
+      });
+    }
   }
 }
 
@@ -164,7 +180,7 @@ function processShoeBrands(shoeBrands, category) {
         name: formatBrandName(key),
         key,
         tier: 'S',
-        multiplier: brand.m,
+        multiplier: brand.multiplier,
         notes: brand.notes || '',
         tips: brand.tips || brand.sig || '',
         category
@@ -179,7 +195,7 @@ function processShoeBrands(shoeBrands, category) {
         name: formatBrandName(key),
         key,
         tier: 'A',
-        multiplier: brand.m,
+        multiplier: brand.multiplier,
         notes: brand.notes || '',
         tips: brand.tips || '',
         category
@@ -194,7 +210,7 @@ function processShoeBrands(shoeBrands, category) {
         name: formatBrandName(key),
         key,
         tier: 'vintage',
-        multiplier: brand.m,
+        multiplier: brand.multiplier,
         notes: brand.notes || '',
         tips: brand.tips || '',
         era: brand.era || '',
@@ -214,7 +230,7 @@ function processJewelryBrands(jewelry) {
         name: formatBrandName(key),
         key,
         tier: 'S',
-        multiplier: brand.m,
+        multiplier: brand.multiplier,
         notes: brand.notes || '',
         tips: brand.marks ? `Marks: ${brand.marks.join(', ')}` : '',
         category
@@ -229,7 +245,7 @@ function processJewelryBrands(jewelry) {
         name: formatBrandName(key),
         key,
         tier: 'A',
-        multiplier: brand.m,
+        multiplier: brand.multiplier,
         notes: brand.notes || '',
         tips: brand.marks ? `Marks: ${brand.marks.join(', ')}` : '',
         category
@@ -244,7 +260,7 @@ function processJewelryBrands(jewelry) {
         name: formatBrandName(key),
         key,
         tier: 'vintage',
-        multiplier: brand.m,
+        multiplier: brand.multiplier,
         notes: brand.notes || '',
         tips: brand.marks ? `Marks: ${brand.marks.join(', ')}` : '',
         era: brand.era || '',
@@ -469,17 +485,18 @@ function renderPlatformRow(key, p) {
     return `<ul class="compact-list">${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
   };
 
-  const itemTypes = (p.best_for || []).map(t => formatTagName(t));
-  const demographics = p.audience ? p.audience.split(',').map(s => s.trim()) : [];
+  // Truncate lists for conciseness
+  const itemTypes = (p.best_for || []).slice(0, 3).map(t => formatTagName(t));
+  const demographics = p.audience ? p.audience.split(',').slice(0, 2).map(s => s.trim()) : [];
+  const pros = (p.pros || []).slice(0, 2);
+  const cons = (p.cons || []).slice(0, 2);
 
   const nameHtml = p.url
     ? `<a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.name)}</a>`
     : escapeHtml(p.name);
 
-  // Split notes into sentences for bullet points
-  const notesList = p.notes
-    ? p.notes.split(/\.\s+/).filter(s => s.trim()).map(s => s.replace(/\.$/, ''))
-    : [];
+  // First sentence only for notes
+  const notesList = p.notes ? [p.notes.split(/\.\s+/)[0]] : [];
 
   return `
     <tr data-platform="${escapeHtml(key)}">
@@ -487,8 +504,8 @@ function renderPlatformRow(key, p) {
       <td>${formatList(demographics)}</td>
       <td>${formatList(itemTypes)}</td>
       <td>${feesSummary.main}</td>
-      <td>${formatList(p.pros)}</td>
-      <td>${formatList(p.cons)}</td>
+      <td>${formatList(pros)}</td>
+      <td>${formatList(cons)}</td>
       <td>${formatList(notesList)}</td>
     </tr>
   `;
