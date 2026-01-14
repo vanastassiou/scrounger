@@ -23,6 +23,7 @@
   <link rel="modulepreload" href="js/dashboard-actions.js">
   <link rel="modulepreload" href="js/sync.js">
   <link rel="modulepreload" href="js/settings.js">
+  <link rel="modulepreload" href="js/references.js">
   <!-- Prevent flash of wrong tab -->
   <script>
     (function() {
@@ -38,12 +39,14 @@
     html[data-tab="stores"] #stores,
     html[data-tab="visits"] #visits,
     html[data-tab="selling"] #selling,
+    html[data-tab="references"] #references,
     html[data-tab="settings"] #settings { display: block; }
     html[data-tab="dashboard"] .tab[data-tab="dashboard"],
     html[data-tab="inventory"] .tab[data-tab="inventory"],
     html[data-tab="stores"] .tab[data-tab="stores"],
     html[data-tab="visits"] .tab[data-tab="visits"],
     html[data-tab="selling"] .tab[data-tab="selling"],
+    html[data-tab="references"] .tab[data-tab="references"],
     html[data-tab="settings"] .tab[data-tab="settings"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
   </style>
 </head>
@@ -59,6 +62,7 @@
     <button class="tab" data-tab="stores">Stores</button>
     <button class="tab" data-tab="visits">Visits</button>
     <button class="tab" data-tab="selling">Selling</button>
+    <button class="tab" data-tab="references">Ref</button>
     <button class="tab" data-tab="settings">Settings</button>
   </nav>
 
@@ -320,6 +324,65 @@
       <div id="selling-count" class="text-muted"></div>
     </section>
 
+    <!-- References -->
+    <section id="references" class="page">
+      <div class="page-header">
+        <h2>References</h2>
+      </div>
+
+      <!-- Sub-navigation for References -->
+      <div class="sub-tabs">
+        <button class="sub-tab active" data-ref-view="brands">Brands</button>
+        <button class="sub-tab" data-ref-view="platforms">Platforms</button>
+      </div>
+
+      <!-- Brands View -->
+      <div id="ref-brands-view" class="ref-view">
+        <div class="filter-row">
+          <button class="filter-btn active" data-category="all">All</button>
+          <button class="filter-btn" data-category="clothing">Clothing</button>
+          <button class="filter-btn" data-category="shoes">Shoes</button>
+          <button class="filter-btn" data-category="jewelry">Jewelry</button>
+        </div>
+
+        <div class="filter-row">
+          <button class="filter-btn active" data-tier="all">All Tiers</button>
+          <button class="filter-btn" data-tier="S">S</button>
+          <button class="filter-btn" data-tier="A">A</button>
+          <button class="filter-btn" data-tier="B">B</button>
+          <button class="filter-btn" data-tier="vintage">Vintage</button>
+        </div>
+
+        <input type="text" class="form-input" id="brand-search" placeholder="Search brands...">
+
+        <div class="table-container">
+          <table class="table" id="references-table">
+            <thead>
+              <tr>
+                <th data-sort="name">Brand</th>
+                <th data-sort="tier">Tier</th>
+                <th data-sort="multiplier">Mult</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="references-table-body">
+              <tr><td colspan="4" class="empty-state"><div class="empty-icon">R</div><p>Loading...</p></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="references-count" class="text-muted"></div>
+      </div>
+
+      <!-- Platforms View -->
+      <div id="ref-platforms-view" class="ref-view" style="display: none;">
+        <input type="text" class="form-input" id="platform-search" placeholder="Search platforms...">
+
+        <div id="platforms-grid" class="platforms-grid">
+          <div class="empty-state"><div class="empty-icon">P</div><p>Loading...</p></div>
+        </div>
+      </div>
+    </section>
+
     <!-- Settings -->
     <section id="settings" class="page">
       <div class="page-header">
@@ -386,7 +449,7 @@
             <div class="sync-step-content">
               <p class="sync-step-status" id="sync-current-status">Ready to sync</p>
               <p class="text-muted">Last sync: <span id="last-sync-time">Never</span></p>
-              <button class="btn btn--primary" id="btn-sync-now" disabled>Sync Now</button>
+              <button class="btn btn--primary" id="btn-sync-now" disabled>Back Up to Drive</button>
             </div>
           </div>
         </div>
@@ -397,8 +460,9 @@
         <h3 class="card-title">Data Management</h3>
         <div class="action-buttons">
           <button class="btn btn--block" id="btn-export-data">Export data (JSON)</button>
-          <button class="btn btn--block" id="btn-import-data">Import data</button>
-          <button class="btn btn--block btn--danger" id="btn-clear-data">Clear all data</button>
+          <button class="btn btn--block" id="btn-restore-backup">Restore from backup</button>
+          <button class="btn btn--block" id="btn-import-merge">Import & merge</button>
+          <button class="btn btn--block btn--danger" id="btn-clear-data">Clear all local data</button>
         </div>
       </div>
     </section>
@@ -1044,23 +1108,23 @@
   <dialog id="import-dialog" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Import data</h2>
+        <h2 id="import-dialog-title">Restore from backup</h2>
         <button class="modal-close" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
-        <p>Choose where to import from:</p>
+        <p id="import-dialog-description">Choose a backup source:</p>
         <div class="option-buttons">
           <button class="btn btn--block option-btn" id="import-local">
             <span class="option-icon">📁</span>
             <span class="option-text">
-              <strong>Select files</strong>
-              <small>Import inventory.json, stores.json, or backups</small>
+              <strong id="import-local-title">Select backup file</strong>
+              <small id="import-local-description">Choose a JSON backup file from your computer</small>
             </span>
           </button>
           <button class="btn btn--block option-btn" id="import-drive" disabled>
             <span class="option-icon">☁️</span>
             <span class="option-text">
-              <strong>Import from Google Drive</strong>
+              <strong id="import-drive-title">Google Drive backup</strong>
               <small id="import-drive-status">Connect Google Drive first</small>
             </span>
           </button>
@@ -1073,17 +1137,17 @@
   <dialog id="import-confirm-dialog" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Confirm import</h2>
+        <h2 id="import-confirm-title">Confirm restore</h2>
         <button class="modal-close" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
-        <p>This will import:</p>
+        <p id="import-confirm-intro">This will restore:</p>
         <ul id="import-summary"></ul>
-        <p class="text-danger"><strong>This will replace your existing data.</strong></p>
+        <p id="import-confirm-warning" class="text-danger"><strong>This will replace all your existing data.</strong></p>
       </div>
       <div class="modal-footer">
         <button class="btn" id="import-confirm-cancel">Cancel</button>
-        <button class="btn btn--primary" id="import-confirm-ok">Import</button>
+        <button class="btn btn--primary" id="import-confirm-ok">Restore</button>
       </div>
     </div>
   </dialog>

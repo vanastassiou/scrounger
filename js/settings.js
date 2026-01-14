@@ -37,6 +37,7 @@ let importConfirmModal = null;
 
 // Pending import data
 let pendingImportData = null;
+let importMode = 'restore'; // 'restore' (replace all) or 'merge' (add to existing)
 
 // =============================================================================
 // INITIALIZATION
@@ -205,7 +206,7 @@ function updateSettingsUI() {
   if (syncNowBtn) {
     const status = getSyncStatus();
     syncNowBtn.disabled = !canSync || status.status === 'syncing';
-    syncNowBtn.textContent = status.status === 'syncing' ? 'Syncing...' : 'Sync Now';
+    syncNowBtn.textContent = status.status === 'syncing' ? 'Backing up...' : 'Back Up to Drive';
   }
 
   if (lastSyncEl) {
@@ -276,7 +277,8 @@ function bindSettingsEvents() {
 
   // Data management
   document.getElementById('btn-export-data')?.addEventListener('click', handleExportData);
-  document.getElementById('btn-import-data')?.addEventListener('click', handleImportData);
+  document.getElementById('btn-restore-backup')?.addEventListener('click', () => openImportModal('restore'));
+  document.getElementById('btn-import-merge')?.addEventListener('click', () => openImportModal('merge'));
   document.getElementById('btn-clear-data')?.addEventListener('click', handleClearData);
 }
 
@@ -367,7 +369,7 @@ async function handleSyncNow() {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = 'Sync Now';
+      btn.textContent = 'Back Up to Drive';
     }
   }
 }
@@ -379,7 +381,30 @@ function handleExportData() {
   }
 }
 
-function handleImportData() {
+function openImportModal(mode) {
+  importMode = mode;
+
+  // Update modal text based on mode
+  const titleEl = document.getElementById('import-dialog-title');
+  const descEl = document.getElementById('import-dialog-description');
+  const localTitleEl = document.getElementById('import-local-title');
+  const localDescEl = document.getElementById('import-local-description');
+  const driveTitleEl = document.getElementById('import-drive-title');
+
+  if (mode === 'restore') {
+    if (titleEl) titleEl.textContent = 'Restore from backup';
+    if (descEl) descEl.textContent = 'Choose a backup source:';
+    if (localTitleEl) localTitleEl.textContent = 'Select backup file';
+    if (localDescEl) localDescEl.textContent = 'Choose a JSON backup file from your computer';
+    if (driveTitleEl) driveTitleEl.textContent = 'Google Drive backup';
+  } else {
+    if (titleEl) titleEl.textContent = 'Import & merge';
+    if (descEl) descEl.textContent = 'Choose files to merge with your existing data:';
+    if (localTitleEl) localTitleEl.textContent = 'Select files';
+    if (localDescEl) localDescEl.textContent = 'Import inventory.json, stores.json, or backup files';
+    if (driveTitleEl) driveTitleEl.textContent = 'Import from Google Drive';
+  }
+
   if (importModal) {
     updateSettingsUI(); // Update Drive button state
     importModal.open();
@@ -547,6 +572,30 @@ async function handleImportDrive() {
 function showImportConfirm(data, sourceName = 'local file') {
   pendingImportData = data;
 
+  // Update confirm dialog text based on mode
+  const titleEl = document.getElementById('import-confirm-title');
+  const introEl = document.getElementById('import-confirm-intro');
+  const warningEl = document.getElementById('import-confirm-warning');
+  const confirmBtn = document.getElementById('import-confirm-ok');
+
+  if (importMode === 'restore') {
+    if (titleEl) titleEl.textContent = 'Confirm restore';
+    if (introEl) introEl.textContent = 'This will restore:';
+    if (warningEl) {
+      warningEl.innerHTML = '<strong>This will replace all your existing data.</strong>';
+      warningEl.className = 'text-danger';
+    }
+    if (confirmBtn) confirmBtn.textContent = 'Restore';
+  } else {
+    if (titleEl) titleEl.textContent = 'Confirm import';
+    if (introEl) introEl.textContent = 'This will add to your existing data:';
+    if (warningEl) {
+      warningEl.innerHTML = '<strong>Duplicate items will be overwritten.</strong>';
+      warningEl.className = 'text-muted';
+    }
+    if (confirmBtn) confirmBtn.textContent = 'Import';
+  }
+
   const summaryEl = document.getElementById('import-summary');
   if (summaryEl) {
     summaryEl.innerHTML = `
@@ -563,25 +612,29 @@ function showImportConfirm(data, sourceName = 'local file') {
 async function executeImport() {
   if (!pendingImportData) return;
 
+  const merge = importMode === 'merge';
+  const actionText = merge ? 'Importing' : 'Restoring';
+  const buttonText = merge ? 'Import' : 'Restore';
+
   const confirmBtn = document.getElementById('import-confirm-ok');
   if (confirmBtn) {
     confirmBtn.disabled = true;
-    confirmBtn.textContent = 'Importing...';
+    confirmBtn.textContent = `${actionText}...`;
   }
 
   try {
-    await importData(pendingImportData, false);
-    showToast('Data imported');
+    await importData(pendingImportData, merge);
+    showToast(merge ? 'Data merged' : 'Data restored');
     window.location.reload();
   } catch (err) {
     console.error('Import failed:', err);
-    showToast('Import failed: ' + err.message, 'error');
+    showToast(`${buttonText} failed: ${err.message}`, 'error');
     if (importConfirmModal) importConfirmModal.close();
   } finally {
     pendingImportData = null;
     if (confirmBtn) {
       confirmBtn.disabled = false;
-      confirmBtn.textContent = 'Import';
+      confirmBtn.textContent = buttonText;
     }
   }
 }
