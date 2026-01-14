@@ -469,15 +469,20 @@ function renderPlatformRow(key, p) {
     ? `<a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.name)}</a>`
     : escapeHtml(p.name);
 
+  // Split notes into sentences for bullet points
+  const notesList = p.notes
+    ? p.notes.split(/\.\s+/).filter(s => s.trim()).map(s => s.replace(/\.$/, ''))
+    : [];
+
   return `
     <tr data-platform="${escapeHtml(key)}">
       <td>${nameHtml}</td>
       <td>${formatList(demographics)}</td>
       <td>${formatList(itemTypes)}</td>
       <td>${feesSummary.main}</td>
-      <td class="text-success">${formatList(p.pros)}</td>
-      <td class="text-danger">${formatList(p.cons)}</td>
-      <td>${formatList(p.notes ? [p.notes] : [])}</td>
+      <td>${formatList(p.pros)}</td>
+      <td>${formatList(p.cons)}</td>
+      <td>${formatList(notesList)}</td>
     </tr>
   `;
 }
