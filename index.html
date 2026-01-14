@@ -353,14 +353,26 @@
             </div>
             <div class="sync-step-content">
               <p class="sync-step-status" id="sync-folder-status">No folder selected</p>
-              <div class="form-row">
-                <input type="text" class="form-input" id="sync-folder-input" placeholder="Folder name (e.g., Thrifting)" disabled>
-                <button class="btn" id="btn-set-folder" disabled>Set</button>
-              </div>
               <div class="sync-step-actions">
-                <button class="btn btn--sm" id="btn-pick-folder" disabled>Browse folders</button>
-                <button class="btn btn--sm btn--danger" id="btn-remove-folder" disabled>Remove folder</button>
+                <button class="btn" id="btn-pick-folder" disabled>Select existing folder</button>
+                <button class="btn btn--sm btn--danger" id="btn-remove-folder" disabled>Remove</button>
               </div>
+              <details class="sync-create-folder" id="sync-create-folder-details">
+                <summary>Or create a new folder</summary>
+                <div class="sync-create-folder-content">
+                  <div class="form-group">
+                    <label class="form-label">Parent folder</label>
+                    <div class="form-row">
+                      <span class="form-input form-input--readonly" id="sync-parent-folder-name">My Drive (root)</span>
+                      <button class="btn btn--sm" id="btn-pick-parent" disabled>Change</button>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <input type="text" class="form-input" id="sync-folder-input" placeholder="New folder name" disabled>
+                    <button class="btn" id="btn-create-folder" disabled>Create</button>
+                  </div>
+                </div>
+              </details>
             </div>
           </div>
 
