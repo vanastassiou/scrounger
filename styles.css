@@ -1665,6 +1665,22 @@
   margin-bottom: var(--space-md);
 }
 
+/* Compact List (for table cells with bullet points) */
+.compact-list {
+  margin: 0;
+  padding-left: 1.2em;
+  font-size: 0.85em;
+  line-height: 1.4;
+}
+
+.compact-list li {
+  margin-bottom: 0.2em;
+}
+
+.compact-list li:last-child {
+  margin-bottom: 0;
+}
+
 /* Platforms Grid */
 .platforms-grid {
   display: flex;

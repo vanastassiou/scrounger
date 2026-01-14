@@ -456,9 +456,14 @@ function renderPlatforms() {
 
 function renderPlatformRow(key, p) {
   const feesSummary = formatFeesSummary(p.fees);
-  const itemTypes = (p.best_for || []).slice(0, 3).map(t => formatTagName(t)).join(', ');
-  const pros = (p.pros || []).slice(0, 2).join('; ');
-  const cons = (p.cons || []).slice(0, 2).join('; ');
+
+  const formatList = (items) => {
+    if (!items || items.length === 0) return '';
+    return `<ul class="compact-list">${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+  };
+
+  const itemTypes = (p.best_for || []).map(t => formatTagName(t));
+  const demographics = p.audience ? p.audience.split(',').map(s => s.trim()) : [];
 
   const nameHtml = p.url
     ? `<a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.name)}</a>`
@@ -467,12 +472,12 @@ function renderPlatformRow(key, p) {
   return `
     <tr data-platform="${escapeHtml(key)}">
       <td>${nameHtml}</td>
-      <td>${escapeHtml(p.audience || '')}</td>
-      <td>${escapeHtml(itemTypes)}</td>
+      <td>${formatList(demographics)}</td>
+      <td>${formatList(itemTypes)}</td>
       <td>${feesSummary.main}</td>
-      <td class="text-success">${escapeHtml(pros)}</td>
-      <td class="text-danger">${escapeHtml(cons)}</td>
-      <td>${escapeHtml(p.notes || '')}</td>
+      <td class="text-success">${formatList(p.pros)}</td>
+      <td class="text-danger">${formatList(p.cons)}</td>
+      <td>${formatList(p.notes ? [p.notes] : [])}</td>
     </tr>
   `;
 }
