@@ -1,0 +1,370 @@
+{
+  "platforms": {
+    "poshmark": {
+      "name": "Poshmark Canada",
+      "url": "https://poshmark.ca",
+      "available_in_canada": true,
+      "categories": ["clothing", "shoes", "jewelry", "accessories"],
+      "fees": {
+        "commission_tiers": [
+          { "threshold_cad": 20, "fee_type": "flat", "amount_cad": 3.95 },
+          { "threshold_cad": null, "fee_type": "percentage", "amount": 20 }
+        ],
+        "payment_processing": "included",
+        "listing_fee": null,
+        "shipping": {
+          "type": "prepaid_label",
+          "cost_cad": 12.49,
+          "carrier": "Canada Post",
+          "weight_limit_lbs": 5
+        }
+      },
+      "audience": "Women 18-45, fashion-forward, brand-conscious buyers",
+      "pros": [
+        "Large user base (80M+ users)",
+        "Flat-rate prepaid shipping simplifies logistics",
+        "Social features (Posh Parties, sharing) boost visibility",
+        "Authentication for items $700+ CAD",
+        "Seller protection on all sales"
+      ],
+      "cons": [
+        "20% commission is high for lower-priced items",
+        "Limited to fashion categories",
+        "Shipping cost included in buyer price can reduce competitiveness"
+      ],
+      "best_for": ["clothing", "shoes", "handbags", "accessories"],
+      "seller_control": "high",
+      "authentication": true,
+      "authentication_threshold_cad": 700,
+      "notes": "Best for mid-range to designer fashion. Use Posh Parties to increase visibility. Cross-list to other platforms for faster sales."
+    },
+    "ebay": {
+      "name": "eBay Canada",
+      "url": "https://ebay.ca",
+      "available_in_canada": true,
+      "categories": ["clothing", "shoes", "jewelry", "accessories"],
+      "fees": {
+        "commission_tiers": [
+          { "category": "most_categories", "fee_type": "percentage", "amount": 12.9 },
+          { "category": "jewelry_watches", "fee_type": "percentage", "amount": 12.9, "cap_cad": 500 }
+        ],
+        "payment_processing": "included_in_final_value",
+        "listing_fee": {
+          "free_listings_per_month": 250,
+          "per_listing_after": 0.35
+        },
+        "shipping": {
+          "type": "seller_arranged",
+          "notes": "Can offer free shipping or buyer-paid; GSP for international"
+        }
+      },
+      "audience": "Broad international audience, collectors, bargain hunters",
+      "pros": [
+        "Massive global reach (134M+ active buyers)",
+        "Auction format can drive up prices for rare items",
+        "International shipping via Global Shipping Program",
+        "Best for vintage, collectible, and niche items",
+        "250 free listings per month"
+      ],
+      "cons": [
+        "Complex fee structure",
+        "Heavy competition on common items",
+        "Buyer-favored dispute resolution",
+        "More effort required for international shipping"
+      ],
+      "best_for": ["vintage", "designer", "jewelry", "rare_items", "menswear"],
+      "seller_control": "high",
+      "authentication": true,
+      "authentication_note": "Authenticity Guarantee for luxury items in select categories",
+      "notes": "Best for unique/rare items, international buyers. Use auction format for desirable vintage pieces. Fixed price for everyday items."
+    },
+    "etsy": {
+      "name": "Etsy",
+      "url": "https://etsy.com",
+      "available_in_canada": true,
+      "categories": ["clothing", "shoes", "jewelry", "accessories"],
+      "fees": {
+        "commission": 6.5,
+        "payment_processing": {
+          "percentage": 3,
+          "flat_fee_cad": 0.25
+        },
+        "listing_fee": {
+          "per_listing_cad": 0.26,
+          "duration_months": 4
+        },
+        "shipping": {
+          "type": "seller_arranged",
+          "notes": "Can purchase labels through Etsy for discounted rates"
+        }
+      },
+      "audience": "Vintage enthusiasts, unique item seekers, eco-conscious buyers",
+      "pros": [
+        "Dedicated vintage category (items must be 20+ years old)",
+        "300M+ monthly visitors globally",
+        "Strong for jewelry and unique pieces",
+        "Built-in audience seeking vintage specifically",
+        "Good search visibility for vintage keywords"
+      ],
+      "cons": [
+        "Multiple fee types add up (listing + transaction + processing)",
+        "20-year vintage requirement limits newer items",
+        "Competition from handmade sellers",
+        "Effective commission ~10% when all fees combined"
+      ],
+      "best_for": ["true_vintage", "jewelry", "unique_pieces", "designer_vintage"],
+      "seller_control": "high",
+      "authentication": false,
+      "vintage_requirement_years": 20,
+      "notes": "Best for true vintage (20+ years). Jewelry performs exceptionally well. Use all 13 tags and detailed descriptions for SEO."
+    },
+    "depop": {
+      "name": "Depop",
+      "url": "https://depop.com",
+      "available_in_canada": true,
+      "categories": ["clothing", "shoes", "jewelry", "accessories"],
+      "fees": {
+        "commission": 10,
+        "payment_processing": {
+          "percentage": 2.9,
+          "notes": "Plus currency conversion fees if applicable"
+        },
+        "listing_fee": null,
+        "shipping": {
+          "type": "seller_arranged",
+          "notes": "No prepaid labels in Canada; seller handles shipping"
+        }
+      },
+      "audience": "Gen Z (90% under 26), trend-focused, streetwear enthusiasts",
+      "pros": [
+        "Strong youth market reach",
+        "Social media-style interface drives engagement",
+        "Good for trendy vintage and streetwear",
+        "Lower commission than Poshmark",
+        "250K+ Canadian users"
+      ],
+      "cons": [
+        "Younger demographic = lower average sale prices",
+        "No prepaid shipping labels in Canada",
+        "Less effective for classic/formal vintage",
+        "Payment processing fees add to costs"
+      ],
+      "best_for": ["streetwear", "90s_vintage", "trendy_items", "youth_fashion"],
+      "seller_control": "high",
+      "authentication": false,
+      "notes": "Best for trendy, youth-oriented vintage. Strong for 90s/Y2K fashion, streetwear, and branded athletic wear. Style your photos for the aesthetic."
+    },
+    "vestiaire_collective": {
+      "name": "Vestiaire Collective",
+      "url": "https://vestiairecollective.com",
+      "available_in_canada": true,
+      "categories": ["clothing", "shoes", "jewelry", "accessories"],
+      "fees": {
+        "commission_tiers": [
+          { "range_cad": [0, 125], "fee_type": "flat", "amount_cad": 15 },
+          { "range_cad": [125, 25000], "fee_type": "percentage", "amount": 12 },
+          { "range_cad": [25000, null], "fee_type": "flat", "amount_cad": 3000 }
+        ],
+        "payment_processing": {
+          "percentage": 3,
+          "minimum_cad": 4
+        },
+        "listing_fee": null,
+        "minimum_listing_price_cad": 34,
+        "shipping": {
+          "type": "seller_ships_to_authentication",
+          "notes": "Items ship to VC for authentication before buyer receives"
+        }
+      },
+      "audience": "Luxury fashion buyers, designer brand seekers, global market",
+      "pros": [
+        "Global luxury marketplace",
+        "All items authenticated",
+        "Lower fees than TheRealReal",
+        "Seller sets own prices",
+        "Price negotiation with buyers"
+      ],
+      "cons": [
+        "Minimum CA$34 listing price",
+        "3% payment processing on top of commission",
+        "Shipping to authentication center adds time",
+        "Best for designer/luxury only"
+      ],
+      "best_for": ["designer", "luxury", "high_end_jewelry", "premium_accessories"],
+      "seller_control": "high",
+      "authentication": true,
+      "authentication_note": "All items authenticated by experts before shipping to buyer",
+      "notes": "Best for designer/luxury items CA$125+. Effective commission ~15% total. Better payout than TheRealReal for most price points. Set competitive prices as buyers can make offers."
+    },
+    "therealreal": {
+      "name": "The RealReal",
+      "url": "https://therealreal.com",
+      "available_in_canada": true,
+      "categories": ["clothing", "shoes", "jewelry", "accessories"],
+      "fees": {
+        "commission_tiers": [
+          { "range_usd": [0, 99], "seller_payout_percentage": 20 },
+          { "range_usd": [100, 149], "seller_payout_percentage": 30 },
+          { "range_usd": [150, 199], "seller_payout_percentage": 45 },
+          { "range_usd": [200, 299], "seller_payout_percentage": 55 },
+          { "range_usd": [300, 749], "seller_payout_percentage": 65 },
+          { "range_usd": [750, null], "seller_payout_percentage": 70 }
+        ],
+        "commission_note": "Percentages shown are what SELLER receives; TRR takes the rest",
+        "payment_processing": "included",
+        "listing_fee": null,
+        "shipping": {
+          "type": "consignment",
+          "notes": "Free shipping kit provided; TRR handles all logistics"
+        }
+      },
+      "audience": "High-end luxury buyers, authenticated luxury seekers",
+      "pros": [
+        "Completely hands-off (they photograph, price, list, ship)",
+        "Free pickup or shipping kit",
+        "Expert authentication",
+        "Reach affluent buyer base",
+        "Instant payout option (60% of expected value)"
+      ],
+      "cons": [
+        "Lowest seller payout (20-70% depending on price)",
+        "No control over pricing",
+        "USD transactions for Canadian sellers",
+        "Best only for high-value luxury items",
+        "Slow payout if item doesn't sell quickly"
+      ],
+      "best_for": ["high_end_luxury", "designer_jewelry", "hands_off_selling"],
+      "seller_control": "low",
+      "authentication": true,
+      "authentication_note": "All items authenticated by in-house experts",
+      "notes": "Best for luxury items $500+ USD when you want zero effort. Commission is steep but convenience is unmatched. Get Paid Now option provides 60% immediately."
+    },
+    "grailed": {
+      "name": "Grailed",
+      "url": "https://grailed.com",
+      "available_in_canada": true,
+      "categories": ["clothing", "shoes", "accessories"],
+      "fees": {
+        "commission": 9,
+        "payment_processing": {
+          "range_percentage": [3.49, 4.99],
+          "notes": "Varies by payment method"
+        },
+        "listing_fee": null,
+        "shipping": {
+          "type": "seller_arranged",
+          "notes": "Seller handles shipping; international buyers common"
+        }
+      },
+      "audience": "Men's fashion enthusiasts, streetwear collectors, designer menswear buyers",
+      "pros": [
+        "Dedicated menswear marketplace",
+        "Strong for designer and streetwear",
+        "3M+ listings, passionate buyer base",
+        "Good prices for sought-after brands",
+        "Lower commission than Poshmark"
+      ],
+      "cons": [
+        "Men's fashion only",
+        "Payment processing fees add ~4%",
+        "International shipping complexity",
+        "No prepaid labels"
+      ],
+      "best_for": ["mens_designer", "streetwear", "vintage_menswear", "sneakers"],
+      "seller_control": "high",
+      "authentication": false,
+      "notes": "The go-to for men's designer and streetwear. Effective commission ~13%. Strong for brands like Supreme, Raf Simons, vintage Helmut Lang, designer denim. Price competitively as buyers negotiate."
+    },
+    "starluv": {
+      "name": "Starluv",
+      "url": "https://starluv.com",
+      "available_in_canada": true,
+      "categories": ["clothing", "shoes", "accessories"],
+      "fees": {
+        "commission_tiers": [
+          { "threshold_cad": 25, "fee_type": "flat", "amount_cad": 1.95 },
+          { "threshold_cad": null, "fee_type": "percentage", "amount": 7.5 }
+        ],
+        "payment_processing": "included",
+        "listing_fee": null,
+        "shipping": {
+          "type": "prepaid_label",
+          "notes": "Tracked shipping labels provided"
+        }
+      },
+      "audience": "Canadian fashion buyers, budget-conscious shoppers",
+      "pros": [
+        "Canadian-owned platform",
+        "Lowest fees of major platforms (7.5%)",
+        "Tracked shipping labels provided",
+        "Growing Canadian user base",
+        "Safety-focused"
+      ],
+      "cons": [
+        "Smaller user base than established platforms",
+        "Less brand recognition",
+        "Limited to Canadian market"
+      ],
+      "best_for": ["canadian_market", "mid_range_fashion", "budget_friendly"],
+      "seller_control": "high",
+      "authentication": false,
+      "notes": "Best Canadian-owned alternative to Poshmark with significantly lower fees. Good for testing the Canadian market specifically. Growing platform worth watching."
+    }
+  },
+  "unavailable_in_canada": {
+    "vinted": {
+      "name": "Vinted",
+      "status": "exited_canada_2024",
+      "notes": "Vinted exited the Canadian market in early 2024. Previously popular for zero seller fees."
+    },
+    "thredup": {
+      "name": "ThredUp",
+      "status": "us_only",
+      "notes": "Consignment platform available only in the United States."
+    },
+    "mercari": {
+      "name": "Mercari",
+      "status": "us_japan_only",
+      "notes": "Available only in US and Japan markets."
+    }
+  },
+  "platform_comparison": {
+    "by_fee_lowest_to_highest": [
+      "starluv",
+      "grailed",
+      "depop",
+      "etsy",
+      "ebay",
+      "vestiaire_collective",
+      "poshmark",
+      "therealreal"
+    ],
+    "by_category": {
+      "clothing": ["poshmark", "depop", "ebay", "vestiaire_collective"],
+      "shoes": ["poshmark", "ebay", "grailed", "vestiaire_collective"],
+      "jewelry": ["etsy", "ebay", "vestiaire_collective", "therealreal"],
+      "accessories": ["poshmark", "ebay", "vestiaire_collective", "etsy"],
+      "menswear": ["grailed", "ebay", "depop"],
+      "luxury": ["vestiaire_collective", "therealreal", "ebay"]
+    },
+    "by_effort_level": {
+      "hands_off": ["therealreal"],
+      "moderate": ["poshmark", "vestiaire_collective"],
+      "high_effort": ["ebay", "etsy", "depop", "grailed"]
+    }
+  },
+  "meta": {
+    "created": "2026-01-13",
+    "document_type": "reference_data",
+    "domain": "thrift_store_sourcing",
+    "purpose": "Resale platform characteristics, fees, and strategic guidance for Canadian sellers",
+    "version": "1.0",
+    "currency": "CAD unless otherwise noted",
+    "sources": [
+      "https://www.thevintageseeker.ca/magazine/where-to-buy-and-sell-vintage-online",
+      "https://canadianbudgetbinder.com/2025/05/17/best-places-to-sell-used-clothing-in-canada/",
+      "https://faq.vestiairecollective.com/hc/en-us/articles/24659638721425-Seller-Selling-Fees",
+      "https://thealloymarket.com/the-realreal-vs-vestiaire-collective/"
+    ]
+  }
+}
