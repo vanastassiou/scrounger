@@ -74,6 +74,7 @@ export async function pickFolder(clientId, apiKey, title = 'Select a folder') {
       .setAppId(clientId.split('-')[0])
       .setOAuthToken(token)
       .setDeveloperKey(apiKey)
+      .setOrigin(window.location.origin)
       .addView(view)
       .setTitle(title)
       .enableFeature(google.picker.Feature.NAV_HIDDEN) // Hide side nav for cleaner look
