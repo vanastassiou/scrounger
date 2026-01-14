@@ -250,11 +250,8 @@ function renderPipelineTable() {
   const tbody = $('#selling-tbody');
   if (!tbody) return;
 
-  // Combine pipeline and non-pipeline data
-  let allData = [...pipelineData, ...nonPipelineData];
-
-  // Filter data
-  let filtered = allData;
+  // Only show items in the sales pipeline (not in_collection)
+  let filtered = [...pipelineData];
 
   // Filter by status
   if (filterStatus) {
