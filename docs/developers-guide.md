@@ -88,14 +88,14 @@ npm start   # Serves at http://localhost:8080
 ```
 User Action → Module Function → db.js → IndexedDB
                                    ↓
-                              sync.js → Google Drive (optional)
+                              sync.js → Google Drive (source of truth)
 ```
 
 ### Storage Layers
 
-1. **IndexedDB** — Primary storage for all user data
+1. **IndexedDB** — Local cache for offline access
 2. **localStorage** — UI state only (active tab, preferences)
-3. **Google Drive** — Optional cloud backup (JSON files)
+3. **Google Drive** — Primary storage and source of truth (syncs to IndexedDB)
 
 ### Module Responsibilities
 
@@ -120,10 +120,9 @@ Initializes all modules and sets up event handlers.
 // Initialization order matters
 async function init() {
   await loadStoresData();      // 1. Load reference data
-  await loadBaselineData();    // 2. Load baseline inventory
-  createTabController(...);    // 3. Set up navigation
+  createTabController(...);    // 2. Set up navigation
 
-  await Promise.all([          // 4. Initialize features in parallel
+  await Promise.all([          // 3. Initialize features in parallel
     initInventory(),
     initStores(),
     initVisits(),
@@ -132,7 +131,11 @@ async function init() {
     initSettings()
   ]);
 
-  await renderDashboardStats(); // 5. Render dashboard
+  await renderDashboardStats(); // 4. Render dashboard
+
+  if (isConnected()) {
+    syncOnOpen();              // 5. Sync with Google Drive
+  }
 }
 ```
 
@@ -317,7 +320,6 @@ html[data-tab="dashboard"] #dashboard { display: block; }
 ```javascript
 createTabController('.tab', '.page', {
   storageKey: 'activeTab',
-  onActivate: handleTabActivate
 });
 ```
 
@@ -700,45 +702,22 @@ markDirty('inventory');  // Queue for sync
 
 | File | Purpose |
 |------|---------|
-| `stores.json` | Pre-loaded thrift stores with hours, tiers, clusters |
-| `inventory.json` | Baseline inventory (loaded once) |
-| `brands-clothing-shoes.json` | Brand tier valuations |
-| `brands-jewelry-hallmarks.json` | Hallmark authentication database |
-| `materials.json` | Fiber, leather, metal quality guides |
+| `stores.json` | Archive (not loaded; store data lives in Google Drive) |
+| `inventory.json` | Archive (not loaded; inventory data lives in Google Drive) |
+| `brands-clothing-shoes.json` | Brand tier valuations (lookup table) |
+| `brands-jewelry-hallmarks.json` | Hallmark authentication database (lookup table) |
+| `materials.json` | Fiber, leather, metal quality guides (lookup table) |
 | `inventory-form-schema.json` | Complete item data schema |
 | `rotation-logic.json` | Visit frequency rules |
 
-### Loading Reference Data
+### Data Storage
 
-Reference data is loaded at startup in `app.js`:
+All user data (inventory, stores, visits) lives in Google Drive and syncs to IndexedDB on app open.
 
-```javascript
-async function loadStoresData() {
-  const response = await fetch('data/stores.json');
-  state.storesDB = await response.json();
-}
-```
-
-### Updating Reference Data
-
-Edit the JSON files directly. Changes take effect on next app load.
-
-For stores, the structure is:
-```json
-{
-  "stores": [
-    {
-      "id": "store-123",
-      "name": "Value Village",
-      "address": "123 Main St",
-      "hours": { "mon": "9-9", "tue": "9-9", ... },
-      "tier": "A",
-      "cluster": "downtown",
-      "chain": "value_village"
-    }
-  ]
-}
-```
+The JSON files in `/data/` are now only used for:
+- Brand/material lookup tables (read-only reference)
+- Form schema definitions
+- Local archives of data that has been migrated to Google Drive
 
 ---
 

@@ -133,6 +133,6 @@ export function updateSyncStatus(syncState) {
   } else if (syncState.lastSyncAt) {
     el.textContent = 'Synced';
   } else {
-    el.textContent = 'Offline';
+    el.textContent = 'Not synced';
   }
 }

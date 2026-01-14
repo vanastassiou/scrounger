@@ -50,7 +50,7 @@
 <body>
   <header class="app-header">
     <h1 class="app-title">Thrift Inventory</h1>
-    <span id="sync-status" class="sync-status">Offline</span>
+    <span id="sync-status" class="sync-status">Not synced</span>
   </header>
 
   <nav class="tabs">
@@ -968,6 +968,149 @@
 
         <button type="submit" class="btn btn--primary btn--block">Mark as shipped</button>
       </form>
+    </div>
+  </dialog>
+
+  <!-- Export Options Dialog -->
+  <dialog id="export-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Export data</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Choose where to save your backup:</p>
+        <div class="option-buttons">
+          <button class="btn btn--block option-btn" id="export-local">
+            <span class="option-icon">💾</span>
+            <span class="option-text">
+              <strong>Download file</strong>
+              <small>Save JSON backup to your device</small>
+            </span>
+          </button>
+          <button class="btn btn--block option-btn" id="export-drive" disabled>
+            <span class="option-icon">☁️</span>
+            <span class="option-text">
+              <strong>Save to Google Drive</strong>
+              <small id="export-drive-status">Connect Google Drive first</small>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Import Options Dialog -->
+  <dialog id="import-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Import data</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Choose where to import from:</p>
+        <div class="option-buttons">
+          <button class="btn btn--block option-btn" id="import-local">
+            <span class="option-icon">📁</span>
+            <span class="option-text">
+              <strong>Select files</strong>
+              <small>Import inventory.json, stores.json, or backups</small>
+            </span>
+          </button>
+          <button class="btn btn--block option-btn" id="import-drive" disabled>
+            <span class="option-icon">☁️</span>
+            <span class="option-text">
+              <strong>Import from Google Drive</strong>
+              <small id="import-drive-status">Connect Google Drive first</small>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Import Confirm Dialog -->
+  <dialog id="import-confirm-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Confirm import</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>This will import:</p>
+        <ul id="import-summary"></ul>
+        <p class="text-danger"><strong>This will replace your existing data.</strong></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="import-confirm-cancel">Cancel</button>
+        <button class="btn btn--primary" id="import-confirm-ok">Import</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Clear Data Confirmation Dialog -->
+  <dialog id="clear-data-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Clear all data?</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>This will permanently delete:</p>
+        <ul class="clear-data-list">
+          <li><strong>All inventory items</strong> and their photos</li>
+          <li><strong>All store visits</strong> you've logged</li>
+          <li><strong>Custom stores</strong> you've added</li>
+          <li><strong>App settings</strong> and preferences</li>
+        </ul>
+        <p class="text-danger"><strong>This cannot be undone.</strong></p>
+        <p class="text-muted">Data synced to Google Drive will not be affected.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="clear-data-cancel">Cancel</button>
+        <button class="btn btn--danger" id="clear-data-confirm">Delete everything</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Setup Wizard (shown when Google Drive not configured) -->
+  <dialog id="setup-wizard-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Welcome to Thrift Inventory</h2>
+      </div>
+      <div class="modal-body">
+        <p>This app stores your data in Google Drive. Please connect your Google account to get started.</p>
+
+        <div class="sync-steps">
+          <div class="sync-step" id="setup-step-1">
+            <div class="sync-step-header">
+              <span class="sync-step-number">1</span>
+              <span class="sync-step-title">Connect Google Drive</span>
+              <span class="sync-step-status sync-step-status--pending" id="setup-step-1-status">Pending</span>
+            </div>
+            <div class="sync-step-content">
+              <p class="text-muted">Sign in with Google to enable cloud storage.</p>
+              <button class="btn btn--primary" id="setup-connect-btn">Connect to Google Drive</button>
+            </div>
+          </div>
+
+          <div class="sync-step sync-step--disabled" id="setup-step-2">
+            <div class="sync-step-header">
+              <span class="sync-step-number">2</span>
+              <span class="sync-step-title">Choose sync folder</span>
+              <span class="sync-step-status sync-step-status--pending" id="setup-step-2-status">Pending</span>
+            </div>
+            <div class="sync-step-content">
+              <p class="text-muted">Select or create a folder for your data.</p>
+              <button class="btn" id="setup-folder-btn" disabled>Select Folder</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn--primary" id="setup-done-btn" disabled>Get Started</button>
+      </div>
     </div>
   </dialog>
 
