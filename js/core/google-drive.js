@@ -7,7 +7,7 @@ import { getToken, startAuth, handleCallback, isAuthenticated, logout } from './
 import { getSavedFolder, pickFolder, saveFolder, clearFolder, findOrCreateFolderByName, createFolder } from './google-picker.js';
 
 const SCOPES = [
-  'https://www.googleapis.com/auth/drive.file'
+  'https://www.googleapis.com/auth/drive'
 ];
 
 const API_BASE = 'https://www.googleapis.com';
