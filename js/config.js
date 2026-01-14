@@ -92,8 +92,9 @@ export const RESALE_PLATFORMS = [
   'ebay',
   'etsy',
   'depop',
-  'facebook_marketplace',
-  'local_consignment',
+  'vestiaire_collective',
+  'therealreal',
+  'grailed',
   'other'
 ];
 

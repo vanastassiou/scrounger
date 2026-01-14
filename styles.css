@@ -1588,3 +1588,278 @@
   color: white;
   text-align: center;
 }
+
+/* =============================================================================
+   REFERENCES TAB
+   ============================================================================= */
+
+/* Tier badges - reuse existing .tier styles with text labels */
+.tier-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.5rem;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+}
+
+.tier-badge--s { background: var(--color-primary); color: white; }
+.tier-badge--a { background: var(--color-success); color: white; }
+.tier-badge--b { background: var(--color-warning); color: black; }
+.tier-badge--vintage { background: #8b4513; color: white; }
+
+/* Brand table cells */
+.brand-name { font-weight: 500; }
+
+.brand-alt {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-weight: normal;
+}
+
+.brand-notes {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+#references-table .text-right { text-align: right; }
+
+/* Sub-tabs for switching views within References */
+.sub-tabs {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-sm);
+}
+
+.sub-tab {
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.sub-tab:hover {
+  color: var(--color-text);
+}
+
+.sub-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+/* View Header (for sub-view action buttons) */
+.view-header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-md);
+}
+
+/* Platforms Grid */
+.platforms-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.platform-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  border-left: 3px solid var(--color-primary);
+}
+
+.platform-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-sm);
+}
+
+.platform-card__name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.platform-card__name a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.platform-card__name a:hover {
+  color: var(--color-primary);
+}
+
+.platform-card__badge {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-elevated);
+  color: var(--color-text-muted);
+}
+
+.platform-card__badge--free {
+  background: var(--color-success);
+  color: white;
+}
+
+.platform-card__badge--low {
+  background: #3b82f6;
+  color: white;
+}
+
+.platform-card__badge--luxury {
+  background: #8b5cf6;
+  color: white;
+}
+
+.platform-card__fees {
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  font-size: 0.875rem;
+}
+
+.platform-card__fees-label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: var(--space-xs);
+}
+
+.platform-card__fees-main {
+  font-weight: 600;
+  color: var(--color-warning);
+}
+
+.platform-card__fees-detail {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-top: var(--space-xs);
+}
+
+.platform-card__audience {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+.platform-card__best-for {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+.platform-card__tag {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+}
+
+.platform-card__pros-cons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+  font-size: 0.8rem;
+}
+
+.platform-card__pros h4,
+.platform-card__cons h4 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+  text-transform: uppercase;
+}
+
+.platform-card__pros h4 { color: var(--color-success); }
+.platform-card__cons h4 { color: var(--color-error); }
+
+.platform-card__pros ul,
+.platform-card__cons ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.platform-card__pros li,
+.platform-card__cons li {
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+  padding-left: 1em;
+  position: relative;
+}
+
+.platform-card__pros li::before {
+  content: "+";
+  position: absolute;
+  left: 0;
+  color: var(--color-success);
+  font-weight: bold;
+}
+
+.platform-card__cons li::before {
+  content: "-";
+  position: absolute;
+  left: 0;
+  color: var(--color-error);
+  font-weight: bold;
+}
+
+.platform-card__notes {
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* Unavailable platforms section */
+.platforms-unavailable {
+  margin-top: var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.platforms-unavailable__title {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-sm);
+}
+
+.platform-unavailable {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-sm);
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-xs);
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+.platform-unavailable__name {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.platform-unavailable__reason {
+  color: var(--color-error);
+  font-size: 0.75rem;
+}
