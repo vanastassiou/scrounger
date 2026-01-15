@@ -6,6 +6,7 @@ import {
   $, $$, escapeHtml,
   createSortableTable, createFilterButtons, emptyStateRow
 } from './utils.js';
+import { createSubTabController } from './components.js';
 
 let brandsData = [];
 let platformsData = null;
@@ -416,34 +417,20 @@ async function loadPlatforms() {
 }
 
 function setupSubTabs() {
-  const subTabs = $$('.sub-tab[data-ref-view]');
-  const views = {
-    stores: $('#ref-stores-view'),
-    visits: $('#ref-visits-view'),
-    brands: $('#ref-brands-view'),
-    platforms: $('#ref-platforms-view')
-  };
-  const validViews = Object.keys(views);
-
-  function activateView(view) {
-    subTabs.forEach(t => t.classList.toggle('active', t.dataset.refView === view));
-    currentView = view;
-    Object.entries(views).forEach(([key, el]) => {
-      if (el) el.style.display = key === view ? '' : 'none';
-    });
-    localStorage.setItem('referencesSubTab', view);
-    document.documentElement.dataset.refSub = view;
-  }
-
-  subTabs.forEach(tab => {
-    tab.addEventListener('click', () => activateView(tab.dataset.refView));
+  createSubTabController({
+    tabSelector: '.sub-tab[data-ref-view]',
+    dataAttr: 'refView',
+    views: {
+      stores: '#ref-stores-view',
+      visits: '#ref-visits-view',
+      brands: '#ref-brands-view',
+      platforms: '#ref-platforms-view'
+    },
+    storageKey: 'referencesSubTab',
+    htmlDataAttr: 'refSub',
+    defaultView: 'stores',
+    onActivate: (view) => { currentView = view; }
   });
-
-  // Restore saved sub-tab
-  const saved = localStorage.getItem('referencesSubTab');
-  if (saved && validViews.includes(saved)) {
-    activateView(saved);
-  }
 
   // Platform search
   const platformSearch = $('#platform-search');

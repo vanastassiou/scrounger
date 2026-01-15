@@ -10,6 +10,7 @@ import {
   createSortableTable, sortData, createFilterButtons, emptyStateRow,
   createChainStoreDropdown, formatChainName, getLocationName, compressImage
 } from './utils.js';
+import { createSubTabController, initStoreDropdown, setVisible } from './components.js';
 import {
   CATEGORIES, SUBCATEGORIES, STATUS_OPTIONS, CONDITION_OPTIONS, ERA_OPTIONS,
   METAL_TYPES, CLOSURE_TYPES, JEWELRY_TESTS,
@@ -169,33 +170,24 @@ export async function initInventory() {
   setupInventorySubTabs();
 }
 
+let inventorySubTabController = null;
+
 function setupInventorySubTabs() {
-  const subTabs = $$('.sub-tab[data-inv-view]');
-  const collectionView = $('#inv-collection-view');
-  const sellingView = $('#inv-selling-view');
-
-  function activateView(view) {
-    subTabs.forEach(t => t.classList.toggle('active', t.dataset.invView === view));
-    if (collectionView) collectionView.style.display = view === 'collection' ? '' : 'none';
-    if (sellingView) sellingView.style.display = view === 'selling' ? '' : 'none';
-    localStorage.setItem('inventorySubTab', view);
-    document.documentElement.dataset.invSub = view;
-  }
-
-  subTabs.forEach(tab => {
-    tab.addEventListener('click', () => activateView(tab.dataset.invView));
+  inventorySubTabController = createSubTabController({
+    tabSelector: '.sub-tab[data-inv-view]',
+    dataAttr: 'invView',
+    views: {
+      collection: '#inv-collection-view',
+      selling: '#inv-selling-view'
+    },
+    storageKey: 'inventorySubTab',
+    htmlDataAttr: 'invSub',
+    defaultView: 'collection'
   });
-
-  // Restore saved sub-tab
-  const saved = localStorage.getItem('inventorySubTab');
-  if (saved && (saved === 'collection' || saved === 'selling')) {
-    activateView(saved);
-  }
 }
 
 export function switchToSellingView() {
-  const sellingTab = $('.sub-tab[data-inv-view="selling"]');
-  if (sellingTab) sellingTab.click();
+  inventorySubTabController?.activate('selling');
 }
 
 async function loadInventory() {
@@ -382,17 +374,12 @@ function populateSelect(selector, options, formatter, defaultLabel = 'Select...'
   }
 }
 
-let storeDropdownInitialized = false;
-
 function populateStoreSelect() {
-  if (storeDropdownInitialized) return;
-  storeDropdownInitialized = true;
-
-  createChainStoreDropdown({
+  initStoreDropdown({
     chainSelector: '#item-chain',
     storeSelector: '#item-store',
     getAllStores: () => state.getAllStores()
-  });
+  }, createChainStoreDropdown);
 }
 
 function renderCheckboxGroup(selector, options, namePrefix, formatter) {

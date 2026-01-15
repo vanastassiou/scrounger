@@ -4,6 +4,7 @@
 
 import { getInventoryInPipeline } from './db.js';
 import { $, $$ } from './utils.js';
+import { setVisible } from './components.js';
 
 // =============================================================================
 // INITIALIZATION
@@ -50,7 +51,7 @@ function updateBadge(type, count) {
   const badge = $(`#action-badge-${type}`);
   if (badge) {
     badge.textContent = count;
-    badge.style.display = count > 0 ? '' : 'none';
+    setVisible(badge, count > 0);
   }
 }
 

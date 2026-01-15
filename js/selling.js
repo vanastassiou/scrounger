@@ -30,6 +30,7 @@ import {
 import { RESALE_PLATFORMS, PIPELINE_STATUSES, getStatusSortOrder } from './config.js';
 import { openViewItemModal, openEditItemModal } from './inventory.js';
 import { initFees, calculatePlatformFees, calculateEstimatedReturns } from './fees.js';
+import { setVisible, show, hide } from './components.js';
 
 // =============================================================================
 // STATE
@@ -218,8 +219,7 @@ function setupEventHandlers() {
     if (platformFeesInput) {
       platformFeesInput.addEventListener('input', () => {
         feesManuallyEdited = true;
-        const resetBtn = $('#reset-fees-btn');
-        if (resetBtn) resetBtn.style.display = 'inline';
+        show('#reset-fees-btn');
       });
     }
 
@@ -229,7 +229,7 @@ function setupEventHandlers() {
       resetFeesBtn.addEventListener('click', (e) => {
         e.preventDefault();
         feesManuallyEdited = false;
-        resetFeesBtn.style.display = 'none';
+        hide(resetFeesBtn);
         updateFeeCalculation();
       });
     }
@@ -477,8 +477,7 @@ export async function openMarkAsSoldModal(itemId) {
   $('#platform-fees').value = '';
 
   // Reset fee display
-  const resetBtn = $('#reset-fees-btn');
-  if (resetBtn) resetBtn.style.display = 'none';
+  hide('#reset-fees-btn');
   clearFeeBreakdown();
 
   updateProfitPreview();
@@ -577,14 +576,14 @@ function renderFeeBreakdown(result) {
   }
 
   container.innerHTML = html;
-  container.style.display = 'block';
+  show(container);
 }
 
 function clearFeeBreakdown() {
   const container = $('#fee-breakdown');
   if (container) {
     container.innerHTML = '';
-    container.style.display = 'none';
+    hide(container);
   }
 }
 

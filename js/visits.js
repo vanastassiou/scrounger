@@ -9,6 +9,7 @@ import {
   $, formatCurrency, formatDate, getTodayDate, capitalize, formatStatus, escapeHtml,
   createChainStoreDropdown, createSortableTable, sortData
 } from './utils.js';
+import { initStoreDropdown } from './components.js';
 import { openAddItemModal, openEditItemModal, openViewItemModal } from './inventory.js';
 import { openViewStoreModal } from './stores.js';
 
@@ -302,17 +303,12 @@ export function openLogVisitModal() {
   logVisitModal.open();
 }
 
-let storeDropdownInitialized = false;
-
 function populateStoreSelect() {
-  if (storeDropdownInitialized) return;
-  storeDropdownInitialized = true;
-
-  createChainStoreDropdown({
+  initStoreDropdown({
     chainSelector: '#visit-chain',
     storeSelector: '#visit-store',
     getAllStores: () => state.getAllStores()
-  });
+  }, createChainStoreDropdown);
 }
 
 // =============================================================================
