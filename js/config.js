@@ -74,6 +74,35 @@ export const ERA_OPTIONS = [
   'unknown'
 ];
 
+// Condition multipliers for pricing recommendations
+export const CONDITION_MULTIPLIERS = {
+  new_with_tags: 1.15,
+  like_new: 1.0,
+  excellent: 0.95,
+  very_good: 0.85,
+  good: 0.75,
+  fair: 0.60,
+  poor: 0.40,
+  for_parts: 0.20
+};
+
+// Era bonuses for vintage items (multiplied with base price)
+export const ERA_BONUSES = {
+  pre_1920s: 1.5,
+  '1920s': 1.4,
+  '1930s': 1.35,
+  '1940s': 1.3,
+  '1950s': 1.25,
+  '1960s': 1.2,
+  '1970s': 1.15,
+  '1980s': 1.1,
+  '1990s': 1.05,
+  '2000s': 1.0,
+  '2010s': 1.0,
+  contemporary: 1.0,
+  unknown: 1.0
+};
+
 export const INTENT_OPTIONS = ['personal_keep', 'resale', 'undecided'];
 
 export const PIPELINE_STATUSES = [

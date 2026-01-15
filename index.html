@@ -1051,6 +1051,34 @@
           <div id="start-selling-item-title" class="text-muted"></div>
         </div>
 
+        <!-- Recommendations Section -->
+        <div id="selling-recommendations" class="recommendations-section" style="display: none;">
+          <h4 class="recommendations-title">Recommendations</h4>
+
+          <div class="recommendation-row">
+            <span class="recommendation-label">Best platform</span>
+            <span id="recommended-platform" class="recommendation-value"></span>
+          </div>
+          <div id="platform-reasons" class="recommendation-reasons text-muted"></div>
+
+          <div class="recommendation-row">
+            <span class="recommendation-label">Suggested price</span>
+            <span id="suggested-price" class="recommendation-value"></span>
+          </div>
+          <div id="price-breakdown" class="recommendation-breakdown text-muted"></div>
+
+          <div class="recommendation-row">
+            <span class="recommendation-label">Est. profit</span>
+            <span id="profit-estimate" class="recommendation-value"></span>
+          </div>
+          <div id="fee-breakdown" class="recommendation-breakdown text-muted"></div>
+
+          <details class="alternatives-details">
+            <summary>Compare platforms</summary>
+            <div id="platform-comparison" class="platform-comparison-table"></div>
+          </details>
+        </div>
+
         <div class="form-group">
           <label class="form-label" for="start-selling-status">Starting status *</label>
           <select class="form-select" id="start-selling-status" name="status" required>

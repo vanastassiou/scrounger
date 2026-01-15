@@ -7,7 +7,7 @@ import { getAllInventory, getInventoryStats, getInventoryItem, createInventoryIt
 import { showToast, createModalController } from './ui.js';
 import {
   $, $$, formatCurrency, formatDate, capitalize, formatStatus, formatPackaging, escapeHtml,
-  createSortableTable, sortData, createFilterButtons, emptyStateRow,
+  createSortableTable, sortData, createFilterButtons, emptyStateRow, updateSortIndicators,
   createChainStoreDropdown, formatChainName, getLocationName, compressImage
 } from './utils.js';
 import { createSubTabController, initStoreDropdown, setVisible } from './components.js';
@@ -18,6 +18,7 @@ import {
   COLOUR_OPTIONS, MATERIAL_OPTIONS, PIPELINE_STATUSES
 } from './config.js';
 import { queueSync } from './sync.js';
+import { generateSellingRecommendations, formatPlatformName } from './recommendations.js';
 
 let inventoryData = [];
 let sortColumn = 'created_at';
@@ -907,8 +908,8 @@ function renderInventoryTable() {
     return `
       <tr data-id="${item.id}">
         <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
-        <td>${formatCurrency(item.purchase_price || 0)}</td>
-        <td><span class="status status--${item.status}">${formatStatus(item.status)}</span></td>
+        <td data-label="Cost">${formatCurrency(item.purchase_price || 0)}</td>
+        <td data-label="Status"><span class="status status--${item.status}">${formatStatus(item.status)}</span></td>
         <td class="table-actions">
           <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
           ${sellButton}
@@ -916,6 +917,10 @@ function renderInventoryTable() {
       </tr>
     `;
   }).join('');
+
+  // Update sort indicators
+  const table = $('#inventory-table');
+  if (table) updateSortIndicators(table, sortColumn, sortDirection);
 
   // Update count
   const countEl = $('#inventory-count');
@@ -1718,31 +1723,114 @@ export async function openStartSellingModal(itemId) {
   $('#start-selling-status').value = 'unlisted';
   $('#start-selling-min-price').value = item.minimum_acceptable_price || '';
 
-  // Calculate suggested resale value from brand data
   const suggestionEl = $('#start-selling-suggestion');
   const estValueInput = $('#start-selling-est-value');
+  const recommendationsSection = $('#selling-recommendations');
 
-  if (item.estimated_resale_value) {
-    // Use existing value if set
-    estValueInput.value = item.estimated_resale_value;
+  // Generate recommendations
+  const recommendations = await generateSellingRecommendations(item);
+
+  if (recommendations) {
+    renderRecommendations(recommendations, item);
+    if (recommendationsSection) recommendationsSection.style.display = 'block';
+
+    // Pre-fill estimated value with suggestion (unless already set)
+    if (!item.estimated_resale_value) {
+      estValueInput.value = recommendations.suggestedPrice;
+    }
     if (suggestionEl) suggestionEl.textContent = '';
   } else {
-    // Try to calculate from brand multiplier
-    const suggestion = await calculateSuggestedResaleValue(item);
-    if (suggestion) {
-      estValueInput.value = suggestion.value;
-      if (suggestionEl) {
-        let hint = `Suggested: ${formatCurrency(suggestion.value)} (${suggestion.multiplier}× cost)`;
-        if (suggestion.tips) hint += ` — ${suggestion.tips}`;
-        suggestionEl.textContent = hint;
-      }
-    } else {
-      estValueInput.value = '';
+    // Fallback: hide recommendations, show old suggestion style
+    if (recommendationsSection) recommendationsSection.style.display = 'none';
+
+    if (item.estimated_resale_value) {
+      estValueInput.value = item.estimated_resale_value;
       if (suggestionEl) suggestionEl.textContent = '';
+    } else {
+      const suggestion = await calculateSuggestedResaleValue(item);
+      if (suggestion) {
+        estValueInput.value = suggestion.value;
+        if (suggestionEl) {
+          let hint = `Suggested: ${formatCurrency(suggestion.value)} (${suggestion.multiplier}× cost)`;
+          if (suggestion.tips) hint += ` — ${suggestion.tips}`;
+          suggestionEl.textContent = hint;
+        }
+      } else {
+        estValueInput.value = '';
+        if (suggestionEl) suggestionEl.textContent = '';
+      }
     }
   }
 
+  // Use existing value if set (takes priority)
+  if (item.estimated_resale_value) {
+    estValueInput.value = item.estimated_resale_value;
+  }
+
   startSellingModal.open();
+}
+
+/**
+ * Render recommendations in the Start Selling modal.
+ */
+function renderRecommendations(rec, item) {
+  const costBasis = (item.purchase_price || 0) + (item.tax_paid || 0);
+
+  // Recommended platform
+  const platformEl = $('#recommended-platform');
+  const reasonsEl = $('#platform-reasons');
+  if (rec.recommendedPlatforms.length > 0) {
+    const top = rec.recommendedPlatforms[0];
+    if (platformEl) platformEl.textContent = formatPlatformName(top.platformId);
+    if (reasonsEl) reasonsEl.textContent = top.reasons.slice(0, 2).join(' · ');
+  }
+
+  // Suggested price with breakdown
+  const priceEl = $('#suggested-price');
+  const breakdownEl = $('#price-breakdown');
+  if (priceEl) priceEl.textContent = formatCurrency(rec.suggestedPrice);
+
+  if (breakdownEl) {
+    const b = rec.priceBreakdown;
+    let breakdown = `${formatCurrency(b.base)} × ${b.brandMultiplier}× brand × ${b.conditionFactor} condition`;
+    if (b.eraBonus !== 1.0) breakdown += ` × ${b.eraBonus} vintage`;
+    breakdownEl.textContent = breakdown;
+  }
+
+  // Profit estimate for top platform
+  const profitEl = $('#profit-estimate');
+  const feeBreakdownEl = $('#fee-breakdown');
+  if (rec.profitEstimate && profitEl) {
+    const profit = rec.profitEstimate.profit;
+    const profitClass = profit >= 0 ? 'text-success' : 'text-danger';
+    profitEl.innerHTML = `<span class="${profitClass}">${formatCurrency(profit)}</span> after fees`;
+
+    if (feeBreakdownEl) {
+      feeBreakdownEl.textContent = `${formatCurrency(rec.profitEstimate.netPayout)} payout − ${formatCurrency(costBasis)} cost`;
+    }
+  }
+
+  // Platform comparison table
+  renderPlatformComparison(rec.recommendedPlatforms, costBasis);
+}
+
+/**
+ * Render the platform comparison table in the details section.
+ */
+function renderPlatformComparison(platforms, costBasis) {
+  const container = $('#platform-comparison');
+  if (!container || platforms.length < 2) return;
+
+  container.innerHTML = platforms.map(p => {
+    const profitClass = p.profit >= 0 ? 'text-success' : 'text-danger';
+    return `
+      <div class="platform-comparison-row">
+        <span>${formatPlatformName(p.platformId)}</span>
+        <span class="text-muted">~${p.feePercent}% fee</span>
+        <span class="${profitClass}">${formatCurrency(p.profit)}</span>
+      </div>
+    `;
+  }).join('');
 }
 
 async function handleStartSellingSubmit(e) {
