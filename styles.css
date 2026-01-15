@@ -87,12 +87,16 @@
     font-family: var(--font-sans);
     font-size: 16px;
     color: var(--color-text);
-    background: var(--color-bg);
+    background: #0d0d1a;
   }
 
   body {
     min-height: 100dvh;
+    max-width: 900px;
+    margin: 0 auto;
     padding-bottom: env(safe-area-inset-bottom);
+    background: var(--color-bg);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
   }
 
   h1, h2, h3 {

@@ -28,7 +28,11 @@
   <script>
     (function() {
       var t = localStorage.getItem('activeTab') || 'dashboard';
+      var invSub = localStorage.getItem('inventorySubTab') || 'collection';
+      var refSub = localStorage.getItem('referencesSubTab') || 'stores';
       document.documentElement.dataset.tab = t;
+      document.documentElement.dataset.invSub = invSub;
+      document.documentElement.dataset.refSub = refSub;
     })();
   </script>
   <style>
@@ -42,6 +46,23 @@
     html[data-tab="inventory"] .tab[data-tab="inventory"],
     html[data-tab="references"] .tab[data-tab="references"],
     html[data-tab="settings"] .tab[data-tab="settings"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+    /* Prevent flash of wrong sub-tab */
+    #inv-collection-view, #inv-selling-view { display: none; }
+    html[data-inv-sub="collection"] #inv-collection-view { display: block; }
+    html[data-inv-sub="selling"] #inv-selling-view { display: block; }
+    #ref-stores-view, #ref-visits-view, #ref-brands-view, #ref-platforms-view { display: none; }
+    html[data-ref-sub="stores"] #ref-stores-view { display: block; }
+    html[data-ref-sub="visits"] #ref-visits-view { display: block; }
+    html[data-ref-sub="brands"] #ref-brands-view { display: block; }
+    html[data-ref-sub="platforms"] #ref-platforms-view { display: block; }
+    /* Sub-tab button active state */
+    .sub-tab { color: var(--color-text-muted); border-bottom-color: transparent; }
+    html[data-inv-sub="collection"] .sub-tab[data-inv-view="collection"],
+    html[data-inv-sub="selling"] .sub-tab[data-inv-view="selling"],
+    html[data-ref-sub="stores"] .sub-tab[data-ref-view="stores"],
+    html[data-ref-sub="visits"] .sub-tab[data-ref-view="visits"],
+    html[data-ref-sub="brands"] .sub-tab[data-ref-view="brands"],
+    html[data-ref-sub="platforms"] .sub-tab[data-ref-view="platforms"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
   </style>
 </head>
 <body>
@@ -154,7 +175,7 @@
 
       <!-- Sub-navigation for Inventory -->
       <div class="sub-tabs">
-        <button class="sub-tab active" data-inv-view="collection">Collection</button>
+        <button class="sub-tab" data-inv-view="collection">Collection</button>
         <button class="sub-tab" data-inv-view="selling">Selling</button>
       </div>
 
@@ -288,7 +309,7 @@
 
       <!-- Sub-navigation for References -->
       <div class="sub-tabs">
-        <button class="sub-tab active" data-ref-view="stores">Stores</button>
+        <button class="sub-tab" data-ref-view="stores">Stores</button>
         <button class="sub-tab" data-ref-view="visits">Visits</button>
         <button class="sub-tab" data-ref-view="brands">Brands</button>
         <button class="sub-tab" data-ref-view="platforms">Platforms</button>
