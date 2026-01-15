@@ -12,7 +12,7 @@ import {
   updateInventoryItem,
   archiveItem
 } from './db.js';
-import { showToast, createModalController } from './ui.js';
+import { showToast } from './ui.js';
 import {
   $,
   $$,
@@ -26,12 +26,13 @@ import {
   createSortableTable,
   createFilterButtons,
   emptyStateRow,
-  updateSortIndicators
+  updateSortIndicators,
+  createFormHandler
 } from './utils.js';
 import { RESALE_PLATFORMS, PIPELINE_STATUSES, getStatusSortOrder } from './config.js';
 import { openViewItemModal, openEditItemModal } from './inventory.js';
 import { initFees, calculatePlatformFees, calculateEstimatedReturns } from './fees.js';
-import { setVisible, show, hide } from './components.js';
+import { setVisible, show, hide, createLazyModal } from './components.js';
 
 // =============================================================================
 // STATE
@@ -176,16 +177,62 @@ function setupEventHandlers() {
   }
 
   // Ship item form
-  const shipItemForm = $('#ship-item-form');
-  if (shipItemForm) {
-    shipItemForm.addEventListener('submit', handleShipItemSubmit);
-  }
+  createFormHandler({
+    formSelector: '#ship-item-form',
+    transform: (formData) => ({
+      itemId: parseInt(formData.get('item_id')),
+      shipData: {
+        status: 'shipped',
+        shipping_carrier: formData.get('shipping_carrier'),
+        tracking_number: formData.get('tracking_number') || null,
+        ship_date: formData.get('ship_date'),
+        shipping_cost: parseFloat(formData.get('shipping_cost')) || 0
+      }
+    }),
+    onSubmit: async ({ itemId, shipData }) => {
+      await updateInventoryItem(itemId, shipData);
+    },
+    onSuccess: async () => {
+      showToast('Item marked as shipped', 'success');
+      shipItemModal.close();
+      await loadPipeline();
+      currentShipItem = null;
+    },
+    onError: () => showToast('Failed to ship item', 'error'),
+    resetOnSuccess: false
+  });
 
   // Mark-as-sold form
+  createFormHandler({
+    formSelector: '#mark-sold-form',
+    transform: (formData) => ({
+      itemId: parseInt(formData.get('item_id')),
+      soldData: {
+        sold_date: formData.get('sold_date'),
+        sold_price: parseFloat(formData.get('sold_price')),
+        sold_platform: formData.get('sold_platform'),
+        shipping_cost: parseFloat(formData.get('shipping_cost')) || 0,
+        platform_fees: parseFloat(formData.get('platform_fees')) || 0
+      }
+    }),
+    onSubmit: async ({ itemId, soldData }) => {
+      await markItemAsSold(itemId, soldData);
+      await archiveItem(itemId);
+    },
+    onSuccess: async () => {
+      showToast('Item sold and archived', 'success');
+      markSoldModal.close();
+      await loadPipeline();
+      await renderAnalytics();
+      currentSoldItem = null;
+    },
+    onError: () => showToast('Failed to mark item as sold', 'error'),
+    resetOnSuccess: false
+  });
+
+  // Mark-sold form real-time listeners
   const markSoldForm = $('#mark-sold-form');
   if (markSoldForm) {
-    markSoldForm.addEventListener('submit', handleMarkAsSoldSubmit);
-
     // Real-time profit preview
     const priceInputs = ['#sold-price', '#shipping-cost', '#platform-fees'];
     priceInputs.forEach(selector => {
@@ -460,7 +507,35 @@ function getNextStatus(currentStatus) {
 // MARK AS SOLD MODAL
 // =============================================================================
 
-const markSoldModal = createModalController($('#mark-sold-dialog'));
+const markSoldModal = createLazyModal('#mark-sold-dialog', {
+  onOpen: (dialog, { item }) => {
+    currentSoldItem = item;
+    feesManuallyEdited = false;
+
+    // Populate form
+    const itemIdInput = dialog.querySelector('#sold-item-id');
+    const titleEl = dialog.querySelector('#sold-item-title');
+    const dateInput = dialog.querySelector('#sold-date');
+    const priceInput = dialog.querySelector('#sold-price');
+    const platformSelect = dialog.querySelector('#sold-platform');
+    const shippingInput = dialog.querySelector('#shipping-cost');
+    const feesInput = dialog.querySelector('#platform-fees');
+
+    if (itemIdInput) itemIdInput.value = item.id;
+    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+    if (priceInput) priceInput.value = item.estimated_resale_value || '';
+    if (platformSelect) platformSelect.value = '';
+    if (shippingInput) shippingInput.value = '';
+    if (feesInput) feesInput.value = '';
+
+    // Reset fee display
+    hide('#reset-fees-btn');
+    clearFeeBreakdown();
+
+    updateProfitPreview();
+  }
+});
 
 export async function openMarkAsSoldModal(itemId) {
   const item = await getInventoryItem(itemId);
@@ -469,24 +544,7 @@ export async function openMarkAsSoldModal(itemId) {
     return;
   }
 
-  currentSoldItem = item;
-  feesManuallyEdited = false;
-
-  // Populate form
-  $('#sold-item-id').value = itemId;
-  $('#sold-item-title').textContent = item.title || 'Untitled';
-  $('#sold-date').value = new Date().toISOString().split('T')[0];
-  $('#sold-price').value = item.estimated_resale_value || '';
-  $('#sold-platform').value = '';
-  $('#shipping-cost').value = '';
-  $('#platform-fees').value = '';
-
-  // Reset fee display
-  hide('#reset-fees-btn');
-  clearFeeBreakdown();
-
-  updateProfitPreview();
-  markSoldModal.open();
+  markSoldModal.open({ item });
 }
 
 function updateProfitPreview() {
@@ -592,34 +650,6 @@ function clearFeeBreakdown() {
   }
 }
 
-async function handleMarkAsSoldSubmit(e) {
-  e.preventDefault();
-
-  const formData = new FormData(e.target);
-  const soldData = {
-    sold_date: formData.get('sold_date'),
-    sold_price: parseFloat(formData.get('sold_price')),
-    sold_platform: formData.get('sold_platform'),
-    shipping_cost: parseFloat(formData.get('shipping_cost')) || 0,
-    platform_fees: parseFloat(formData.get('platform_fees')) || 0
-  };
-
-  const itemId = parseInt(formData.get('item_id'));
-
-  try {
-    await markItemAsSold(itemId, soldData);
-    await archiveItem(itemId);
-    showToast('Item sold and archived', 'success');
-    markSoldModal.close();
-    await loadPipeline();
-    await renderAnalytics();
-    currentSoldItem = null;
-  } catch (err) {
-    console.error('Failed to mark item as sold:', err);
-    showToast('Failed to mark item as sold', 'error');
-  }
-}
-
 // =============================================================================
 // STATUS UPDATES
 // =============================================================================
@@ -639,7 +669,26 @@ async function updateItemStatus(itemId, newStatus) {
 // SHIP ITEM MODAL
 // =============================================================================
 
-const shipItemModal = createModalController($('#ship-item-dialog'));
+const shipItemModal = createLazyModal('#ship-item-dialog', {
+  onOpen: (dialog, { item }) => {
+    currentShipItem = item;
+
+    // Populate form
+    const itemIdInput = dialog.querySelector('#ship-item-id');
+    const titleEl = dialog.querySelector('#ship-item-title');
+    const dateInput = dialog.querySelector('#ship-date');
+    const carrierSelect = dialog.querySelector('#shipping-carrier');
+    const trackingInput = dialog.querySelector('#tracking-number');
+    const shippingCostInput = dialog.querySelector('#ship-shipping-cost');
+
+    if (itemIdInput) itemIdInput.value = item.id;
+    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+    if (carrierSelect) carrierSelect.value = '';
+    if (trackingInput) trackingInput.value = '';
+    if (shippingCostInput) shippingCostInput.value = item.shipping_cost || '';
+  }
+});
 
 async function openShipItemModal(itemId) {
   const item = await getInventoryItem(itemId);
@@ -648,43 +697,7 @@ async function openShipItemModal(itemId) {
     return;
   }
 
-  currentShipItem = item;
-
-  // Populate form
-  $('#ship-item-id').value = itemId;
-  $('#ship-item-title').textContent = item.title || 'Untitled';
-  $('#ship-date').value = new Date().toISOString().split('T')[0];
-  $('#shipping-carrier').value = '';
-  $('#tracking-number').value = '';
-  $('#ship-shipping-cost').value = item.shipping_cost || '';
-
-  shipItemModal.open();
-}
-
-async function handleShipItemSubmit(e) {
-  e.preventDefault();
-
-  const formData = new FormData(e.target);
-  const itemId = parseInt(formData.get('item_id'));
-
-  const shipData = {
-    status: 'shipped',
-    shipping_carrier: formData.get('shipping_carrier'),
-    tracking_number: formData.get('tracking_number') || null,
-    ship_date: formData.get('ship_date'),
-    shipping_cost: parseFloat(formData.get('shipping_cost')) || 0
-  };
-
-  try {
-    await updateInventoryItem(itemId, shipData);
-    showToast('Item marked as shipped', 'success');
-    shipItemModal.close();
-    await loadPipeline();
-    currentShipItem = null;
-  } catch (err) {
-    console.error('Failed to ship item:', err);
-    showToast('Failed to ship item', 'error');
-  }
+  shipItemModal.open({ item });
 }
 
 // =============================================================================

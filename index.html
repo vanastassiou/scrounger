@@ -73,45 +73,45 @@
     <span id="sync-status" class="sync-status">Not synced</span>
   </header>
 
-  <nav class="tabs">
-    <button class="tab" data-tab="dashboard">Home</button>
-    <button class="tab" data-tab="inventory">Inventory</button>
-    <button class="tab" data-tab="references">References</button>
-    <button class="tab" data-tab="settings">Settings</button>
+  <nav class="tabs" role="tablist" aria-label="Main navigation">
+    <button class="tab" data-tab="dashboard" role="tab" aria-selected="false" aria-controls="dashboard">Home</button>
+    <button class="tab" data-tab="inventory" role="tab" aria-selected="false" aria-controls="inventory">Inventory</button>
+    <button class="tab" data-tab="references" role="tab" aria-selected="false" aria-controls="references">References</button>
+    <button class="tab" data-tab="settings" role="tab" aria-selected="false" aria-controls="settings">Settings</button>
   </nav>
 
   <main>
     <!-- Dashboard -->
-    <section id="dashboard" class="page">
+    <section id="dashboard" class="page" role="tabpanel" aria-labelledby="dashboard-tab">
       <div class="stats-grid">
-        <div class="stat-card">
+        <article class="stat-card">
           <div class="stat-value" id="stat-total-items">0</div>
           <div class="stat-label">Items</div>
-        </div>
-        <div class="stat-card">
+        </article>
+        <article class="stat-card">
           <div class="stat-value" id="stat-total-invested">$0</div>
           <div class="stat-label">Invested</div>
-        </div>
-        <div class="stat-card">
+        </article>
+        <article class="stat-card">
           <div class="stat-value" id="stat-total-sold">$0</div>
           <div class="stat-label">Sold</div>
-        </div>
-        <div class="stat-card">
+        </article>
+        <article class="stat-card">
           <div class="stat-value" id="stat-stores-visited">0</div>
           <div class="stat-label">Stores</div>
-        </div>
+        </article>
       </div>
 
-      <div class="card">
+      <article class="card">
         <h3 class="card-title">Quick actions</h3>
         <div class="action-buttons">
           <button class="btn btn--primary btn--block" id="add-item-btn">Add item</button>
           <button class="btn btn--block" id="log-visit-btn">Log visit</button>
           <button class="btn btn--block" id="list-for-sale-btn">List for sale</button>
         </div>
-      </div>
+      </article>
 
-      <div class="card">
+      <article class="card">
         <h3 class="card-title">Action items</h3>
         <div class="action-tiles" id="action-tiles">
           <button class="action-tile hidden" data-action="seasonal">
@@ -142,25 +142,25 @@
         <p class="text-muted text-center action-tiles-empty" id="action-tiles-empty">All clear!</p>
       </div>
 
-      <div class="card">
+      <article class="card">
         <h3 class="card-title">Dev tools</h3>
         <div class="action-buttons">
           <button class="btn btn--block" id="clear-data-btn">Clear all data</button>
         </div>
-      </div>
+      </article>
     </section>
 
     <!-- Inventory -->
-    <section id="inventory" class="page">
+    <section id="inventory" class="page" role="tabpanel" aria-labelledby="inventory-tab">
       <div class="page-header">
         <h2>Inventory</h2>
       </div>
 
       <!-- Sub-navigation for Inventory -->
-      <div class="sub-tabs">
-        <button class="sub-tab" data-inv-view="collection">Collection</button>
-        <button class="sub-tab" data-inv-view="selling">Selling</button>
-      </div>
+      <nav class="sub-tabs" role="tablist" aria-label="Inventory views">
+        <button class="sub-tab" data-inv-view="collection" role="tab" aria-selected="true" aria-controls="inv-collection-view">Collection</button>
+        <button class="sub-tab" data-inv-view="selling" role="tab" aria-selected="false" aria-controls="inv-selling-view">Selling</button>
+      </nav>
 
       <!-- Collection View -->
       <div id="inv-collection-view" class="inv-view">
@@ -172,7 +172,9 @@
           <button class="filter-btn" data-category="accessories">Accessories</button>
         </div>
 
-        <input type="text" class="form-input" id="inventory-search" placeholder="Search items...">
+        <div class="search-row">
+          <input type="text" class="form-input" id="inventory-search" placeholder="Search items...">
+        </div>
 
         <div class="table-container">
           <table class="table table-responsive" id="inventory-table">
@@ -196,22 +198,22 @@
       <div id="inv-selling-view" class="inv-view hidden">
         <!-- Analytics Dashboard -->
         <div class="selling-stats-grid">
-          <div class="stat-card">
+          <article class="stat-card">
             <div class="stat-value" id="selling-stat-revenue">$0</div>
             <div class="stat-label">Revenue</div>
-          </div>
-          <div class="stat-card">
+          </article>
+          <article class="stat-card">
             <div class="stat-value" id="selling-stat-profit">$0</div>
             <div class="stat-label">Profit</div>
-          </div>
-          <div class="stat-card">
+          </article>
+          <article class="stat-card">
             <div class="stat-value" id="selling-stat-margin">0%</div>
             <div class="stat-label">Margin</div>
-          </div>
-          <div class="stat-card">
+          </article>
+          <article class="stat-card">
             <div class="stat-value" id="selling-stat-sold">0</div>
             <div class="stat-label">Items sold</div>
-          </div>
+          </article>
         </div>
 
         <!-- Pipeline Status Filters -->
@@ -285,19 +287,19 @@
     </section>
 
     <!-- References -->
-    <section id="references" class="page">
+    <section id="references" class="page" role="tabpanel" aria-labelledby="references-tab">
       <div class="page-header">
         <h2>References</h2>
       </div>
 
       <!-- Sub-navigation for References -->
-      <div class="sub-tabs">
-        <button class="sub-tab" data-ref-view="stores">Stores</button>
-        <button class="sub-tab" data-ref-view="brands">Brands</button>
-        <button class="sub-tab" data-ref-view="platforms">Platforms</button>
-        <button class="sub-tab" data-ref-view="trends">Trends</button>
-        <button class="sub-tab" data-ref-view="pricing">Pricing</button>
-      </div>
+      <nav class="sub-tabs" role="tablist" aria-label="Reference categories">
+        <button class="sub-tab" data-ref-view="stores" role="tab" aria-selected="true" aria-controls="ref-stores-view">Stores</button>
+        <button class="sub-tab" data-ref-view="brands" role="tab" aria-selected="false" aria-controls="ref-brands-view">Brands</button>
+        <button class="sub-tab" data-ref-view="platforms" role="tab" aria-selected="false" aria-controls="ref-platforms-view">Platforms</button>
+        <button class="sub-tab" data-ref-view="trends" role="tab" aria-selected="false" aria-controls="ref-trends-view">Trends</button>
+        <button class="sub-tab" data-ref-view="pricing" role="tab" aria-selected="false" aria-controls="ref-pricing-view">Pricing</button>
+      </nav>
 
       <!-- Stores View -->
       <div id="ref-stores-view" class="ref-view">
@@ -475,13 +477,13 @@
     </section>
 
     <!-- Settings -->
-    <section id="settings" class="page">
+    <section id="settings" class="page" role="tabpanel" aria-labelledby="settings-tab">
       <div class="page-header">
         <h2>Settings</h2>
       </div>
 
       <!-- Google Drive Sync -->
-      <div class="card">
+      <article class="card">
         <h3 class="card-title">Google Drive Sync</h3>
 
         <div class="sync-steps">
@@ -544,10 +546,10 @@
             </div>
           </div>
         </div>
-      </div>
+      </article>
 
       <!-- Data Management -->
-      <div class="card">
+      <article class="card">
         <h3 class="card-title">Data Management</h3>
         <div class="action-buttons">
           <button class="btn btn--block" id="btn-export-data">Export data (JSON)</button>
@@ -555,7 +557,7 @@
           <button class="btn btn--block" id="btn-import-merge">Import & merge</button>
           <button class="btn btn--block btn--danger" id="btn-clear-data">Clear all local data</button>
         </div>
-      </div>
+      </article>
     </section>
   </main>
 
@@ -1414,10 +1416,10 @@
         <ul id="import-summary"></ul>
         <p id="import-confirm-warning" class="text-danger"><strong>This will replace all your existing data.</strong></p>
       </div>
-      <div class="modal-footer">
+      <footer class="modal-footer">
         <button class="btn" id="import-confirm-cancel">Cancel</button>
         <button class="btn btn--primary" id="import-confirm-ok">Restore</button>
-      </div>
+      </footer>
     </div>
   </dialog>
 
@@ -1439,10 +1441,10 @@
         <p class="text-danger"><strong>This cannot be undone.</strong></p>
         <p class="text-muted">Data synced to Google Drive will not be affected.</p>
       </div>
-      <div class="modal-footer">
+      <footer class="modal-footer">
         <button class="btn" id="clear-data-cancel">Cancel</button>
         <button class="btn btn--danger" id="clear-data-confirm">Delete everything</button>
-      </div>
+      </footer>
     </div>
   </dialog>
 
@@ -1481,9 +1483,9 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer">
+      <footer class="modal-footer">
         <button class="btn btn--primary" id="setup-done-btn" disabled>Get Started</button>
-      </div>
+      </footer>
     </div>
   </dialog>
 

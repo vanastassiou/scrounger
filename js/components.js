@@ -4,7 +4,7 @@
 // =============================================================================
 
 import { createModalController } from './ui.js';
-import { $, sortData, emptyStateRow, escapeHtml } from './utils.js';
+import { $, sortData, emptyStateRow, escapeHtml, createSortableTable, createFilterButtons, updateSortIndicators } from './utils.js';
 
 // =============================================================================
 // LAZY MODAL
@@ -64,38 +64,37 @@ export function createLazyModal(dialogSelector, options = {}) {
 // =============================================================================
 
 /**
- * Create a unified table controller with filtering, sorting, and rendering.
- * Replaces the repeated pattern of:
- *   function renderTable() {
- *     let filtered = data;
- *     if (filter) filtered = filtered.filter(...);
- *     sortData(filtered, ...);
- *     if (filtered.length === 0) { tbody.innerHTML = emptyStateRow(...); return; }
- *     tbody.innerHTML = filtered.map(createRow).join('');
- *     updateCount(filtered.length);
- *   }
+ * Create a unified table controller with filtering, sorting, rendering, and event binding.
+ * Consolidates repeated patterns across inventory, stores, selling, visits modules.
  *
  * @param {Object} config
- * @param {string} config.tbodySelector - CSS selector for tbody
+ * @param {string} config.tableSelector - CSS selector for table element
+ * @param {string} config.tbodySelector - CSS selector for tbody element
  * @param {Function} config.getData - Returns array of data items
  * @param {Function} config.filterItem - (item, filters, searchTerm) => boolean
  * @param {Function} config.getColumnValue - (item, column) => sortable value
  * @param {Function} config.createRow - (item) => HTML string
  * @param {Object} config.emptyState - { colspan, icon, message }
+ * @param {string} [config.searchSelector] - CSS selector for search input
  * @param {string} [config.countSelector] - CSS selector for count display
  * @param {string} [config.countTemplate] - Template like "{count} item{s}"
  * @param {Object} [config.defaultSort] - { column, direction }
- * @returns {Object} Controller with render(), setFilter(), setSearch(), setSorting()
+ * @param {Array} [config.filterButtons] - Array of { selector, dataAttr, key }
+ * @param {Object<string, Function>} [config.clickHandlers] - Map of selector to handler function.
+ *   Handler returns true to allow default behavior (e.g., external links), undefined/false to preventDefault.
+ * @param {Function} [config.onRender] - Called after render with filtered data
+ * @returns {Object} Controller API
  */
 export function createTableController(config) {
   let filters = {};
   let searchTerm = '';
   let sortColumn = config.defaultSort?.column || null;
   let sortDirection = config.defaultSort?.direction || 'asc';
+  let sortHandler = null;
 
   function render() {
     const tbody = $(config.tbodySelector);
-    if (!tbody) return;
+    if (!tbody) return [];
 
     let data = config.getData();
 
@@ -116,22 +115,101 @@ export function createTableController(config) {
       tbody.innerHTML = data.map(config.createRow).join('');
     }
 
+    // Update sort indicators
+    if (config.tableSelector) {
+      const table = $(config.tableSelector);
+      if (table) updateSortIndicators(table, sortColumn, sortDirection);
+    }
+
     // Update count
-    if (config.countSelector && config.countTemplate) {
+    if (config.countSelector) {
       const countEl = $(config.countSelector);
       if (countEl) {
-        const text = config.countTemplate
+        const template = config.countTemplate || '{count} item{s}';
+        const text = template
           .replace('{count}', data.length)
           .replace('{s}', data.length !== 1 ? 's' : '');
         countEl.textContent = text;
       }
     }
 
-    return data.length;
+    // Callback
+    if (config.onRender) config.onRender(data);
+
+    return data;
   }
 
-  return {
+  function setupEventHandlers() {
+    // Search input
+    if (config.searchSelector) {
+      const searchInput = $(config.searchSelector);
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+          searchTerm = e.target.value.toLowerCase();
+          render();
+        });
+      }
+    }
+
+    // Filter buttons
+    if (config.filterButtons) {
+      for (const fb of config.filterButtons) {
+        createFilterButtons({
+          selector: fb.selector,
+          dataAttr: fb.dataAttr,
+          onFilter: (value) => {
+            filters[fb.key] = value;
+            render();
+          }
+        });
+      }
+    }
+
+    // Table sorting and click delegation
+    if (config.tableSelector) {
+      const table = $(config.tableSelector);
+      if (table) {
+        // Create sort handler
+        sortHandler = createSortableTable({
+          getState: () => ({ sortColumn, sortDirection }),
+          setState: (s) => { sortColumn = s.sortColumn; sortDirection = s.sortDirection; },
+          onSort: render
+        });
+
+        // Click delegation
+        table.addEventListener('click', (e) => {
+          // Header sorting
+          if (sortHandler(e)) return;
+
+          // Custom click handlers
+          if (config.clickHandlers) {
+            for (const [selector, handler] of Object.entries(config.clickHandlers)) {
+              const target = e.target.closest(selector);
+              if (target) {
+                const allowDefault = handler(target, e);
+                if (!allowDefault) e.preventDefault();
+                return;
+              }
+            }
+          }
+        });
+      }
+    }
+  }
+
+  // Return controller API
+  const controller = {
     render,
+    setupEventHandlers,
+    init() {
+      setupEventHandlers();
+      render();
+      return controller;
+    },
+    async refresh(newGetData) {
+      if (newGetData) config.getData = newGetData;
+      render();
+    },
     setFilter(key, value) {
       filters[key] = value;
       render();
@@ -150,16 +228,12 @@ export function createTableController(config) {
       render();
     },
     getState() {
-      return { filters, searchTerm, sortColumn, sortDirection };
+      return { filters: { ...filters }, searchTerm, sortColumn, sortDirection };
     },
-    getSortState() {
-      return { sortColumn, sortDirection };
-    },
-    updateSortState(state) {
-      sortColumn = state.sortColumn;
-      sortDirection = state.sortDirection;
-    }
+    getData: () => config.getData()
   };
+
+  return controller;
 }
 
 // =============================================================================

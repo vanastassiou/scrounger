@@ -7,10 +7,9 @@ import { getAllInventory, getInventoryStats, getInventoryItem, createInventoryIt
 import { showToast, createModalController } from './ui.js';
 import {
   $, $$, formatCurrency, formatDate, capitalize, formatStatus, formatPackaging, escapeHtml,
-  createSortableTable, sortData, createFilterButtons, emptyStateRow, updateSortIndicators,
-  createChainStoreDropdown, formatChainName, getLocationName, compressImage
+  sortData, createChainStoreDropdown, formatChainName, getLocationName, compressImage
 } from './utils.js';
-import { createSubTabController, initStoreDropdown, setVisible } from './components.js';
+import { createSubTabController, initStoreDropdown, setVisible, createLazyModal, createTableController, renderDetailSections } from './components.js';
 import {
   CATEGORIES, SUBCATEGORIES, STATUS_OPTIONS, CONDITION_OPTIONS, ERA_OPTIONS,
   METAL_TYPES, CLOSURE_TYPES, JEWELRY_TESTS,
@@ -22,10 +21,7 @@ import { generateSellingRecommendations, formatPlatformName, calculateTrendMulti
 import { calculatePlatformFees } from './fees.js';
 
 let inventoryData = [];
-let sortColumn = 'created_at';
-let sortDirection = 'desc';
-let filterCategory = null;
-let searchTerm = '';
+let inventoryTableCtrl = null;
 let currentFlaws = [];
 let currentSecondaryMaterials = []; // For structured secondary materials
 let pendingPhotos = []; // Array of {blob, filename, mimeType, type}
@@ -37,7 +33,6 @@ let visitContext = null; // Stores storeId/date when opened from visit workflow
 const PHOTO_TYPES = ['front', 'back', 'detail', 'label', 'flaw', 'hallmark', 'closure', 'measurement', 'styled'];
 
 // Start Selling modal state
-let startSellingModal = null;
 let currentSellingItem = null; // Item being listed for sale
 
 // Brands data cache for resale value suggestions
@@ -167,6 +162,7 @@ async function calculateSuggestedResaleValue(item) {
 // =============================================================================
 
 export async function initInventory() {
+  setupTableController();
   await loadInventory();
   setupEventHandlers();
   setupFormOptions();
@@ -195,84 +191,79 @@ export function switchToSellingView() {
 
 async function loadInventory() {
   inventoryData = await getAllInventory();
-  renderInventoryTable();
+  if (inventoryTableCtrl) {
+    inventoryTableCtrl.render();
+  }
 }
 
-function setupEventHandlers() {
-  // Search
-  const searchInput = $('#inventory-search');
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      searchTerm = e.target.value.toLowerCase();
-      renderInventoryTable();
-    });
-  }
-
-  // Category filter
-  createFilterButtons({
-    selector: '.filter-btn[data-category]',
-    dataAttr: 'category',
-    onFilter: (value) => {
-      filterCategory = value;
-      renderInventoryTable();
+function setupTableController() {
+  inventoryTableCtrl = createTableController({
+    tableSelector: '#inventory-table',
+    tbodySelector: '#inventory-tbody',
+    getData: () => inventoryData,
+    filterItem: (item, filters, search) => {
+      if (filters.category && item.category !== filters.category) return false;
+      if (search) {
+        const inTitle = item.title?.toLowerCase().includes(search);
+        const inBrand = item.brand?.toLowerCase().includes(search);
+        const inDesc = item.description?.toLowerCase().includes(search);
+        if (!inTitle && !inBrand && !inDesc) return false;
+      }
+      return true;
+    },
+    getColumnValue: (item, col) => {
+      if (col === 'purchase_price') return Number(item[col]) || 0;
+      return item[col];
+    },
+    createRow: createInventoryRow,
+    emptyState: { colspan: 4, icon: 'I', message: 'No items found' },
+    searchSelector: '#inventory-search',
+    countSelector: '#inventory-count',
+    countTemplate: '{count} item{s}',
+    defaultSort: { column: 'created_at', direction: 'desc' },
+    filterButtons: [{ selector: '.filter-btn[data-category]', dataAttr: 'category', key: 'category' }],
+    clickHandlers: {
+      '.table-link': (el) => openViewItemModal(el.dataset.id),
+      '.edit-item-btn': (el) => openEditItemModal(el.dataset.id, {
+        onSave: async () => {
+          await loadInventory();
+          await renderInventoryStats();
+        }
+      }),
+      '.start-selling-btn': (el) => openStartSellingModal(el.dataset.id),
+      '.view-in-selling-btn': () => navigateToSelling()
     }
   });
 
-  // Table click delegation (sorting + item links)
-  const table = $('#inventory-table');
-  if (table) {
-    const sortHandler = createSortableTable({
-      getState: () => ({ sortColumn, sortDirection }),
-      setState: (s) => { sortColumn = s.sortColumn; sortDirection = s.sortDirection; },
-      onSort: renderInventoryTable
-    });
+  inventoryTableCtrl.init();
+}
 
-    table.addEventListener('click', (e) => {
-      // Header sorting
-      if (sortHandler(e)) return;
+function createInventoryRow(item) {
+  const inPipeline = isInPipeline(item.status);
+  let sellButton = '';
 
-      // Item link click
-      const link = e.target.closest('.table-link');
-      if (link) {
-        e.preventDefault();
-        const itemId = link.dataset.id;
-        openViewItemModal(itemId);
-        return;
-      }
-
-      // Edit button click
-      const editBtn = e.target.closest('.edit-item-btn');
-      if (editBtn) {
-        e.preventDefault();
-        const itemId = editBtn.dataset.id;
-        openEditItemModal(itemId, {
-          onSave: async () => {
-            await loadInventory();
-            await renderInventoryStats();
-          }
-        });
-        return;
-      }
-
-      // Start selling button click
-      const startSellBtn = e.target.closest('.start-selling-btn');
-      if (startSellBtn) {
-        e.preventDefault();
-        const itemId = startSellBtn.dataset.id;
-        openStartSellingModal(itemId);
-        return;
-      }
-
-      // View in selling button click
-      const viewSellBtn = e.target.closest('.view-in-selling-btn');
-      if (viewSellBtn) {
-        e.preventDefault();
-        navigateToSelling();
-        return;
-      }
-    });
+  if (item.status === 'sold') {
+    // No sell button for sold items
+  } else if (inPipeline) {
+    sellButton = `<button class="btn btn--sm view-in-selling-btn" data-id="${item.id}">View in Selling</button>`;
+  } else {
+    sellButton = `<button class="btn btn--sm btn--primary start-selling-btn" data-id="${item.id}">Sell</button>`;
   }
 
+  return `
+    <tr data-id="${item.id}">
+      <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
+      <td data-label="Cost">${formatCurrency(item.purchase_price || 0)}</td>
+      <td data-label="Status"><span class="status status--${item.status}">${formatStatus(item.status)}</span></td>
+      <td class="table-actions">
+        <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
+        ${sellButton}
+      </td>
+    </tr>
+  `;
+}
+
+function setupEventHandlers() {
   // Item form submission
   const form = $('#item-form');
   if (form) {
@@ -861,75 +852,8 @@ function clearPendingPhotos() {
 }
 
 // =============================================================================
-// RENDERING
+// STATS
 // =============================================================================
-
-function renderInventoryTable() {
-  const tbody = $('#inventory-tbody');
-  if (!tbody) return;
-
-  // Filter
-  let filtered = inventoryData;
-
-  if (filterCategory) {
-    filtered = filtered.filter(i => i.category === filterCategory);
-  }
-
-  if (searchTerm) {
-    filtered = filtered.filter(i =>
-      i.title?.toLowerCase().includes(searchTerm) ||
-      i.brand?.toLowerCase().includes(searchTerm) ||
-      i.description?.toLowerCase().includes(searchTerm)
-    );
-  }
-
-  // Sort
-  sortData(filtered, sortColumn, sortDirection, (item, col) => {
-    if (col === 'purchase_price') return Number(item[col]) || 0;
-    return item[col];
-  });
-
-  // Render
-  if (filtered.length === 0) {
-    tbody.innerHTML = emptyStateRow({ colspan: 4, icon: 'I', message: 'No items found' });
-    return;
-  }
-
-  tbody.innerHTML = filtered.map(item => {
-    const inPipeline = isInPipeline(item.status);
-    let sellButton = '';
-
-    if (item.status === 'sold') {
-      // No sell button for sold items
-    } else if (inPipeline) {
-      sellButton = `<button class="btn btn--sm view-in-selling-btn" data-id="${item.id}">View in Selling</button>`;
-    } else {
-      sellButton = `<button class="btn btn--sm btn--primary start-selling-btn" data-id="${item.id}">Sell</button>`;
-    }
-
-    return `
-      <tr data-id="${item.id}">
-        <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
-        <td data-label="Cost">${formatCurrency(item.purchase_price || 0)}</td>
-        <td data-label="Status"><span class="status status--${item.status}">${formatStatus(item.status)}</span></td>
-        <td class="table-actions">
-          <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
-          ${sellButton}
-        </td>
-      </tr>
-    `;
-  }).join('');
-
-  // Update sort indicators
-  const table = $('#inventory-table');
-  if (table) updateSortIndicators(table, sortColumn, sortDirection);
-
-  // Update count
-  const countEl = $('#inventory-count');
-  if (countEl) {
-    countEl.textContent = `${filtered.length} item${filtered.length !== 1 ? 's' : ''}`;
-  }
-}
 
 export async function renderInventoryStats() {
   const stats = await getInventoryStats();
@@ -944,22 +868,17 @@ export async function renderInventoryStats() {
 }
 
 // =============================================================================
-// ADD ITEM MODAL
+// ADD/EDIT ITEM MODAL
 // =============================================================================
 
-let addItemModal = null;
+const addItemModal = createLazyModal('#add-item-dialog', {
+  onOpen: () => {
+    // Ensure stores are populated (may have loaded after initial setup)
+    populateStoreSelect();
+  }
+});
 
 export function openAddItemModal(context = null) {
-  const dialog = $('#add-item-dialog');
-  if (!dialog) return;
-
-  if (!addItemModal) {
-    addItemModal = createModalController(dialog);
-  }
-
-  // Ensure stores are populated (may have loaded after initial setup)
-  populateStoreSelect();
-
   // Reset form and editing state
   resetItemForm();
   editingItemId = null;
@@ -1003,26 +922,12 @@ export function openAddItemModal(context = null) {
   addItemModal.open();
 }
 
-// =============================================================================
-// EDIT ITEM MODAL
-// =============================================================================
-
 export async function openEditItemModal(itemId, context = null) {
   const item = await getInventoryItem(itemId);
   if (!item) {
     showToast('Item not found');
     return;
   }
-
-  const dialog = $('#add-item-dialog');
-  if (!dialog) return;
-
-  if (!addItemModal) {
-    addItemModal = createModalController(dialog);
-  }
-
-  // Ensure stores are populated
-  populateStoreSelect();
 
   // Reset form first
   resetItemForm();
@@ -1474,315 +1379,296 @@ function collectCheckedValues(formData, name) {
 // VIEW ITEM MODAL
 // =============================================================================
 
-let viewItemModal = null;
+const viewItemModal = createLazyModal('#view-item-dialog', {
+  onOpen: (dialog, { item, photos }) => {
+    // Update title
+    const titleEl = dialog.querySelector('#view-item-title');
+    if (titleEl) {
+      titleEl.textContent = item.title || 'Item Details';
+    }
+
+    // Render content
+    const contentEl = dialog.querySelector('#view-item-content');
+    if (contentEl) {
+      contentEl.innerHTML = renderItemDetails(item, photos);
+    }
+  }
+});
 
 export async function openViewItemModal(itemId) {
-  const dialog = $('#view-item-dialog');
-  if (!dialog) return;
-
-  if (!viewItemModal) {
-    viewItemModal = createModalController(dialog);
-  }
-
   const item = await getInventoryItem(itemId);
   if (!item) {
     showToast('Item not found');
     return;
   }
 
-  // Load photos for this item
   const photos = await getAttachmentsByItem(itemId);
+  viewItemModal.open({ item, photos });
+}
 
-  // Update title
-  const titleEl = $('#view-item-title');
-  if (titleEl) {
-    titleEl.textContent = item.title || 'Item Details';
+// =============================================================================
+// ITEM DETAIL SECTION HELPERS
+// =============================================================================
+
+function formatCategoryDisplay(item) {
+  return item.subcategory
+    ? `${capitalize(item.category)} (${formatStatus(item.subcategory)})`
+    : capitalize(item.category);
+}
+
+function formatColourDisplay(item) {
+  if (!item.primary_colour) return null;
+  let display = `${formatColour(item.primary_colour)} (primary)`;
+  if (item.secondary_colour) display += `, ${formatColour(item.secondary_colour)}`;
+  return display;
+}
+
+function renderPhotoGallerySection(photos) {
+  if (!photos.length) return null;
+
+  const galleryHtml = photos.map(photo => {
+    const url = URL.createObjectURL(photo.blob);
+    const typeMatch = photo.filename?.match(/^([^_]+)_/);
+    const photoType = typeMatch ? capitalize(typeMatch[1]) : '';
+    return `<div class="gallery-item">
+      <img src="${url}" alt="${escapeHtml(photo.filename || 'Photo')}">
+      ${photoType ? `<span class="gallery-item-type">${photoType}</span>` : ''}
+    </div>`;
+  }).join('');
+
+  return `<div class="item-photo-gallery">${galleryHtml}</div>`;
+}
+
+function renderSizingSection(item) {
+  if (!item.labeled_size && !item.measurements) return null;
+
+  const fields = [
+    { dt: 'Labeled size', dd: item.labeled_size ? escapeHtml(item.labeled_size) : null },
+    { dt: 'Width', dd: item.width ? capitalize(item.width) : null },
+    { dt: 'Ring size', dd: item.ring_size ? escapeHtml(item.ring_size) : null }
+  ];
+
+  // Add dynamic measurement fields
+  if (item.measurements) {
+    const measurementFields = MEASUREMENT_FIELDS[item.category] || [];
+    for (const field of measurementFields) {
+      if (item.measurements[field.key]) {
+        fields.push({ dt: field.label, dd: `${item.measurements[field.key]}${field.unit}` });
+      }
+    }
   }
 
-  // Render content
-  const contentEl = $('#view-item-content');
-  if (contentEl) {
-    contentEl.innerHTML = renderItemDetails(item, photos);
+  return { title: 'Sizing', content: fields };
+}
+
+function renderMaterialsSection(item) {
+  if (!item.primary_material && !item.metal_type) return null;
+
+  const materialsList = [];
+
+  // Handle primary material (object vs string format)
+  if (item.primary_material) {
+    if (typeof item.primary_material === 'object') {
+      const pct = item.primary_material.percentage || 100;
+      materialsList.push(`${formatMaterial(item.primary_material.name)} (${pct}%)`);
+    } else {
+      materialsList.push(formatMaterialString(item.primary_material));
+    }
   }
 
-  viewItemModal.open();
+  // Handle secondary materials (array vs string)
+  if (item.secondary_materials) {
+    if (Array.isArray(item.secondary_materials)) {
+      item.secondary_materials.forEach(m => {
+        const pct = m.percentage ? ` (${m.percentage}%)` : '';
+        materialsList.push(`${formatMaterial(m.name)}${pct}`);
+      });
+    } else {
+      materialsList.push(formatMaterialString(item.secondary_materials));
+    }
+  }
+
+  return { title: 'Materials', content: [
+    { dt: 'Materials', dd: materialsList.length > 0 ? materialsList.join(', ') : null },
+    { dt: 'Metal type', dd: item.metal_type ? formatMetalType(item.metal_type) : null }
+  ]};
+}
+
+function renderConditionSection(item) {
+  if (!item.overall_condition && !item.flaws?.length) return null;
+
+  // Build dl content
+  let html = '<dl class="detail-grid">';
+  if (item.overall_condition) html += `<dt>Condition</dt><dd>${formatStatus(item.overall_condition)}</dd>`;
+  if (item.condition_notes) html += `<dt>Notes</dt><dd>${escapeHtml(item.condition_notes)}</dd>`;
+  html += '</dl>';
+
+  // Add flaws list if present
+  if (item.flaws?.length) {
+    html += '<div class="flaws-summary"><strong>Flaws:</strong><ul>' +
+      item.flaws.map(flaw =>
+        `<li>${formatStatus(flaw.type)} (${flaw.severity})${flaw.location ? ` - ${flaw.location}` : ''}${flaw.repairable ? ' [repairable]' : ''}</li>`
+      ).join('') + '</ul></div>';
+  }
+
+  return { title: 'Condition', content: html };
 }
 
 function renderItemDetails(item, photos = []) {
   const store = state.getStore(item.store_id);
   const storeName = store?.name || '-';
-
-  const sections = [];
-
-  // Photo gallery (if photos exist)
-  if (photos.length > 0) {
-    const galleryHtml = photos.map(photo => {
-      const url = URL.createObjectURL(photo.blob);
-      // Extract photo type from filename (format: type_originalname.jpg)
-      const typeMatch = photo.filename?.match(/^([^_]+)_/);
-      const photoType = typeMatch ? capitalize(typeMatch[1]) : '';
-      return `
-        <div class="gallery-item">
-          <img src="${url}" alt="${escapeHtml(photo.filename || 'Photo')}">
-          ${photoType ? `<span class="gallery-item-type">${photoType}</span>` : ''}
-        </div>
-      `;
-    }).join('');
-
-    sections.push(`
-      <section class="detail-section">
-        <h3 class="detail-section-title">Photos</h3>
-        <div class="item-photo-gallery">${galleryHtml}</div>
-      </section>
-    `);
-  }
-
-  // Format category as: Primary (Secondary)
-  const categoryDisplay = item.subcategory
-    ? `${capitalize(item.category)} (${formatStatus(item.subcategory)})`
-    : capitalize(item.category);
-
-  // Format colours as: Primary (primary), Secondary
-  let colourDisplay = '';
-  if (item.primary_colour) {
-    colourDisplay = `${formatColour(item.primary_colour)} (primary)`;
-    if (item.secondary_colour) {
-      colourDisplay += `, ${formatColour(item.secondary_colour)}`;
-    }
-  }
-
-  // Basic info
-  sections.push(`
-    <section class="detail-section">
-      <h3 class="detail-section-title">Basic info</h3>
-      <dl class="detail-grid">
-        <dt>Category</dt><dd>${categoryDisplay}</dd>
-        ${item.brand ? `<dt>Brand</dt><dd>${escapeHtml(item.brand)}</dd>` : ''}
-        ${item.country_of_manufacture ? `<dt>Country</dt><dd>${escapeHtml(item.country_of_manufacture)}</dd>` : ''}
-        ${colourDisplay ? `<dt>Colours</dt><dd>${colourDisplay}</dd>` : ''}
-        ${item.era ? `<dt>Era</dt><dd>${formatEra(item.era)}</dd>` : ''}
-        <dt>Status</dt><dd><span class="status status--${item.status}">${formatStatus(item.status)}</span></dd>
-      </dl>
-    </section>
-  `);
-
-  // Acquisition
   const totalCost = (item.purchase_price || 0) + (item.tax_paid || 0);
-  sections.push(`
-    <section class="detail-section">
-      <h3 class="detail-section-title">Acquisition</h3>
-      <dl class="detail-grid">
-        <dt>Store</dt><dd>${escapeHtml(storeName)}</dd>
-        <dt>Date</dt><dd>${formatDate(item.acquisition_date)}</dd>
-        <dt>Price</dt><dd>${formatCurrency(item.purchase_price || 0)}</dd>
-        ${item.tax_paid ? `<dt>Tax</dt><dd>${formatCurrency(item.tax_paid)}</dd>` : ''}
-        <dt>Total cost</dt><dd><strong>${formatCurrency(totalCost)}</strong></dd>
-      </dl>
-    </section>
-  `);
 
-  // Sizing (if present)
-  if (item.labeled_size || item.measurements) {
-    let sizingHtml = '<dl class="detail-grid">';
-    if (item.labeled_size) sizingHtml += `<dt>Labeled size</dt><dd>${escapeHtml(item.labeled_size)}</dd>`;
-    if (item.width) sizingHtml += `<dt>Width</dt><dd>${capitalize(item.width)}</dd>`;
-    if (item.ring_size) sizingHtml += `<dt>Ring size</dt><dd>${escapeHtml(item.ring_size)}</dd>`;
-    if (item.measurements) {
-      const fields = MEASUREMENT_FIELDS[item.category] || [];
-      for (const field of fields) {
-        if (item.measurements[field.key]) {
-          sizingHtml += `<dt>${field.label}</dt><dd>${item.measurements[field.key]}${field.unit}</dd>`;
-        }
-      }
-    }
-    sizingHtml += '</dl>';
-    sections.push(`<section class="detail-section"><h3 class="detail-section-title">Sizing</h3>${sizingHtml}</section>`);
-  }
+  return renderDetailSections([
+    // Photos
+    { title: 'Photos', content: renderPhotoGallerySection(photos) },
 
-  // Materials (if present)
-  if (item.primary_material || item.metal_type) {
-    // Build combined materials list with percentages
-    const materialsList = [];
+    // Basic Info
+    { title: 'Basic info', content: [
+      { dt: 'Category', dd: formatCategoryDisplay(item) },
+      { dt: 'Brand', dd: item.brand ? escapeHtml(item.brand) : null },
+      { dt: 'Country', dd: item.country_of_manufacture ? escapeHtml(item.country_of_manufacture) : null },
+      { dt: 'Colours', dd: formatColourDisplay(item) },
+      { dt: 'Era', dd: item.era ? formatEra(item.era) : null },
+      { dt: 'Status', dd: `<span class="status status--${item.status}">${formatStatus(item.status)}</span>` }
+    ]},
 
-    // Handle primary material (both structured object and legacy string format)
-    if (item.primary_material) {
-      if (typeof item.primary_material === 'object') {
-        const pct = item.primary_material.percentage || 100;
-        materialsList.push(`${formatMaterial(item.primary_material.name)} (${pct}%)`);
-      } else {
-        // Parse string format like "100% cashmere" or "70% wool/30% cashmere"
-        materialsList.push(formatMaterialString(item.primary_material));
-      }
-    }
+    // Acquisition
+    { title: 'Acquisition', content: [
+      { dt: 'Store', dd: escapeHtml(storeName) },
+      { dt: 'Date', dd: formatDate(item.acquisition_date) },
+      { dt: 'Price', dd: formatCurrency(item.purchase_price || 0) },
+      { dt: 'Tax', dd: item.tax_paid ? formatCurrency(item.tax_paid) : null },
+      { dt: 'Total cost', dd: `<strong>${formatCurrency(totalCost)}</strong>` }
+    ]},
 
-    // Handle secondary materials (array of structured objects or legacy string)
-    if (item.secondary_materials) {
-      if (Array.isArray(item.secondary_materials)) {
-        item.secondary_materials.forEach(m => {
-          const pct = m.percentage ? ` (${m.percentage}%)` : '';
-          materialsList.push(`${formatMaterial(m.name)}${pct}`);
-        });
-      } else {
-        materialsList.push(formatMaterialString(item.secondary_materials));
-      }
-    }
+    // Sizing
+    renderSizingSection(item),
 
-    let materialsHtml = '<dl class="detail-grid">';
-    if (materialsList.length > 0) {
-      materialsHtml += `<dt>Materials</dt><dd>${materialsList.join(', ')}</dd>`;
-    }
-    if (item.metal_type) materialsHtml += `<dt>Metal type</dt><dd>${formatMetalType(item.metal_type)}</dd>`;
-    materialsHtml += '</dl>';
-    sections.push(`<section class="detail-section"><h3 class="detail-section-title">Materials</h3>${materialsHtml}</section>`);
-  }
+    // Materials
+    renderMaterialsSection(item),
 
-  // Jewelry details (if present)
-  if (item.category === 'jewelry' && (item.hallmarks || item.stones || item.closure_type || item.tested_with)) {
-    let jewelryHtml = '<dl class="detail-grid">';
-    if (item.closure_type) jewelryHtml += `<dt>Closure</dt><dd>${formatStatus(item.closure_type)}</dd>`;
-    if (item.hallmarks) jewelryHtml += `<dt>Hallmarks</dt><dd>${escapeHtml(item.hallmarks)}</dd>`;
-    if (item.stones) jewelryHtml += `<dt>Stones</dt><dd>${escapeHtml(item.stones)}</dd>`;
-    if (item.tested_with?.length) jewelryHtml += `<dt>Tested with</dt><dd>${item.tested_with.map(formatStatus).join(', ')}</dd>`;
-    jewelryHtml += '</dl>';
-    sections.push(`<section class="detail-section"><h3 class="detail-section-title">Jewelry details</h3>${jewelryHtml}</section>`);
-  }
+    // Jewelry details (conditional)
+    item.category === 'jewelry' && (item.hallmarks || item.stones || item.closure_type || item.tested_with)
+      ? { title: 'Jewelry details', content: [
+          { dt: 'Closure', dd: item.closure_type ? formatStatus(item.closure_type) : null },
+          { dt: 'Hallmarks', dd: item.hallmarks ? escapeHtml(item.hallmarks) : null },
+          { dt: 'Stones', dd: item.stones ? escapeHtml(item.stones) : null },
+          { dt: 'Tested with', dd: item.tested_with?.length ? item.tested_with.map(formatStatus).join(', ') : null }
+        ]}
+      : null,
 
-  // Condition (if present)
-  if (item.overall_condition || item.flaws?.length) {
-    let conditionHtml = '<dl class="detail-grid">';
-    if (item.overall_condition) conditionHtml += `<dt>Condition</dt><dd>${formatStatus(item.overall_condition)}</dd>`;
-    if (item.condition_notes) conditionHtml += `<dt>Notes</dt><dd>${escapeHtml(item.condition_notes)}</dd>`;
-    conditionHtml += '</dl>';
-    if (item.flaws?.length) {
-      conditionHtml += '<div class="flaws-summary"><strong>Flaws:</strong><ul>';
-      for (const flaw of item.flaws) {
-        conditionHtml += `<li>${formatStatus(flaw.type)} (${flaw.severity})${flaw.location ? ` - ${flaw.location}` : ''}${flaw.repairable ? ' [repairable]' : ''}</li>`;
-      }
-      conditionHtml += '</ul></div>';
-    }
-    sections.push(`<section class="detail-section"><h3 class="detail-section-title">Condition</h3>${conditionHtml}</section>`);
-  }
+    // Condition
+    renderConditionSection(item),
 
-  // Pricing (if pricing info present)
-  if (item.estimated_resale_value || item.minimum_acceptable_price) {
-    let pricingHtml = '<dl class="detail-grid">';
-    if (item.estimated_resale_value) pricingHtml += `<dt>Est. value</dt><dd>${formatCurrency(item.estimated_resale_value)}</dd>`;
-    if (item.minimum_acceptable_price) pricingHtml += `<dt>Min. price</dt><dd>${formatCurrency(item.minimum_acceptable_price)}</dd>`;
-    pricingHtml += '</dl>';
-    sections.push(`<section class="detail-section"><h3 class="detail-section-title">Pricing</h3>${pricingHtml}</section>`);
-  }
+    // Pricing
+    (item.estimated_resale_value || item.minimum_acceptable_price)
+      ? { title: 'Pricing', content: [
+          { dt: 'Est. value', dd: item.estimated_resale_value ? formatCurrency(item.estimated_resale_value) : null },
+          { dt: 'Min. price', dd: item.minimum_acceptable_price ? formatCurrency(item.minimum_acceptable_price) : null }
+        ]}
+      : null,
 
-  // Packaging (if present)
-  if (item.packaging) {
-    sections.push(`
-      <section class="detail-section">
-        <h3 class="detail-section-title">Packaging</h3>
-        <p>${formatPackaging(item.packaging)}</p>
-      </section>
-    `);
-  }
+    // Packaging
+    item.packaging ? { title: 'Packaging', content: `<p>${formatPackaging(item.packaging)}</p>` } : null,
 
-  // Description (if present)
-  if (item.description) {
-    sections.push(`
-      <section class="detail-section">
-        <h3 class="detail-section-title">Description</h3>
-        <p class="item-description">${escapeHtml(item.description)}</p>
-      </section>
-    `);
-  }
+    // Description
+    item.description ? { title: 'Description', content: `<p class="item-description">${escapeHtml(item.description)}</p>` } : null
 
-  return sections.join('');
+  ].filter(Boolean));
 }
 
 // =============================================================================
 // START SELLING MODAL
 // =============================================================================
 
-export async function openStartSellingModal(itemId) {
-  const dialog = $('#start-selling-dialog');
-  if (!dialog) return;
+let startSellingHandlersSetup = false;
 
-  if (!startSellingModal) {
-    startSellingModal = createModalController(dialog);
-
-    // Setup form submission handler once
-    const form = $('#start-selling-form');
-    if (form) {
-      form.addEventListener('submit', handleStartSellingSubmit);
+const startSellingModal = createLazyModal('#start-selling-dialog', {
+  onOpen: (dialog, { item, recommendations, fallbackSuggestion }) => {
+    // Setup event handlers (once)
+    if (!startSellingHandlersSetup) {
+      startSellingHandlersSetup = true;
+      const form = dialog.querySelector('#start-selling-form');
+      if (form) {
+        form.addEventListener('submit', handleStartSellingSubmit);
+      }
+      const compPriceInput = dialog.querySelector('#start-selling-comp-price');
+      if (compPriceInput) {
+        compPriceInput.addEventListener('input', handleCompPriceChange);
+      }
     }
 
-    // Setup comp price change handler
-    const compPriceInput = $('#start-selling-comp-price');
-    if (compPriceInput) {
-      compPriceInput.addEventListener('input', handleCompPriceChange);
+    // Store current item for recalculation
+    currentSellingItem = item;
+
+    // Populate form
+    const itemIdInput = dialog.querySelector('#start-selling-item-id');
+    const itemTitleEl = dialog.querySelector('#start-selling-item-title');
+    const statusSelect = dialog.querySelector('#start-selling-status');
+    const minPriceInput = dialog.querySelector('#start-selling-min-price');
+    const compPriceInput = dialog.querySelector('#start-selling-comp-price');
+    const suggestionEl = dialog.querySelector('#start-selling-suggestion');
+    const estValueInput = dialog.querySelector('#start-selling-est-value');
+    const recommendationsSection = dialog.querySelector('#selling-recommendations');
+
+    if (itemIdInput) itemIdInput.value = item.id;
+    if (itemTitleEl) itemTitleEl.textContent = item.title || 'Untitled';
+    if (statusSelect) statusSelect.value = 'unlisted';
+    if (minPriceInput) minPriceInput.value = item.minimum_acceptable_price || '';
+    if (compPriceInput) compPriceInput.value = '';
+
+    if (recommendations) {
+      renderRecommendations(recommendations, item);
+      if (recommendationsSection) recommendationsSection.style.display = 'block';
+
+      if (!item.estimated_resale_value && estValueInput) {
+        estValueInput.value = recommendations.suggestedPrice;
+      }
+      if (suggestionEl) suggestionEl.textContent = '';
+    } else {
+      if (recommendationsSection) recommendationsSection.style.display = 'none';
+
+      if (item.estimated_resale_value) {
+        if (estValueInput) estValueInput.value = item.estimated_resale_value;
+        if (suggestionEl) suggestionEl.textContent = '';
+      } else if (fallbackSuggestion) {
+        if (estValueInput) estValueInput.value = fallbackSuggestion.value;
+        if (suggestionEl) {
+          let hint = `Suggested: ${formatCurrency(fallbackSuggestion.value)} (${fallbackSuggestion.multiplier}× brand tier)`;
+          if (fallbackSuggestion.tips) hint += ` — ${fallbackSuggestion.tips}`;
+          suggestionEl.textContent = hint;
+        }
+      } else {
+        if (estValueInput) estValueInput.value = '';
+        if (suggestionEl) suggestionEl.textContent = '';
+      }
+    }
+
+    // Use existing value if set (takes priority)
+    if (item.estimated_resale_value && estValueInput) {
+      estValueInput.value = item.estimated_resale_value;
     }
   }
+});
 
+export async function openStartSellingModal(itemId) {
   const item = await getInventoryItem(itemId);
   if (!item) {
     showToast('Item not found');
     return;
   }
 
-  // Store current item for recalculation
-  currentSellingItem = item;
-
-  // Populate form
-  $('#start-selling-item-id').value = itemId;
-  $('#start-selling-item-title').textContent = item.title || 'Untitled';
-  $('#start-selling-status').value = 'unlisted';
-  $('#start-selling-min-price').value = item.minimum_acceptable_price || '';
-
-  // Reset comp price input
-  const compPriceInput = $('#start-selling-comp-price');
-  if (compPriceInput) compPriceInput.value = '';
-
-  const suggestionEl = $('#start-selling-suggestion');
-  const estValueInput = $('#start-selling-est-value');
-  const recommendationsSection = $('#selling-recommendations');
-
-  // Generate recommendations using brand-tier ranges (no comp price initially)
+  // Generate recommendations (async work done before opening)
   const recommendations = await generateSellingRecommendations(item);
 
-  if (recommendations) {
-    renderRecommendations(recommendations, item);
-    if (recommendationsSection) recommendationsSection.style.display = 'block';
-
-    // Pre-fill estimated value with suggestion (unless already set)
-    if (!item.estimated_resale_value) {
-      estValueInput.value = recommendations.suggestedPrice;
-    }
-    if (suggestionEl) suggestionEl.textContent = '';
-  } else {
-    // Fallback: hide recommendations, show old suggestion style
-    if (recommendationsSection) recommendationsSection.style.display = 'none';
-
-    if (item.estimated_resale_value) {
-      estValueInput.value = item.estimated_resale_value;
-      if (suggestionEl) suggestionEl.textContent = '';
-    } else {
-      const suggestion = await calculateSuggestedResaleValue(item);
-      if (suggestion) {
-        estValueInput.value = suggestion.value;
-        if (suggestionEl) {
-          let hint = `Suggested: ${formatCurrency(suggestion.value)} (${suggestion.multiplier}× brand tier)`;
-          if (suggestion.tips) hint += ` — ${suggestion.tips}`;
-          suggestionEl.textContent = hint;
-        }
-      } else {
-        estValueInput.value = '';
-        if (suggestionEl) suggestionEl.textContent = '';
-      }
-    }
+  // Calculate fallback suggestion if no recommendations
+  let fallbackSuggestion = null;
+  if (!recommendations && !item.estimated_resale_value) {
+    fallbackSuggestion = await calculateSuggestedResaleValue(item);
   }
 
-  // Use existing value if set (takes priority)
-  if (item.estimated_resale_value) {
-    estValueInput.value = item.estimated_resale_value;
-  }
-
-  startSellingModal.open();
+  startSellingModal.open({ item, recommendations, fallbackSuggestion });
 }
 
 /**
