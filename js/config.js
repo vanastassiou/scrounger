@@ -187,6 +187,84 @@ export const FLAW_IMPACT = {
   max_penalty: -0.25         // Floor on total flaw adjustment
 };
 
+// =============================================================================
+// TREND MULTIPLIERS - Color, Cut, and Style Impact on Pricing
+// =============================================================================
+
+// Color trend multipliers (seasonal alignment)
+export const COLOR_TREND_MULTIPLIERS = {
+  hot: 1.15,           // +15% for hot seasonal colors
+  emerging: 1.08,      // +8% for emerging colors
+  neutral: 1.0,        // No adjustment for evergreen neutrals
+  declining: 0.92,     // -8% for declining colors
+  off_season: 0.85     // -15% for completely off-season colors
+};
+
+// Cut/silhouette trend multipliers
+export const CUT_TREND_MULTIPLIERS = {
+  trending: 1.12,      // +12% for trending cuts this month/season
+  platform_match: 1.08, // +8% for cuts that match platform preferences
+  classic: 1.0,        // No adjustment for classic/timeless cuts
+  dated: 0.90          // -10% for dated cuts (e.g., extreme 2000s low-rise on Vestiaire)
+};
+
+// Style/aesthetic multipliers
+export const STYLE_TREND_MULTIPLIERS = {
+  hot_aesthetic: 1.15,     // +15% for current trending aesthetics (e.g., quiet luxury)
+  platform_match: 1.10,    // +10% for styles that match platform demographics
+  seasonal_match: 1.08,    // +8% for seasonal style alignment
+  neutral: 1.0,
+  platform_mismatch: 0.92  // -8% for styles that don't fit platform audience
+};
+
+// Cut keywords for inference from description
+export const CUT_KEYWORDS = {
+  oversized: ['oversized', 'baggy', 'boxy', 'loose', 'relaxed', 'slouchy'],
+  fitted: ['fitted', 'slim', 'tailored', 'bodycon', 'form-fitting', 'tight', 'skinny'],
+  wrap: ['wrap', 'surplice', 'crossover', 'tie-waist'],
+  a_line: ['a-line', 'a line', 'flared', 'swing', 'skater'],
+  midi: ['midi', 'mid-length', 'tea-length'],
+  maxi: ['maxi', 'floor-length', 'full-length'],
+  cropped: ['cropped', 'crop', 'short'],
+  high_waist: ['high-waist', 'high waist', 'high-rise', 'high rise'],
+  low_rise: ['low-rise', 'low rise', 'low-waist'],
+  wide_leg: ['wide-leg', 'wide leg', 'palazzo', 'flare'],
+  straight: ['straight-leg', 'straight leg', 'straight cut'],
+  structured: ['structured', 'tailored', 'architectural'],
+  column: ['column', 'sheath', 'pencil'],
+  puff_sleeve: ['puff sleeve', 'puffed', 'balloon sleeve'],
+  dramatic: ['dramatic', 'statement', 'bold', 'avant-garde'],
+  chunky: ['chunky', 'cable-knit', 'cable knit', 'bulky']
+};
+
+// Style keywords for inference from description/era/brand
+export const STYLE_KEYWORDS = {
+  y2k: ['y2k', '2000s', 'early 2000s', 'paris hilton', 'low rise', 'baby tee'],
+  streetwear: ['streetwear', 'urban', 'supreme', 'bape', 'palace', 'stussy'],
+  boho: ['boho', 'bohemian', 'hippie', 'festival', 'peasant', 'gypsy'],
+  preppy: ['preppy', 'collegiate', 'ivy', 'nautical', 'country club'],
+  minimalist: ['minimalist', 'minimal', 'clean lines', 'understated'],
+  romantic: ['romantic', 'feminine', 'delicate', 'lace', 'ruffle', 'floral'],
+  gothic: ['gothic', 'goth', 'dark', 'black', 'victorian'],
+  grunge: ['grunge', '90s', 'plaid', 'distressed', 'band tee'],
+  quiet_luxury: ['quiet luxury', 'stealth wealth', 'old money', 'understated', 'investment'],
+  cottagecore: ['cottagecore', 'prairie', 'pastoral', 'vintage floral'],
+  dark_academia: ['dark academia', 'scholarly', 'tweed', 'oxford', 'literary'],
+  vintage_authentic: ['vintage', 'true vintage', 'antique', 'retro', 'deadstock'],
+  athleisure: ['athleisure', 'athletic', 'sporty', 'activewear', 'workout'],
+  coastal: ['coastal', 'beach', 'resort', 'nautical', 'summer', 'vacation']
+};
+
+// Trend calculation weighting
+export const TREND_WEIGHTS = {
+  color: 0.4,    // 40% weight for color trends
+  cut: 0.3,      // 30% weight for cut/silhouette
+  style: 0.3     // 30% weight for style/aesthetic
+};
+
+// Max trend adjustment (cap to prevent extreme swings)
+export const MAX_TREND_ADJUSTMENT = 0.20; // +/-20% max
+
 export const INTENT_OPTIONS = ['personal_keep', 'resale', 'undecided'];
 
 export const PIPELINE_STATUSES = [

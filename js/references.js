@@ -929,52 +929,62 @@ function renderTrendsRow(month, currentMonth, nextMonth) {
     ? `<ul class="compact-list">${month.themes.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`
     : '-';
 
-  // Hot items: collect types, colours, materials separately
-  const types = [];
-  const colours = [];
-  const materials = [];
+  // Colors: collect from colour_trends and hot_categories
+  const hotColors = month.colour_trends?.hot || [];
+  const emergingColors = month.colour_trends?.emerging || [];
+  const categoryColors = (month.hot_categories || []).flatMap(cat => cat.colours || []);
+  const allColors = [...new Set([...hotColors, ...categoryColors])];
+
+  let colorsHtml = '-';
+  if (allColors.length > 0 || emergingColors.length > 0) {
+    const parts = [];
+    if (allColors.length > 0) {
+      parts.push(`<div class="trend-pills trend-pills--hot">${allColors.slice(0, 6).map(c => `<span class="trend-pill trend-pill--color">${escapeHtml(formatTagName(c))}</span>`).join('')}</div>`);
+    }
+    if (emergingColors.length > 0) {
+      parts.push(`<div class="trend-pills trend-pills--emerging"><span class="text-muted small">Emerging:</span> ${emergingColors.slice(0, 3).map(c => `<span class="trend-pill trend-pill--emerging">${escapeHtml(formatTagName(c))}</span>`).join('')}</div>`);
+    }
+    colorsHtml = parts.join('');
+  }
+
+  // Cuts & Styles: collect from hot_categories and trending_aesthetics
+  const cuts = [];
+  const styles = [];
   (month.hot_categories || []).forEach(cat => {
-    types.push(...(cat.subcategories || []));
-    colours.push(...(cat.colours || []));
-    materials.push(...(cat.materials || []));
+    cuts.push(...(cat.cuts || []));
+    styles.push(...(cat.styles || []));
   });
+  const uniqueCuts = [...new Set(cuts)].slice(0, 5);
+  const uniqueStyles = [...new Set(styles)].slice(0, 5);
+  const trendingAesthetics = (month.trending_aesthetics || []).slice(0, 3);
 
-  const hotItemsList = [];
-  const uniqueTypes = [...new Set(types)];
-  const uniqueColours = [...new Set(colours)];
-  const uniqueMaterials = [...new Set(materials)];
-
-  if (uniqueTypes.length > 0) {
-    hotItemsList.push(`Types: ${uniqueTypes.map(i => escapeHtml(formatTagName(i))).join(', ')}`);
+  let cutsStylesHtml = '-';
+  const cutsStylesParts = [];
+  if (uniqueCuts.length > 0) {
+    cutsStylesParts.push(`<div><span class="text-muted small">Cuts:</span> ${uniqueCuts.map(c => `<span class="trend-pill trend-pill--cut">${escapeHtml(formatTagName(c))}</span>`).join('')}</div>`);
   }
-  if (uniqueColours.length > 0) {
-    hotItemsList.push(`Colours: ${uniqueColours.map(i => escapeHtml(formatTagName(i))).join(', ')}`);
+  if (trendingAesthetics.length > 0) {
+    cutsStylesParts.push(`<div><span class="text-muted small">Aesthetics:</span> ${trendingAesthetics.map(s => `<span class="trend-pill trend-pill--style">${escapeHtml(formatTagName(s))}</span>`).join('')}</div>`);
+  } else if (uniqueStyles.length > 0) {
+    cutsStylesParts.push(`<div><span class="text-muted small">Styles:</span> ${uniqueStyles.map(s => `<span class="trend-pill trend-pill--style">${escapeHtml(formatTagName(s))}</span>`).join('')}</div>`);
   }
-  if (uniqueMaterials.length > 0) {
-    hotItemsList.push(`Materials: ${uniqueMaterials.map(i => escapeHtml(formatTagName(i))).join(', ')}`);
+  if (cutsStylesParts.length > 0) {
+    cutsStylesHtml = cutsStylesParts.join('');
   }
-
-  const hotItemsHtml = hotItemsList.length > 0
-    ? `<ul class="compact-list">${hotItemsList.map(item => `<li>${item}</li>`).join('')}</ul>`
-    : '-';
-
-  // Why: first reason from categories
-  const firstReason = month.hot_categories?.[0]?.reason || '';
-  const whyText = firstReason ? escapeHtml(firstReason) : '-';
 
   // Platform tips (bullet list)
   const platformNotes = month.platform_notes || {};
   const platformEntries = Object.entries(platformNotes);
   const platformsHtml = platformEntries.length > 0
-    ? `<ul class="compact-list">${platformEntries.map(([platform, tip]) => `<li>${escapeHtml(getPlatformName(platform))}: ${escapeHtml(tip)}</li>`).join('')}</ul>`
+    ? `<ul class="compact-list">${platformEntries.map(([platform, tip]) => `<li><strong>${escapeHtml(getPlatformName(platform))}:</strong> ${escapeHtml(tip)}</li>`).join('')}</ul>`
     : '-';
 
   return `
     <tr class="${rowClass}">
       <td>${escapeHtml(month.label)}</td>
       <td data-label="Themes">${themesHtml}</td>
-      <td data-label="Hot Items">${hotItemsHtml}</td>
-      <td data-label="Why">${whyText}</td>
+      <td data-label="Colors">${colorsHtml}</td>
+      <td data-label="Cuts & Styles">${cutsStylesHtml}</td>
       <td data-label="Platforms">${platformsHtml}</td>
     </tr>
   `;
