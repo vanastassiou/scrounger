@@ -7,6 +7,9 @@ import {
   createSortableTable, createFilterButtons, emptyStateRow
 } from './utils.js';
 import { createSubTabController } from './components.js';
+import {
+  loadSeasonalData, getAllMonthsData, getCurrentMonthKey, getNextMonthKey
+} from './seasonal.js';
 
 let brandsData = [];
 let platformsData = null;
@@ -424,12 +427,18 @@ function setupSubTabs() {
       stores: '#ref-stores-view',
       visits: '#ref-visits-view',
       brands: '#ref-brands-view',
-      platforms: '#ref-platforms-view'
+      platforms: '#ref-platforms-view',
+      trends: '#ref-trends-view'
     },
     storageKey: 'referencesSubTab',
     htmlDataAttr: 'refSub',
     defaultView: 'stores',
-    onActivate: (view) => { currentView = view; }
+    onActivate: (view) => {
+      currentView = view;
+      if (view === 'trends') {
+        renderTrendsView();
+      }
+    }
   });
 
   // Platform search
@@ -764,4 +773,102 @@ function getPlatformBadge(p) {
 
 function formatTagName(tag) {
   return tag.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+// =============================================================================
+// TRENDS VIEW
+// =============================================================================
+
+let trendsLoaded = false;
+
+async function renderTrendsView() {
+  const container = $('#trends-calendar');
+  if (!container) return;
+
+  // Load seasonal data if not already loaded
+  if (!trendsLoaded) {
+    await loadSeasonalData();
+    trendsLoaded = true;
+  }
+
+  const months = getAllMonthsData();
+  if (!months || months.length === 0) {
+    container.innerHTML = '<p class="text-muted">Unable to load seasonal data</p>';
+    return;
+  }
+
+  const currentMonth = getCurrentMonthKey();
+  const nextMonth = getNextMonthKey();
+
+  container.innerHTML = months.map(month => renderTrendsMonth(month, currentMonth, nextMonth)).join('');
+}
+
+function renderTrendsMonth(month, currentMonth, nextMonth) {
+  const isCurrent = month.key === currentMonth;
+  const isNext = month.key === nextMonth;
+
+  const monthClass = isCurrent ? 'trends-month trends-month--current' :
+    isNext ? 'trends-month trends-month--next' : 'trends-month';
+
+  const badge = isCurrent ? '<span class="trends-month__badge trends-month__badge--current">Now</span>' :
+    isNext ? '<span class="trends-month__badge trends-month__badge--next">Next</span>' : '';
+
+  // Render themes
+  const themesHtml = month.themes?.length
+    ? `<div class="trends-themes">${month.themes.map(t => `<span class="trends-theme">${escapeHtml(t)}</span>`).join('')}</div>`
+    : '';
+
+  // Render hot categories
+  const categoriesHtml = month.hot_categories?.length
+    ? `<div class="trends-categories">${month.hot_categories.map(renderTrendsCategory).join('')}</div>`
+    : '';
+
+  // Render platform notes
+  const platformsHtml = month.platform_notes && Object.keys(month.platform_notes).length
+    ? renderPlatformNotes(month.platform_notes)
+    : '';
+
+  return `
+    <div class="${monthClass}">
+      <div class="trends-month__header">
+        <span class="trends-month__name">${escapeHtml(month.label)}</span>
+        ${badge}
+      </div>
+      ${themesHtml}
+      ${categoriesHtml}
+      ${platformsHtml}
+    </div>
+  `;
+}
+
+function renderTrendsCategory(cat) {
+  const items = cat.subcategories || [];
+  const materials = cat.materials || [];
+  const colours = cat.colours || [];
+
+  const allItems = [...items, ...materials, ...colours];
+  const itemsHtml = allItems.map(item =>
+    `<span class="trends-category__item">${escapeHtml(formatTagName(item))}</span>`
+  ).join('');
+
+  return `
+    <div class="trends-category">
+      <div class="trends-category__items">${itemsHtml}</div>
+      ${cat.reason ? `<div class="trends-reason">${escapeHtml(cat.reason)}</div>` : ''}
+    </div>
+  `;
+}
+
+function renderPlatformNotes(notes) {
+  const entries = Object.entries(notes);
+  if (entries.length === 0) return '';
+
+  const notesHtml = entries.map(([platform, tip]) => `
+    <div class="trends-platform">
+      <span class="trends-platform__name">${escapeHtml(platform)}:</span>
+      <span class="trends-platform__tip">${escapeHtml(tip)}</span>
+    </div>
+  `).join('');
+
+  return `<div class="trends-platforms">${notesHtml}</div>`;
 }

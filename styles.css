@@ -1971,3 +1971,191 @@
   color: var(--color-error);
   font-size: 0.75rem;
 }
+
+/* =============================================================================
+   SEASONAL TRENDS
+   ============================================================================= */
+
+/* Trends calendar grid */
+.trends-header {
+  margin-bottom: var(--space-lg);
+}
+
+.trends-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.trends-header .text-muted {
+  margin-top: var(--space-xs);
+}
+
+.trends-calendar {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-md);
+}
+
+@media (min-width: 640px) {
+  .trends-calendar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .trends-calendar {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Month card */
+.trends-month {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  border-left: 3px solid var(--color-border);
+  transition: border-color 0.2s;
+}
+
+.trends-month--current {
+  border-left-color: var(--color-primary);
+  background: var(--color-surface-elevated);
+}
+
+.trends-month--next {
+  border-left-color: var(--color-success);
+}
+
+.trends-month__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
+.trends-month__name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.trends-month__badge {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.trends-month__badge--current {
+  background: var(--color-primary);
+  color: white;
+}
+
+.trends-month__badge--next {
+  background: var(--color-success);
+  color: white;
+}
+
+.trends-themes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+.trends-theme {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+}
+
+.trends-categories {
+  margin-bottom: var(--space-sm);
+}
+
+.trends-category {
+  margin-bottom: var(--space-sm);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.trends-category:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.trends-category__items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
+}
+
+.trends-category__item {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.trends-category__item::after {
+  content: ",";
+  color: var(--color-text-muted);
+}
+
+.trends-category__item:last-child::after {
+  content: none;
+}
+
+.trends-reason {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.trends-platforms {
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border);
+}
+
+.trends-platform {
+  display: flex;
+  gap: var(--space-xs);
+  font-size: 0.75rem;
+  margin-bottom: var(--space-xs);
+}
+
+.trends-platform:last-child {
+  margin-bottom: 0;
+}
+
+.trends-platform__name {
+  font-weight: 600;
+  color: var(--color-primary);
+  text-transform: capitalize;
+}
+
+.trends-platform__tip {
+  color: var(--color-text-muted);
+}
+
+/* Seasonal action group on dashboard */
+.action-item-group--seasonal {
+  border-left: 3px solid var(--color-success);
+}
+
+.action-item-group--seasonal .action-badge {
+  background: var(--color-success);
+}
+
+.seasonal-reason {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+  display: block;
+  margin-top: 2px;
+}
