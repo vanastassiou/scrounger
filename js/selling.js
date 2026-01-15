@@ -29,6 +29,7 @@ import {
 } from './utils.js';
 import { RESALE_PLATFORMS, PIPELINE_STATUSES, getStatusSortOrder } from './config.js';
 import { openViewItemModal, openEditItemModal } from './inventory.js';
+import { initFees, calculatePlatformFees, calculateEstimatedReturns } from './fees.js';
 
 // =============================================================================
 // STATE
@@ -44,12 +45,14 @@ let dateRangeFilter = 'all';
 let searchTerm = '';
 let currentSoldItem = null;
 let currentShipItem = null;
+let feesManuallyEdited = false;
 
 // =============================================================================
 // INITIALIZATION
 // =============================================================================
 
 export async function initSelling() {
+  await initFees();
   await loadPipeline();
   setupEventHandlers();
   await renderAnalytics();
@@ -189,6 +192,47 @@ function setupEventHandlers() {
         input.addEventListener('input', updateProfitPreview);
       }
     });
+
+    // Auto-calculate fees when platform or price changes
+    const soldPriceInput = $('#sold-price');
+    const soldPlatformSelect = $('#sold-platform');
+    const platformFeesInput = $('#platform-fees');
+
+    if (soldPriceInput) {
+      soldPriceInput.addEventListener('input', () => {
+        if (!feesManuallyEdited) {
+          updateFeeCalculation();
+        }
+      });
+    }
+
+    if (soldPlatformSelect) {
+      soldPlatformSelect.addEventListener('change', () => {
+        if (!feesManuallyEdited) {
+          updateFeeCalculation();
+        }
+      });
+    }
+
+    // Track manual edits to platform fees
+    if (platformFeesInput) {
+      platformFeesInput.addEventListener('input', () => {
+        feesManuallyEdited = true;
+        const resetBtn = $('#reset-fees-btn');
+        if (resetBtn) resetBtn.style.display = 'inline';
+      });
+    }
+
+    // Reset fees button
+    const resetFeesBtn = $('#reset-fees-btn');
+    if (resetFeesBtn) {
+      resetFeesBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        feesManuallyEdited = false;
+        resetFeesBtn.style.display = 'none';
+        updateFeeCalculation();
+      });
+    }
   }
 }
 
@@ -320,7 +364,7 @@ function renderPipelineTable() {
 
   // Render rows
   if (filtered.length === 0) {
-    tbody.innerHTML = emptyStateRow({ colspan: 7, icon: '💰', message: 'No items in pipeline' });
+    tbody.innerHTML = emptyStateRow({ colspan: 8, icon: '💰', message: 'No items in pipeline' });
   } else {
     tbody.innerHTML = filtered.map(item => renderPipelineRow(item)).join('');
   }
@@ -340,6 +384,20 @@ function renderPipelineRow(item) {
   const cost = (item.purchase_price || 0) + (item.tax_paid || 0);
   const price = item.sold_price || item.estimated_resale_value || 0;
   const platform = item.sold_platform ? capitalize(item.sold_platform.replace('_', ' ')) : '-';
+
+  // Calculate estimated return for items not yet sold
+  let estReturnHtml = '-';
+  if (item.status !== 'sold' && item.estimated_resale_value > 0) {
+    const estimates = calculateEstimatedReturns(item);
+    if (estimates.length > 0) {
+      const best = estimates[0];
+      const profitClass = best.profit >= 0 ? 'profit--positive' : 'profit--negative';
+      estReturnHtml = `<span class="est-return">
+        <span class="${profitClass}">${formatCurrency(best.profit)}</span>
+        <span class="est-platform">${best.platformId}</span>
+      </span>`;
+    }
+  }
 
   // Determine action button
   let actionButton = '';
@@ -363,6 +421,7 @@ function renderPipelineRow(item) {
       <td><span class="status status--${item.status}">${formatStatus(item.status)}</span></td>
       <td>${formatCurrency(cost)}</td>
       <td>${price > 0 ? formatCurrency(price) : '-'}</td>
+      <td>${estReturnHtml}</td>
       <td class="${profitClass}">${item.status === 'sold' ? profitDisplay : '-'}</td>
       <td>${platform}</td>
       <td class="table-actions">
@@ -406,6 +465,7 @@ export async function openMarkAsSoldModal(itemId) {
   }
 
   currentSoldItem = item;
+  feesManuallyEdited = false;
 
   // Populate form
   $('#sold-item-id').value = itemId;
@@ -415,6 +475,11 @@ export async function openMarkAsSoldModal(itemId) {
   $('#sold-platform').value = '';
   $('#shipping-cost').value = '';
   $('#platform-fees').value = '';
+
+  // Reset fee display
+  const resetBtn = $('#reset-fees-btn');
+  if (resetBtn) resetBtn.style.display = 'none';
+  clearFeeBreakdown();
 
   updateProfitPreview();
   markSoldModal.open();
@@ -442,6 +507,85 @@ function updateProfitPreview() {
   const { formatted, className } = formatProfitDisplay(profit);
   profitEl.textContent = formatted;
   profitEl.className = `${className}`;
+}
+
+function updateFeeCalculation() {
+  const platform = $('#sold-platform').value;
+  const salePrice = parseFloat($('#sold-price').value) || 0;
+
+  if (!platform || !salePrice) {
+    clearFeeBreakdown();
+    return;
+  }
+
+  const result = calculatePlatformFees(platform, salePrice);
+  if (result) {
+    $('#platform-fees').value = result.totalFees.toFixed(2);
+    renderFeeBreakdown(result);
+    updateProfitPreview();
+  } else {
+    clearFeeBreakdown();
+  }
+}
+
+function renderFeeBreakdown(result) {
+  const container = $('#fee-breakdown');
+  if (!container) return;
+
+  const { breakdown, notes, isConsignment, platformName } = result;
+  let html = '';
+
+  // Commission
+  if (breakdown.commission) {
+    html += `<div class="fee-line">
+      <span>${isConsignment ? 'Payout:' : 'Commission:'}</span>
+      <span>${breakdown.commission}${!isConsignment ? ` (${formatCurrency(result.commission)})` : ''}</span>
+    </div>`;
+  }
+
+  // Payment processing
+  if (breakdown.paymentProcessing && breakdown.paymentProcessing !== 'Included') {
+    html += `<div class="fee-line">
+      <span>Payment processing:</span>
+      <span>${breakdown.paymentProcessing} (${formatCurrency(result.paymentProcessing)})</span>
+    </div>`;
+  }
+
+  // Listing fee
+  if (breakdown.listingFee) {
+    html += `<div class="fee-line">
+      <span>Listing fee:</span>
+      <span>${breakdown.listingFee}</span>
+    </div>`;
+  }
+
+  // Total fees
+  html += `<div class="fee-line fee-line--total">
+    <span>Total fees:</span>
+    <span>${formatCurrency(result.totalFees)}</span>
+  </div>`;
+
+  // Net payout
+  html += `<div class="fee-line fee-line--net">
+    <span>Net payout:</span>
+    <span>${formatCurrency(result.netPayout)}</span>
+  </div>`;
+
+  // Notes
+  if (notes && notes.length > 0) {
+    html += `<div class="fee-notes">${notes.join(' • ')}</div>`;
+  }
+
+  container.innerHTML = html;
+  container.style.display = 'block';
+}
+
+function clearFeeBreakdown() {
+  const container = $('#fee-breakdown');
+  if (container) {
+    container.innerHTML = '';
+    container.style.display = 'none';
+  }
 }
 
 async function handleMarkAsSoldSubmit(e) {

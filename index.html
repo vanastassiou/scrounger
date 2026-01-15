@@ -260,6 +260,7 @@
                 <th data-sort="status">Status</th>
                 <th data-sort="purchase_price">Cost</th>
                 <th data-sort="sold_price">Price</th>
+                <th>Est. Return</th>
                 <th data-sort="profit">Profit</th>
                 <th data-sort="sold_platform">Platform</th>
                 <th>Actions</th>
@@ -267,7 +268,7 @@
             </thead>
             <tbody id="selling-tbody">
               <tr>
-                <td colspan="7" class="empty-state">
+                <td colspan="8" class="empty-state">
                   <div class="empty-icon">💰</div>
                   <p>No items in sales pipeline</p>
                 </td>
@@ -377,11 +378,11 @@
               <tr>
                 <th data-sort="name">Name</th>
                 <th data-sort="demographic">Demographic</th>
-                <th>Item Types</th>
-                <th>Fees</th>
+                <th data-sort="fees">Fees</th>
+                <th>Shipping</th>
+                <th>Best For</th>
                 <th>Pros</th>
                 <th>Cons</th>
-                <th>Notes</th>
               </tr>
             </thead>
             <tbody id="platforms-tbody">
@@ -935,6 +936,10 @@
             <option value="ebay">eBay</option>
             <option value="etsy">Etsy</option>
             <option value="depop">Depop</option>
+            <option value="vestiaire_collective">Vestiaire Collective</option>
+            <option value="therealreal">The RealReal</option>
+            <option value="grailed">Grailed</option>
+            <option value="starluv">Starluv</option>
             <option value="facebook_marketplace">Facebook Marketplace</option>
             <option value="local_consignment">Local Consignment</option>
             <option value="other">Other</option>
@@ -947,10 +952,15 @@
             <input type="number" class="form-input" id="shipping-cost" name="shipping_cost" step="0.01" min="0" placeholder="0.00">
           </div>
           <div class="form-group">
-            <label class="form-label" for="platform-fees">Platform fees</label>
+            <label class="form-label" for="platform-fees">
+              Platform fees
+              <button type="button" id="reset-fees-btn" class="btn-link" style="display: none;">Reset</button>
+            </label>
             <input type="number" class="form-input" id="platform-fees" name="platform_fees" step="0.01" min="0" placeholder="0.00">
           </div>
         </div>
+
+        <div id="fee-breakdown" class="fee-breakdown" style="display: none;"></div>
 
         <div class="form-group">
           <label class="form-label">Profit summary</label>
