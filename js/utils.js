@@ -220,6 +220,22 @@ export function createSortableTable({ getState, setState, onSort }) {
 }
 
 /**
+ * Update sort indicator classes on table headers.
+ * @param {HTMLElement} table - Table element
+ * @param {string} sortColumn - Current sort column
+ * @param {string} sortDirection - 'asc' or 'desc'
+ */
+export function updateSortIndicators(table, sortColumn, sortDirection) {
+  const headers = table.querySelectorAll('th[data-sort]');
+  headers.forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (th.dataset.sort === sortColumn) {
+      th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+    }
+  });
+}
+
+/**
  * Generic sort comparator with custom column value extraction.
  * @param {Array} data - Array to sort (sorts in place)
  * @param {string} sortColumn

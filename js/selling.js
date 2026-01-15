@@ -25,7 +25,8 @@ import {
   escapeHtml,
   createSortableTable,
   createFilterButtons,
-  emptyStateRow
+  emptyStateRow,
+  updateSortIndicators
 } from './utils.js';
 import { RESALE_PLATFORMS, PIPELINE_STATUSES, getStatusSortOrder } from './config.js';
 import { openViewItemModal, openEditItemModal } from './inventory.js';
@@ -369,6 +370,10 @@ function renderPipelineTable() {
     tbody.innerHTML = filtered.map(item => renderPipelineRow(item)).join('');
   }
 
+  // Update sort indicators
+  const table = $('#selling-table');
+  if (table) updateSortIndicators(table, sortColumn, sortDirection);
+
   // Update count
   const countEl = $('#selling-count');
   if (countEl) {
@@ -418,12 +423,12 @@ function renderPipelineRow(item) {
   return `
     <tr data-id="${item.id}">
       <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || 'Untitled')}</a></td>
-      <td><span class="status status--${item.status}">${formatStatus(item.status)}</span></td>
-      <td>${formatCurrency(cost)}</td>
-      <td>${price > 0 ? formatCurrency(price) : '-'}</td>
-      <td>${estReturnHtml}</td>
-      <td class="${profitClass}">${item.status === 'sold' ? profitDisplay : '-'}</td>
-      <td>${platform}</td>
+      <td data-label="Status"><span class="status status--${item.status}">${formatStatus(item.status)}</span></td>
+      <td data-label="Cost">${formatCurrency(cost)}</td>
+      <td data-label="Price">${price > 0 ? formatCurrency(price) : '-'}</td>
+      <td data-label="Est. Return">${estReturnHtml}</td>
+      <td data-label="Profit" class="${profitClass}">${item.status === 'sold' ? profitDisplay : '-'}</td>
+      <td data-label="Platform">${platform}</td>
       <td class="table-actions">
         <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
         ${actionButton}

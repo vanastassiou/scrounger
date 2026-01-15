@@ -7,7 +7,7 @@ import { computeVisitsFromInventory, getInventoryForVisit, deleteInventoryItem }
 import { showToast, createModalController } from './ui.js';
 import {
   $, formatCurrency, formatDate, getTodayDate, capitalize, formatStatus, escapeHtml,
-  createChainStoreDropdown, createSortableTable, sortData
+  createChainStoreDropdown, createSortableTable, sortData, updateSortIndicators
 } from './utils.js';
 import { initStoreDropdown } from './components.js';
 import { openAddItemModal, openEditItemModal, openViewItemModal } from './inventory.js';
@@ -130,7 +130,7 @@ function renderVisitsTable() {
     </div>
 
     <div class="table-container">
-      <table class="table" id="visits-table">
+      <table class="table table-responsive" id="visits-table">
         <thead>
           <tr>
             <th data-sort="date">Date</th>
@@ -146,6 +146,10 @@ function renderVisitsTable() {
     </div>
     <div id="visits-count" class="text-muted">${totalVisits} visit${totalVisits !== 1 ? 's' : ''}</div>
   `;
+
+  // Update sort indicators
+  const table = $('#visits-table');
+  if (table) updateSortIndicators(table, sortColumn, sortDirection);
 }
 
 function createVisitRow(visit) {
@@ -157,14 +161,14 @@ function createVisitRow(visit) {
   return `
     <tr data-visit-key="${visitKey}" data-store-id="${visit.store_id}" data-date="${visit.date}">
       <td>${formatDate(visit.date)}</td>
-      <td><a href="#" class="table-link store-link" data-store-id="${visit.store_id}">${escapeHtml(storeName)}</a></td>
-      <td>
+      <td data-label="Store"><a href="#" class="table-link store-link" data-store-id="${visit.store_id}">${escapeHtml(storeName)}</a></td>
+      <td data-label="Items">
         ${hasItems
           ? `<a href="#" class="table-link" data-store-id="${visit.store_id}" data-date="${visit.date}">${visit.purchases_count} item${visit.purchases_count !== 1 ? 's' : ''}</a>`
           : `<span class="text-muted">0 items</span>`
         }
       </td>
-      <td>${formatCurrency(visit.total_spent || 0)}</td>
+      <td data-label="Spent">${formatCurrency(visit.total_spent || 0)}</td>
     </tr>
   `;
 }
@@ -244,7 +248,7 @@ function renderVisitItemsDetails(store, items) {
   if (items.length > 0) {
     const total = items.reduce((sum, item) => sum + (item.purchase_price || 0), 0);
 
-    let itemsHtml = '<table class="mini-table"><thead><tr>';
+    let itemsHtml = '<div class="table-container"><table class="table table-responsive table--compact"><thead><tr>';
     itemsHtml += '<th>Item</th><th>Category</th><th>Brand</th><th>Cost</th>';
     itemsHtml += '</tr></thead><tbody>';
 
@@ -255,16 +259,16 @@ function renderVisitItemsDetails(store, items) {
       const price = formatCurrency(item.purchase_price || 0);
       itemsHtml += `<tr>`;
       itemsHtml += `<td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(title)}</a></td>`;
-      itemsHtml += `<td>${category}</td>`;
-      itemsHtml += `<td>${escapeHtml(brand)}</td>`;
-      itemsHtml += `<td>${price}</td>`;
+      itemsHtml += `<td data-label="Category">${category}</td>`;
+      itemsHtml += `<td data-label="Brand">${escapeHtml(brand)}</td>`;
+      itemsHtml += `<td data-label="Cost">${price}</td>`;
       itemsHtml += `</tr>`;
     }
 
     itemsHtml += '</tbody><tfoot><tr>';
     itemsHtml += `<td colspan="3" class="text-muted">Total</td>`;
     itemsHtml += `<td><strong>${formatCurrency(total)}</strong></td>`;
-    itemsHtml += '</tr></tfoot></table>';
+    itemsHtml += '</tr></tfoot></table></div>';
 
     sections.push(`<section class="detail-section"><h3 class="detail-section-title">Items (${items.length})</h3>${itemsHtml}</section>`);
   } else {
@@ -396,9 +400,9 @@ function renderSpreadsheet() {
   tbody.innerHTML = visitWorkflow.items.map(item => `
     <tr data-item-id="${item.id}">
       <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
-      <td>${capitalize(item.category)}</td>
-      <td>${escapeHtml(item.brand || '-')}</td>
-      <td>${formatCurrency(item.purchase_price || 0)}</td>
+      <td data-label="Category">${capitalize(item.category)}</td>
+      <td data-label="Brand">${escapeHtml(item.brand || '-')}</td>
+      <td data-label="Cost">${formatCurrency(item.purchase_price || 0)}</td>
       <td class="table-actions">
         <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
         <button class="btn btn--sm btn--danger delete-item-btn" data-id="${item.id}">Delete</button>

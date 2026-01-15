@@ -7,7 +7,7 @@ import { getAllStoreStats, getAllUserStores, createUserStore, getInventoryByStor
 import { showToast, createModalController } from './ui.js';
 import {
   $, $$, formatCurrency, formatDate, escapeHtml,
-  createSortableTable, createFilterButtons, emptyStateRow, formatChainName
+  createSortableTable, createFilterButtons, emptyStateRow, formatChainName, updateSortIndicators
 } from './utils.js';
 import { getTierSortOrder } from './config.js';
 import { openViewItemModal } from './inventory.js';
@@ -147,6 +147,10 @@ function renderStoresTable() {
 
   tbody.innerHTML = filtered.map(store => createStoreRow(store, statsMap.get(store.id))).join('');
 
+  // Update sort indicators
+  const table = $('#stores-table');
+  if (table) updateSortIndicators(table, sortColumn, sortDirection);
+
   updateStoreCount(filtered.length);
 }
 
@@ -168,9 +172,9 @@ function createStoreRow(store, stats) {
           ${addressHtml}
         </div>
       </td>
-      <td><span class="tier tier--${store.tier}">${store.tier}</span></td>
-      <td>${visitCount}</td>
-      <td>${hitRate}</td>
+      <td data-label="Tier"><span class="tier tier--${store.tier}">${store.tier}</span></td>
+      <td data-label="Visits">${visitCount}</td>
+      <td data-label="Hit Rate">${hitRate}</td>
     </tr>
   `;
 }
