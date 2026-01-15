@@ -102,6 +102,13 @@ export function isConnected() {
 }
 
 /**
+ * Get the connected Google account email
+ */
+export async function getAccountEmail() {
+  return provider?.getAccountEmail() || null;
+}
+
+/**
  * Check if sync folder is configured
  */
 export function isFolderConfigured() {

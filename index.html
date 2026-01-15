@@ -89,7 +89,7 @@
 
   <main>
     <!-- Dashboard -->
-    <section id="dashboard" class="page" role="tabpanel" aria-labelledby="dashboard-tab">
+    <section id="dashboard" class="page page--narrow" role="tabpanel" aria-labelledby="dashboard-tab">
       <div class="stats-grid">
         <article class="stat-card">
           <div class="stat-value" id="stat-total-items">0</div>
@@ -451,7 +451,7 @@
     </section>
 
     <!-- Settings -->
-    <section id="settings" class="page" role="tabpanel" aria-labelledby="settings-tab">
+    <section id="settings" class="page page--narrow" role="tabpanel" aria-labelledby="settings-tab">
       <div class="page-header">
         <h2>Settings</h2>
       </div>
@@ -460,64 +460,30 @@
       <article class="card">
         <h3 class="card-title">Google Drive Sync</h3>
 
-        <div class="sync-steps">
-          <!-- Step 1: Connect -->
-          <div class="sync-step" id="sync-step-1">
-            <div class="sync-step-header">
-              <span class="sync-step-number">1</span>
-              <span class="sync-step-title">Connect Account</span>
-              <span class="sync-step-badge" id="sync-step-1-status">Pending</span>
-            </div>
-            <div class="sync-step-content">
-              <p class="sync-step-status" id="sync-connect-status">Not connected</p>
-              <button class="btn" id="btn-connect">Connect to Google Drive</button>
-            </div>
+        <div class="sync-rows">
+          <div class="sync-row">
+            <span class="sync-row-label">Account:</span>
+            <span class="sync-row-value" id="sync-account-value">none</span>
+            <button class="btn btn--sm" id="btn-connect">Connect</button>
           </div>
 
-          <!-- Step 2: Select Folder -->
-          <div class="sync-step sync-step--disabled" id="sync-step-2">
-            <div class="sync-step-header">
-              <span class="sync-step-number">2</span>
-              <span class="sync-step-title">Select Folder</span>
-              <span class="sync-step-badge" id="sync-step-2-status">Pending</span>
-            </div>
-            <div class="sync-step-content">
-              <p class="sync-step-status" id="sync-folder-status">No folder selected</p>
-              <div class="sync-step-actions">
-                <button class="btn" id="btn-pick-folder" disabled>Select existing folder</button>
-                <button class="btn btn--sm btn--danger" id="btn-remove-folder" disabled>Remove</button>
+          <div class="sync-row sync-row--disabled" id="sync-row-folder">
+            <span class="sync-row-label">Sync folder:</span>
+            <span class="sync-row-value" id="sync-folder-value">none</span>
+            <div class="sync-row-dropdown">
+              <button class="btn btn--sm" id="btn-folder-menu">Select folder</button>
+              <div class="sync-row-dropdown-menu" id="folder-dropdown-menu" hidden>
+                <button class="dropdown-item" id="btn-pick-folder">Select existing folder</button>
+                <button class="dropdown-item" id="btn-create-folder-open">Create new folder</button>
+                <button class="dropdown-item dropdown-item--danger" id="btn-remove-folder">Remove folder</button>
               </div>
-              <details class="sync-create-folder" id="sync-create-folder-details">
-                <summary>Or create a new folder</summary>
-                <div class="sync-create-folder-content">
-                  <div class="form-group">
-                    <label class="form-label">Parent folder</label>
-                    <div class="form-row">
-                      <span class="form-input form-input--readonly" id="sync-parent-folder-name">My Drive (root)</span>
-                      <button class="btn btn--sm" id="btn-pick-parent" disabled>Change</button>
-                    </div>
-                  </div>
-                  <div class="form-row">
-                    <input type="text" class="form-input" id="sync-folder-input" placeholder="New folder name" disabled>
-                    <button class="btn" id="btn-create-folder" disabled>Create</button>
-                  </div>
-                </div>
-              </details>
             </div>
           </div>
 
-          <!-- Step 3: Sync Status -->
-          <div class="sync-step sync-step--disabled" id="sync-step-3">
-            <div class="sync-step-header">
-              <span class="sync-step-number">3</span>
-              <span class="sync-step-title">Sync Status</span>
-              <span class="sync-step-badge" id="sync-step-3-status">Ready</span>
-            </div>
-            <div class="sync-step-content">
-              <p class="sync-step-status" id="sync-current-status">Ready to sync</p>
-              <p class="text-muted">Last sync: <span id="last-sync-time">Never</span></p>
-              <button class="btn btn--primary" id="btn-sync-now" disabled>Back Up to Drive</button>
-            </div>
+          <div class="sync-row sync-row--disabled" id="sync-row-sync">
+            <span class="sync-row-label">Last synced:</span>
+            <span class="sync-row-value" id="sync-last-value">Never</span>
+            <button class="btn btn--sm btn--primary" id="btn-sync-now">Sync now</button>
           </div>
         </div>
       </article>
@@ -525,11 +491,38 @@
       <!-- Data Management -->
       <article class="card">
         <h3 class="card-title">Data Management</h3>
-        <div class="action-buttons">
-          <button class="btn btn--block" id="btn-export-data">Export data (JSON)</button>
-          <button class="btn btn--block" id="btn-restore-backup">Restore from backup</button>
-          <button class="btn btn--block" id="btn-import-merge">Import & merge</button>
-          <button class="btn btn--block btn--danger" id="btn-clear-data">Clear all local data</button>
+        <div class="sync-rows">
+          <div class="sync-row">
+            <div class="sync-row-info">
+              <span class="sync-row-label">Export</span>
+              <span class="sync-row-desc">Download a JSON backup of inventory, stores, and archives</span>
+            </div>
+            <button class="btn btn--sm" id="btn-export-data">Export</button>
+          </div>
+
+          <div class="sync-row">
+            <div class="sync-row-info">
+              <span class="sync-row-label">Restore</span>
+              <span class="sync-row-desc">Replace all local data with a backup file</span>
+            </div>
+            <button class="btn btn--sm" id="btn-restore-backup">Restore</button>
+          </div>
+
+          <div class="sync-row">
+            <div class="sync-row-info">
+              <span class="sync-row-label">Import & merge</span>
+              <span class="sync-row-desc">Add inventory, stores, and brands without deleting local data</span>
+            </div>
+            <button class="btn btn--sm" id="btn-import-merge">Import</button>
+          </div>
+
+          <div class="sync-row">
+            <div class="sync-row-info">
+              <span class="sync-row-label">Clear data</span>
+              <span class="sync-row-desc">Delete all local data</span>
+            </div>
+            <button class="btn btn--sm btn--danger" id="btn-clear-data">Clear</button>
+          </div>
         </div>
       </article>
     </section>
@@ -1393,6 +1386,33 @@
   </dialog>
 
   <!-- Clear Data Confirmation Dialog -->
+  <!-- Create Folder Dialog -->
+  <dialog id="create-folder-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Create sync folder</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label" for="create-folder-name">Folder name</label>
+          <input type="text" class="form-input" id="create-folder-name" placeholder="e.g., ThriftSync">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Parent folder</label>
+          <div class="form-row">
+            <span class="form-input form-input--readonly" id="sync-parent-folder-name">My Drive (root)</span>
+            <button class="btn btn--sm" id="btn-pick-parent">Change</button>
+          </div>
+        </div>
+      </div>
+      <footer class="modal-footer">
+        <button class="btn" id="create-folder-cancel">Cancel</button>
+        <button class="btn btn--primary" id="btn-create-folder">Create folder</button>
+      </footer>
+    </div>
+  </dialog>
+
   <dialog id="clear-data-dialog" class="modal">
     <div class="modal-content">
       <div class="modal-header">
@@ -1408,7 +1428,18 @@
           <li><strong>App settings</strong> and preferences</li>
         </ul>
         <p class="text-danger"><strong>This cannot be undone.</strong></p>
-        <p class="text-muted">Data synced to Google Drive will not be affected.</p>
+
+        <!-- Shown when Drive is connected -->
+        <div id="clear-data-drive-section" class="form-group" hidden>
+          <p class="text-warning"><strong>Google Drive is connected.</strong> Data will restore on next sync unless you also disconnect.</p>
+          <label class="form-checkbox">
+            <input type="checkbox" id="clear-data-disconnect" checked>
+            <span>Also disconnect from Google Drive</span>
+          </label>
+        </div>
+
+        <!-- Shown when Drive is NOT connected -->
+        <p id="clear-data-no-drive" class="text-muted">Data synced to Google Drive will not be affected.</p>
       </div>
       <footer class="modal-footer">
         <button class="btn" id="clear-data-cancel">Cancel</button>
@@ -1426,30 +1457,9 @@
       <div class="modal-body">
         <p>This app stores your data in Google Drive. Please connect your Google account to get started.</p>
 
-        <div class="sync-steps">
-          <div class="sync-step" id="setup-step-1">
-            <div class="sync-step-header">
-              <span class="sync-step-number">1</span>
-              <span class="sync-step-title">Connect Google Drive</span>
-              <span class="sync-step-status sync-step-status--pending" id="setup-step-1-status">Pending</span>
-            </div>
-            <div class="sync-step-content">
-              <p class="text-muted">Sign in with Google to enable cloud storage.</p>
-              <button class="btn btn--primary" id="setup-connect-btn">Connect to Google Drive</button>
-            </div>
-          </div>
-
-          <div class="sync-step sync-step--disabled" id="setup-step-2">
-            <div class="sync-step-header">
-              <span class="sync-step-number">2</span>
-              <span class="sync-step-title">Choose sync folder</span>
-              <span class="sync-step-status sync-step-status--pending" id="setup-step-2-status">Pending</span>
-            </div>
-            <div class="sync-step-content">
-              <p class="text-muted">Select or create a folder for your data.</p>
-              <button class="btn" id="setup-folder-btn" disabled>Select Folder</button>
-            </div>
-          </div>
+        <div class="setup-actions">
+          <button class="btn btn--block btn--primary" id="setup-connect-btn">Connect Google Drive account</button>
+          <button class="btn btn--block" id="setup-folder-btn" disabled>Select sync folder</button>
         </div>
       </div>
       <footer class="modal-footer">

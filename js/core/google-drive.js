@@ -3,11 +3,12 @@
  * Ported from seneschal core
  */
 
-import { getToken, startAuth, handleCallback, isAuthenticated, logout } from './oauth.js';
+import { getToken, startAuth, handleCallback, isAuthenticated, logout, getUserInfo, clearUserInfo } from './oauth.js';
 import { getSavedFolder, pickFolder, saveFolder, clearFolder, findOrCreateFolderByName, createFolder } from './google-picker.js';
 
 const SCOPES = [
-  'https://www.googleapis.com/auth/drive'
+  'https://www.googleapis.com/auth/drive',
+  'https://www.googleapis.com/auth/userinfo.email'
 ];
 
 const API_BASE = 'https://www.googleapis.com';
@@ -55,8 +56,18 @@ export function createGoogleDriveProvider(config) {
    */
   function disconnect() {
     logout('google');
+    clearUserInfo('google');
+    clearFolder(domain);
     fileId = null;
     attachmentsFolderId = null;
+  }
+
+  /**
+   * Get the connected user's email
+   */
+  async function getAccountEmail() {
+    const info = await getUserInfo('google');
+    return info?.email || null;
   }
 
   /**
@@ -404,6 +415,7 @@ export function createGoogleDriveProvider(config) {
     connect,
     handleAuthCallback,
     disconnect,
+    getAccountEmail,
     selectFolder,
     pickParentFolder,
     setFolderByName,

@@ -242,3 +242,44 @@ export function hasOAuthCallback() {
   const params = new URLSearchParams(window.location.search);
   return params.has('code') && params.has('state');
 }
+
+/**
+ * Get user info from Google
+ * @param {string} provider - Provider name (google)
+ * @returns {Promise<{email: string, name?: string} | null>}
+ */
+export async function getUserInfo(provider) {
+  const token = getToken(provider);
+  if (!token) return null;
+
+  // Check cache first
+  const cached = localStorage.getItem(`userinfo-${provider}`);
+  if (cached) {
+    return JSON.parse(cached);
+  }
+
+  try {
+    const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const userInfo = { email: data.email, name: data.name };
+
+    // Cache it
+    localStorage.setItem(`userinfo-${provider}`, JSON.stringify(userInfo));
+
+    return userInfo;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Clear user info cache
+ */
+export function clearUserInfo(provider) {
+  localStorage.removeItem(`userinfo-${provider}`);
+}
