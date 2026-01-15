@@ -75,6 +75,11 @@ export function getSeasonalColours() {
   return seasonalData.colour_seasons[season] || [];
 }
 
+export function getSeasonalSources() {
+  if (!seasonalData) return null;
+  return seasonalData.sources || null;
+}
+
 // =============================================================================
 // ITEM MATCHING
 // =============================================================================

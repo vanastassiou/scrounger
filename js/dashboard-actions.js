@@ -3,9 +3,28 @@
 // =============================================================================
 
 import { getInventoryInPipeline, getAllInventory } from './db.js';
-import { $, $$ } from './utils.js';
-import { setVisible, show, hide } from './components.js';
+import { $, $$, escapeHtml } from './utils.js';
+import { createModalController } from './ui.js';
+import { setVisible } from './components.js';
 import { loadSeasonalData, getSeasonalOpportunities } from './seasonal.js';
+import { openStartSellingModal } from './inventory.js';
+
+// =============================================================================
+// STATE
+// =============================================================================
+
+let actionItemsModal = null;
+let currentActionData = {}; // Stores item arrays by action type
+
+// Tile configuration
+const TILE_CONFIG = {
+  seasonal: { label: 'Perfect time to list', countId: 'tile-count-seasonal' },
+  photo: { label: 'Needs photo', countId: 'tile-count-photo' },
+  ready: { label: 'Ready to list', countId: 'tile-count-ready' },
+  shipping: { label: 'Needs shipping', countId: 'tile-count-shipping' },
+  awaiting: { label: 'Awaiting confirmation', countId: 'tile-count-awaiting' },
+  confirm: { label: 'Confirm sale', countId: 'tile-count-confirm' }
+};
 
 // =============================================================================
 // INITIALIZATION
@@ -13,6 +32,8 @@ import { loadSeasonalData, getSeasonalOpportunities } from './seasonal.js';
 
 export async function initDashboardActions() {
   await loadSeasonalData();
+  setupTileHandlers();
+  setupModalHandlers();
   await loadActionItems();
 }
 
@@ -23,160 +44,137 @@ export async function loadActionItems() {
   // Get seasonal opportunities from all listable items (pipeline + collection with resale intent)
   const seasonalMatches = getSeasonalOpportunities(allItems);
 
-  const items = pipelineItems;
-
-  const actionGroups = {
-    seasonal: seasonalMatches,
-    needsPhoto: items.filter(i => i.status === 'unlisted'),
-    readyToList: items.filter(i => i.status === 'photographed'),
-    needsShipping: items.filter(i => i.status === 'packaged'),
-    awaitingConfirmation: items.filter(i => i.status === 'shipped'),
-    confirmSale: items.filter(i => i.status === 'confirmed_received')
+  // Store data for modal use
+  currentActionData = {
+    seasonal: seasonalMatches, // Array of {item, score, reasons}
+    photo: pipelineItems.filter(i => i.status === 'unlisted'),
+    ready: pipelineItems.filter(i => i.status === 'photographed'),
+    shipping: pipelineItems.filter(i => i.status === 'packaged'),
+    awaiting: pipelineItems.filter(i => i.status === 'shipped'),
+    confirm: pipelineItems.filter(i => i.status === 'confirmed_received')
   };
 
-  renderActionItems(actionGroups);
+  updateTileCounts();
 }
 
-function renderActionItems(groups) {
-  // Render seasonal opportunities (shows/hides group based on count)
-  renderSeasonalList(groups.seasonal);
+// =============================================================================
+// TILE RENDERING
+// =============================================================================
 
-  // Update badges
-  updateBadge('photo', groups.needsPhoto.length);
-  updateBadge('list', groups.readyToList.length);
-  updateBadge('ship', groups.needsShipping.length);
-  updateBadge('confirm', groups.awaitingConfirmation.length);
-  updateBadge('complete', groups.confirmSale.length);
+function updateTileCounts() {
+  let anyVisible = false;
 
-  // Render lists
-  renderActionList('photo', groups.needsPhoto, 'unlisted');
-  renderActionList('list', groups.readyToList, 'photographed');
-  renderActionList('ship', groups.needsShipping, 'packaged');
-  renderActionList('confirm', groups.awaitingConfirmation, 'shipped');
-  renderActionList('complete', groups.confirmSale, 'confirmed_received');
+  Object.entries(TILE_CONFIG).forEach(([actionType, config]) => {
+    const tile = $(`.action-tile[data-action="${actionType}"]`);
+    const countEl = $(`#${config.countId}`);
+    if (!tile || !countEl) return;
 
-  // Setup click handlers
-  setupActionItemHandlers();
-}
+    const data = currentActionData[actionType];
+    const count = data?.length || 0;
 
-function updateBadge(type, count) {
-  const badge = $(`#action-badge-${type}`);
-  if (badge) {
-    badge.textContent = count;
-    setVisible(badge, count > 0);
-  }
-}
+    countEl.textContent = count;
 
-function renderSeasonalList(matches) {
-  const groupEl = $('#action-group-seasonal');
-  const listEl = $('#action-list-seasonal');
-  const badgeEl = $('#action-badge-seasonal');
-
-  if (!groupEl || !listEl) return;
-
-  const count = matches?.length || 0;
-
-  // Show/hide the entire group
-  if (count === 0) {
-    hide(groupEl);
-    return;
-  }
-
-  show(groupEl);
-
-  // Update badge
-  if (badgeEl) {
-    badgeEl.textContent = count;
-  }
-
-  // Show first 3 items with reasons
-  const displayItems = matches.slice(0, 3);
-  const remaining = count - 3;
-
-  listEl.innerHTML = displayItems.map(({ item, reasons }) => {
-    const reason = reasons[0] || '';
-    return `
-      <li data-item-id="${item.id}" data-status="${item.status}">
-        <a href="#" class="table-link">${item.title || 'Untitled'}</a>
-        ${reason ? `<span class="seasonal-reason">${reason}</span>` : ''}
-      </li>
-    `;
-  }).join('');
-
-  if (remaining > 0) {
-    listEl.innerHTML += `<li class="action-item-more"><a href="#" class="table-link">+ ${remaining} more</a></li>`;
-  }
-}
-
-function renderActionList(type, items, status) {
-  const listEl = $(`#action-list-${type}`);
-  if (!listEl) return;
-
-  if (items.length === 0) {
-    listEl.innerHTML = '<li class="action-item-empty">All clear!</li>';
-    return;
-  }
-
-  // Show first 3 items
-  const displayItems = items.slice(0, 3);
-  const remaining = items.length - 3;
-
-  listEl.innerHTML = displayItems.map(item => `
-    <li data-item-id="${item.id}" data-status="${status}">
-      <a href="#" class="table-link">${item.title || 'Untitled'}</a>
-    </li>
-  `).join('');
-
-  if (remaining > 0) {
-    listEl.innerHTML += `<li class="action-item-more" data-status="${status}"><a href="#" class="table-link">+ ${remaining} more</a></li>`;
-  }
-}
-
-function setupActionItemHandlers() {
-  // Click on action item header - navigate to Selling tab with filter
-  const headers = $$('.action-item-header');
-  headers.forEach(header => {
-    header.addEventListener('click', (e) => {
-      const group = e.currentTarget.closest('.action-item-group');
-      const list = group.querySelector('.action-item-list');
-      const firstItem = list.querySelector('li[data-status]');
-
-      if (firstItem) {
-        const status = firstItem.dataset.status;
-        navigateToSellingWithFilter(status);
-      }
-    });
+    // Show/hide tile based on count
+    setVisible(tile, count > 0);
+    if (count > 0) anyVisible = true;
   });
 
-  // Click on individual action item
-  const allLists = $$('.action-item-list');
-  allLists.forEach(list => {
-    list.addEventListener('click', (e) => {
-      const li = e.target.closest('li');
-      if (!li) return;
+  // Show/hide empty state
+  setVisible('#action-tiles-empty', !anyVisible);
+}
 
-      const itemId = li.dataset.itemId;
-      const status = li.dataset.status;
+// =============================================================================
+// TILE CLICK HANDLERS
+// =============================================================================
 
-      if (li.classList.contains('action-item-more')) {
-        // Navigate to Selling tab with status filter
-        navigateToSellingWithFilter(status);
-      } else if (itemId) {
-        // Navigate to Selling tab
-        navigateToSellingWithFilter(status);
-      }
+function setupTileHandlers() {
+  const tiles = $$('.action-tile');
+  tiles.forEach(tile => {
+    tile.addEventListener('click', () => {
+      const actionType = tile.dataset.action;
+      openActionItemsModal(actionType);
     });
   });
 }
 
-function navigateToSellingWithFilter(status) {
-  // Switch to Selling tab
-  localStorage.setItem('activeTab', 'selling');
+// =============================================================================
+// MODAL
+// =============================================================================
 
-  // Store the filter status for selling module to pick up
-  localStorage.setItem('selling-filter-status', status);
+function setupModalHandlers() {
+  const dialog = $('#action-items-dialog');
+  if (!dialog) return;
 
-  // Trigger tab change
-  window.location.hash = '#selling';
-  window.location.reload();
+  actionItemsModal = createModalController(dialog);
+
+  // Handle clicks in modal table (event delegation)
+  const tbody = $('#action-items-tbody');
+  if (tbody) {
+    tbody.addEventListener('click', handleModalTableClick);
+  }
+}
+
+function openActionItemsModal(actionType) {
+  if (!actionItemsModal) return;
+
+  const config = TILE_CONFIG[actionType];
+  const data = currentActionData[actionType];
+
+  if (!config || !data) return;
+
+  // Set modal title
+  const titleEl = $('#action-items-title');
+  if (titleEl) {
+    titleEl.textContent = config.label;
+  }
+
+  // Populate table
+  const tbody = $('#action-items-tbody');
+  if (tbody) {
+    if (data.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="2" class="text-center text-muted">No items</td></tr>`;
+    } else {
+      tbody.innerHTML = data.map(entry => renderModalRow(entry, actionType)).join('');
+    }
+  }
+
+  actionItemsModal.open();
+}
+
+function renderModalRow(entry, actionType) {
+  // Seasonal items have {item, score, reasons} structure
+  // Other items are just the item object directly
+  const item = actionType === 'seasonal' ? entry.item : entry;
+  const reason = actionType === 'seasonal' ? (entry.reasons?.[0] || '') : '';
+
+  return `
+    <tr data-id="${escapeHtml(item.id)}">
+      <td>
+        <span class="table-link">${escapeHtml(item.title || 'Untitled')}</span>
+        ${reason ? `<span class="seasonal-reason">${escapeHtml(reason)}</span>` : ''}
+      </td>
+      <td class="table-actions" data-label="">
+        <button class="btn btn--sm btn--primary sell-from-modal-btn" data-id="${escapeHtml(item.id)}">Sell</button>
+      </td>
+    </tr>
+  `;
+}
+
+function handleModalTableClick(e) {
+  const sellBtn = e.target.closest('.sell-from-modal-btn');
+  if (sellBtn) {
+    e.preventDefault();
+    const itemId = sellBtn.dataset.id;
+    handleSellFromModal(itemId);
+  }
+}
+
+async function handleSellFromModal(itemId) {
+  // Close action items modal
+  if (actionItemsModal) {
+    actionItemsModal.close();
+  }
+
+  // Open the start selling modal (from inventory.js)
+  await openStartSellingModal(itemId);
 }
