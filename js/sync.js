@@ -38,7 +38,6 @@ export async function initSync() {
     // Try to load config
     const configModule = await import('./google-config.js').catch(() => null);
     if (!configModule?.googleConfig) {
-      console.log('Sync disabled: google-config.js not found');
       return false;
     }
 
@@ -73,7 +72,8 @@ export async function initSync() {
     // Handle OAuth callback if present
     if (hasOAuthCallback()) {
       await provider.handleAuthCallback();
-      showToast('Connected to Google Drive', 'success');
+      const email = await provider.getAccountEmail();
+      showToast(email ? `Connected as ${email}` : 'Connected to Google Drive');
     }
 
     return true;
@@ -120,7 +120,7 @@ export function isFolderConfigured() {
  */
 export async function connect() {
   if (!provider) {
-    showToast('Sync not configured', 'error');
+    showToast('Sync not configured');
     return;
   }
   await provider.connect();
@@ -156,7 +156,7 @@ export async function setFolder(folderName, parentId) {
     showToast(`Sync folder set to "${folder.name}"`);
     return folder;
   } catch (err) {
-    showToast('Failed to set folder: ' + err.message, 'error');
+    showToast('Failed to set folder: ' + err.message);
     return null;
   }
 }
@@ -173,7 +173,7 @@ export async function selectFolder() {
     }
     return folder;
   } catch (err) {
-    showToast('Failed to select folder: ' + err.message, 'error');
+    showToast('Failed to select folder: ' + err.message);
     return null;
   }
 }
@@ -186,7 +186,7 @@ export async function pickParentFolder() {
   try {
     return await provider.pickParentFolder();
   } catch (err) {
-    showToast('Failed to pick folder: ' + err.message, 'error');
+    showToast('Failed to pick folder: ' + err.message);
     return null;
   }
 }
@@ -225,7 +225,7 @@ export function getSyncStatus() {
  */
 export async function syncNow() {
   if (!syncEngine) {
-    showToast('Sync not configured', 'error');
+    showToast('Sync not configured');
     return { success: false, error: 'Sync not configured' };
   }
 
@@ -233,7 +233,7 @@ export async function syncNow() {
     const error = !isConnected()
       ? 'Not connected to Google Drive'
       : 'No sync folder configured';
-    showToast(error, 'error');
+    showToast(error);
     return { success: false, error };
   }
 
@@ -244,7 +244,7 @@ export async function syncNow() {
     await syncAttachments();
     showToast('Sync complete');
   } else {
-    showToast('Sync failed: ' + result.error, 'error');
+    showToast('Sync failed: ' + result.error);
   }
 
   return result;
