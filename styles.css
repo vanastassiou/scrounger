@@ -1081,6 +1081,74 @@
   color: var(--color-text);
 }
 
+/* Fee Breakdown */
+.fee-breakdown {
+  margin-top: var(--space-sm);
+  padding: var(--space-sm);
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  font-size: 0.85rem;
+}
+
+.fee-line {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-xs) 0;
+  color: var(--color-text-muted);
+}
+
+.fee-line--total {
+  margin-top: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--color-border);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.fee-line--net {
+  font-weight: 600;
+  color: var(--color-success);
+}
+
+.fee-notes {
+  margin-top: var(--space-xs);
+  padding-top: var(--space-xs);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+/* Estimated Return in Pipeline Table */
+.est-return {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.85rem;
+}
+
+.est-platform {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-transform: capitalize;
+}
+
+/* Reset Fees Button */
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0;
+  margin-left: var(--space-xs);
+  text-decoration: underline;
+}
+
+.btn-link:hover {
+  color: var(--color-primary-hover);
+}
+
 /* Action Buttons */
 .table-actions {
   display: flex;

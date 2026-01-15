@@ -95,6 +95,7 @@ export const RESALE_PLATFORMS = [
   'vestiaire_collective',
   'therealreal',
   'grailed',
+  'starluv',
   'other'
 ];
 
