@@ -1,4 +1,4 @@
-# Thrift Inventory Tracker
+# Bargain Huntress Tracker
 
 A mobile-first PWA for tracking thrift store finds, managing resale inventory, and optimizing sourcing trips. Built for vintage clothing enthusiasts who source high-end clothing, shoes, and jewelry.
 

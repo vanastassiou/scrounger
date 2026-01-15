@@ -92,6 +92,10 @@
     /* Picker dimensions */
     --picker-max-height: 400px;
 
+    /* Layout dimensions */
+    --header-height: 2.75rem;
+    --tabs-height: 2.5rem;
+
     /* Typography - small */
     --font-size-xxs: 0.625rem;
 
@@ -145,6 +149,7 @@
   h1, h2, h3 {
     font-weight: 600;
     line-height: 1.2;
+    text-align: center;
   }
 
   h1 { font-size: 1.75rem; }
@@ -174,7 +179,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-sm) var(--space-md);
+    height: var(--header-height);
+    padding: 0 var(--space-md);
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
   }
@@ -199,14 +205,18 @@
 
   /* Tabs */
   .tabs {
+    position: sticky;
+    top: var(--header-height);
+    z-index: 99;
     display: flex;
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .tab {
-    flex: 1;
+    flex: 1 0 auto;
     padding: var(--space-sm) var(--space-md);
     font-size: 0.875rem;
     font-weight: 500;
@@ -216,6 +226,7 @@
     border-bottom: 2px solid transparent;
     cursor: pointer;
     transition: color 0.2s, border-color 0.2s;
+    white-space: nowrap;
   }
 
   .tab:hover,
@@ -245,28 +256,53 @@
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-md);
+    gap: var(--space-sm);
     margin-bottom: var(--space-lg);
+  }
+
+  @media (min-width: 640px) {
+    .stats-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: var(--space-md);
+    }
   }
 
   .stat-card {
     background: var(--color-surface);
     border-radius: var(--radius-md);
-    padding: var(--space-md);
+    padding: var(--space-sm);
     text-align: center;
   }
 
+  @media (min-width: 640px) {
+    .stat-card {
+      padding: var(--space-md);
+    }
+  }
+
   .stat-value {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--color-primary);
   }
 
+  @media (min-width: 640px) {
+    .stat-value {
+      font-size: 1.5rem;
+    }
+  }
+
   .stat-label {
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     color: var(--color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+  }
+
+  @media (min-width: 640px) {
+    .stat-label {
+      font-size: 0.75rem;
+    }
   }
 
   /* Cards */
@@ -353,9 +389,16 @@
   }
 
   .action-buttons {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr;
     gap: var(--space-sm);
+  }
+
+  @media (min-width: 480px) {
+    .action-buttons {
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      max-width: 480px;
+    }
   }
 
   /* Filter Row */
@@ -401,6 +444,59 @@
 
   .search-row .btn {
     flex-shrink: 0;
+  }
+
+  /* Table Toolbar - combined filters and search */
+  .table-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+    align-items: center;
+  }
+
+  /* Unified styling for toolbar controls */
+  .table-toolbar .filter-select,
+  .table-toolbar .form-input {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.875rem;
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+  }
+
+  .table-toolbar .filter-select:focus,
+  .table-toolbar .form-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+  }
+
+  .table-toolbar .filter-select {
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+
+  .table-toolbar .form-input {
+    flex: 1;
+    min-width: 150px;
+  }
+
+  .table-toolbar .form-input::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  /* Stack vertically on small screens */
+  @media (max-width: 480px) {
+    .table-toolbar {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .table-toolbar .filter-select,
+    .table-toolbar .form-input {
+      width: 100%;
+    }
   }
 
   /* Forms */
@@ -870,6 +966,36 @@
   }
 
   /* ==========================================================================
+     Mobile Sort Dropdown - visible only on mobile for responsive tables
+     ========================================================================== */
+
+  .mobile-sort {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) 0 var(--space-md) var(--space-md);
+    margin-bottom: var(--space-sm);
+  }
+
+  .mobile-sort__label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  .mobile-sort__select {
+    flex: 1;
+    max-width: 200px;
+  }
+
+  @media (min-width: 640px) {
+    .mobile-sort {
+      display: none;
+    }
+  }
+
+  /* ==========================================================================
      Responsive table - Mobile-first (card layout by default)
      ========================================================================== */
 
@@ -919,6 +1045,7 @@
     text-transform: uppercase;
     letter-spacing: 0.05em;
     min-width: 80px;
+    max-width: 80px;
     flex-shrink: 0;
   }
 
@@ -938,11 +1065,10 @@
     font-weight: 600;
   }
 
-  /* Mobile: Actions cell - no label, stacked buttons */
+  /* Mobile: Actions cell - no label, grid buttons */
   .table-responsive td.table-actions {
     padding-top: var(--space-sm);
     margin-top: var(--space-xs);
-    border-top: 1px solid var(--color-border);
   }
 
   .table-responsive td.table-actions::before {
@@ -950,7 +1076,8 @@
   }
 
   .table-responsive .table-actions {
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     width: 100%;
     gap: var(--space-sm);
   }
@@ -1047,6 +1174,7 @@
     }
 
     .table-responsive .table-actions {
+      display: flex;
       flex-direction: row;
       width: auto;
       gap: var(--space-xs);
@@ -1432,20 +1560,6 @@
 /* =============================================================================
    SELLING TAB COMPONENTS
    ============================================================================= */
-
-/* Selling Stats Grid */
-.selling-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-md);
-  margin-bottom: var(--space-lg);
-}
-
-@media (min-width: 640px) {
-  .selling-stats-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
 
 /* Filter Components */
 .filter-label {
@@ -2092,14 +2206,21 @@
 
 /* Sub-tabs for switching views within References */
 .sub-tabs {
+  position: sticky;
+  top: calc(var(--header-height) + var(--tabs-height));
+  z-index: 98;
   display: flex;
   gap: var(--space-xs);
   margin-bottom: var(--space-md);
+  background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
   padding-bottom: var(--space-sm);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .sub-tab {
+  flex-shrink: 0;
   padding: var(--space-sm) var(--space-md);
   font-size: 0.875rem;
   font-weight: 500;
@@ -2109,6 +2230,7 @@
   border-bottom: 2px solid transparent;
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s;
+  white-space: nowrap;
 }
 
 .sub-tab:hover {
@@ -2346,19 +2468,6 @@
    ============================================================================= */
 
 /* Trends calendar grid */
-.trends-header {
-  margin-bottom: var(--space-lg);
-}
-
-.trends-header h3 {
-  margin: 0;
-  font-size: 1.125rem;
-}
-
-.trends-header .text-muted {
-  margin-top: var(--space-xs);
-}
-
 /* Trends table row highlighting */
 .trends-row--current {
   background: var(--color-surface-elevated);
@@ -2421,53 +2530,6 @@
   text-decoration: underline;
 }
 
-/* Trend Pills - for displaying colors, cuts, styles in trends table */
-.trend-pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-bottom: 4px;
-}
-
-.trend-pill {
-  display: inline-block;
-  font-size: 0.7rem;
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
-  white-space: nowrap;
-}
-
-.trend-pill--color {
-  background: var(--color-primary);
-  color: white;
-}
-
-.trend-pill--emerging {
-  background: var(--color-warning);
-  color: black;
-}
-
-.trend-pill--cut {
-  background: var(--color-success);
-  color: white;
-}
-
-.trend-pill--style {
-  background: var(--color-accent-violet);
-  color: white;
-}
-
-.trend-pills--hot .trend-pill {
-  background: var(--color-primary);
-  color: white;
-}
-
-.trend-pills--emerging .trend-pill--emerging {
-  background: var(--color-warning);
-  color: black;
-  opacity: 0.9;
-}
-
 /* Platform comparison full table */
 .platform-comparison-full {
   margin-top: var(--space-sm);
@@ -2523,23 +2585,31 @@
 }
 
 .size-tables-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
 }
 
 .size-table-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius);
-  padding: var(--space-md);
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
 }
 
 .size-table-card h4 {
   margin: 0 0 var(--space-sm) 0;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  color: var(--color-primary);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.size-table-card .table-container {
+  margin-top: var(--space-sm);
 }
 
 .size-table-card .table {

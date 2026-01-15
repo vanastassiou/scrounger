@@ -1,6 +1,6 @@
 {
-  "name": "Thrift Inventory Tracker",
-  "short_name": "Thrifting",
+  "name": "Bargain Huntress",
+  "short_name": "Huntress",
   "description": "Track thrift store inventory and visits",
   "start_url": "/",
   "display": "standalone",

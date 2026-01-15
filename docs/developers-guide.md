@@ -1,6 +1,6 @@
 # Developer's Guide
 
-A comprehensive guide for developers contributing to the Thrift Inventory Tracker.
+A comprehensive guide for developers contributing to the Bargain Huntress Tracker.
 
 ## Table of Contents
 

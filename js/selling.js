@@ -6,7 +6,6 @@ import { state } from './state.js';
 import {
   getInventoryInPipeline,
   getItemsNotInPipeline,
-  getSellingAnalytics,
   markItemAsSold,
   getInventoryItem,
   updateInventoryItem,
@@ -24,10 +23,10 @@ import {
   formatProfitDisplay,
   escapeHtml,
   createSortableTable,
-  createFilterButtons,
   emptyStateRow,
   updateSortIndicators,
-  createFormHandler
+  createFormHandler,
+  createMobileSortDropdown
 } from './utils.js';
 import { RESALE_PLATFORMS, PIPELINE_STATUSES, getStatusSortOrder } from './config.js';
 import { openViewItemModal, openEditItemModal } from './inventory.js';
@@ -44,7 +43,6 @@ let sortColumn = 'status';
 let sortDirection = 'asc';
 let filterStatus = null;
 let filterPlatform = null;
-let dateRangeFilter = 'all';
 let searchTerm = '';
 let currentSoldItem = null;
 let currentShipItem = null;
@@ -58,7 +56,6 @@ export async function initSelling() {
   await initFees();
   await loadPipeline();
   setupEventHandlers();
-  await renderAnalytics();
 }
 
 async function loadPipeline() {
@@ -68,15 +65,14 @@ async function loadPipeline() {
 }
 
 function setupEventHandlers() {
-  // Status filter buttons
-  createFilterButtons({
-    selector: '.filter-btn[data-status]',
-    dataAttr: 'status',
-    onFilter: (value) => {
-      filterStatus = value;
+  // Status filter dropdown
+  const statusFilter = $('#status-filter');
+  if (statusFilter) {
+    statusFilter.addEventListener('change', (e) => {
+      filterStatus = e.target.value === 'all' ? null : e.target.value;
       renderPipelineTable();
-    }
-  });
+    });
+  }
 
   // Platform filter
   const platformFilter = $('#platform-filter');
@@ -84,16 +80,6 @@ function setupEventHandlers() {
     platformFilter.addEventListener('change', (e) => {
       filterPlatform = e.target.value === 'all' ? null : e.target.value;
       renderPipelineTable();
-      renderAnalytics();
-    });
-  }
-
-  // Date range filter
-  const dateFilter = $('#date-range-filter');
-  if (dateFilter) {
-    dateFilter.addEventListener('change', (e) => {
-      dateRangeFilter = e.target.value;
-      renderAnalytics();
     });
   }
 
@@ -109,11 +95,13 @@ function setupEventHandlers() {
   // Table sorting and actions
   const table = $('#selling-table');
   if (table) {
-    const sortHandler = createSortableTable({
+    const sortConfig = {
       getState: () => ({ sortColumn, sortDirection }),
       setState: (s) => { sortColumn = s.sortColumn; sortDirection = s.sortDirection; },
       onSort: renderPipelineTable
-    });
+    };
+    const sortHandler = createSortableTable(sortConfig);
+    createMobileSortDropdown(table, sortConfig);
 
     table.addEventListener('click', (e) => {
       // Header sorting
@@ -223,7 +211,6 @@ function setupEventHandlers() {
       showToast('Item sold and archived', 'success');
       markSoldModal.close();
       await loadPipeline();
-      await renderAnalytics();
       currentSoldItem = null;
     },
     onError: () => showToast('Failed to mark item as sold', 'error'),
@@ -282,56 +269,6 @@ function setupEventHandlers() {
       });
     }
   }
-}
-
-// =============================================================================
-// ANALYTICS
-// =============================================================================
-
-async function renderAnalytics() {
-  const dateRange = getDateRange();
-  const analytics = await getSellingAnalytics(dateRange);
-
-  // Update stat cards
-  const revenueEl = $('#selling-stat-revenue');
-  const profitEl = $('#selling-stat-profit');
-  const marginEl = $('#selling-stat-margin');
-  const soldEl = $('#selling-stat-sold');
-
-  if (revenueEl) revenueEl.textContent = formatCurrency(analytics.totalRevenue);
-  if (profitEl) {
-    const { formatted, className } = formatProfitDisplay(analytics.totalProfit);
-    profitEl.textContent = formatted;
-    profitEl.className = `stat-value ${className}`;
-  }
-  if (marginEl) marginEl.textContent = `${analytics.profitMargin.toFixed(1)}%`;
-  if (soldEl) soldEl.textContent = analytics.itemsSold;
-}
-
-function getDateRange() {
-  if (dateRangeFilter === 'all') return null;
-
-  const now = new Date();
-  let startDate;
-
-  switch (dateRangeFilter) {
-    case '7d':
-      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      break;
-    case '30d':
-      startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      break;
-    case '90d':
-      startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-      break;
-    case 'ytd':
-      startDate = new Date(now.getFullYear(), 0, 1);
-      break;
-    default:
-      return null;
-  }
-
-  return { startDate, endDate: now };
 }
 
 // =============================================================================

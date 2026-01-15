@@ -4,7 +4,7 @@
 // =============================================================================
 
 import { createModalController } from './ui.js';
-import { $, sortData, emptyStateRow, escapeHtml, createSortableTable, createFilterButtons, updateSortIndicators } from './utils.js';
+import { $, sortData, emptyStateRow, escapeHtml, createSortableTable, createFilterButtons, updateSortIndicators, createMobileSortDropdown } from './utils.js';
 
 // =============================================================================
 // LAZY MODAL
@@ -80,6 +80,7 @@ export function createLazyModal(dialogSelector, options = {}) {
  * @param {string} [config.countTemplate] - Template like "{count} item{s}"
  * @param {Object} [config.defaultSort] - { column, direction }
  * @param {Array} [config.filterButtons] - Array of { selector, dataAttr, key }
+ * @param {Array} [config.filterSelects] - Array of { selector, key, allValue? }
  * @param {Object<string, Function>} [config.clickHandlers] - Map of selector to handler function.
  *   Handler returns true to allow default behavior (e.g., external links), undefined/false to preventDefault.
  * @param {Function} [config.onRender] - Called after render with filtered data
@@ -165,16 +166,37 @@ export function createTableController(config) {
       }
     }
 
+    // Filter selects (dropdowns)
+    if (config.filterSelects) {
+      for (const fs of config.filterSelects) {
+        const select = $(fs.selector);
+        if (select) {
+          const allValue = fs.allValue || 'all';
+          select.addEventListener('change', (e) => {
+            const value = e.target.value;
+            filters[fs.key] = value === allValue ? null : value;
+            render();
+          });
+        }
+      }
+    }
+
     // Table sorting and click delegation
     if (config.tableSelector) {
       const table = $(config.tableSelector);
       if (table) {
         // Create sort handler
-        sortHandler = createSortableTable({
+        const sortConfig = {
           getState: () => ({ sortColumn, sortDirection }),
           setState: (s) => { sortColumn = s.sortColumn; sortDirection = s.sortDirection; },
           onSort: render
-        });
+        };
+        sortHandler = createSortableTable(sortConfig);
+
+        // Create mobile sort dropdown for responsive tables
+        if (table.classList.contains('table-responsive')) {
+          createMobileSortDropdown(table, sortConfig);
+        }
 
         // Click delegation
         table.addEventListener('click', (e) => {

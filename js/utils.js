@@ -220,7 +220,7 @@ export function createSortableTable({ getState, setState, onSort }) {
 }
 
 /**
- * Update sort indicator classes on table headers.
+ * Update sort indicator classes on table headers and mobile sort dropdown.
  * @param {HTMLElement} table - Table element
  * @param {string} sortColumn - Current sort column
  * @param {string} sortDirection - 'asc' or 'desc'
@@ -232,6 +232,72 @@ export function updateSortIndicators(table, sortColumn, sortDirection) {
     if (th.dataset.sort === sortColumn) {
       th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
     }
+  });
+
+  // Sync mobile sort dropdown if present
+  const container = table.closest('.table-container');
+  if (container) {
+    const dropdown = container.querySelector('.mobile-sort__select');
+    if (dropdown && sortColumn) {
+      dropdown.value = `${sortColumn}-${sortDirection}`;
+    }
+  }
+}
+
+/**
+ * Create mobile sort dropdown for responsive tables.
+ * Generates a dropdown from table headers with data-sort attributes.
+ * @param {HTMLElement} table - Table element with sortable headers
+ * @param {Object} config - Same config as createSortableTable
+ * @param {Function} config.getState - Returns { sortColumn, sortDirection }
+ * @param {Function} config.setState - Updates { sortColumn, sortDirection }
+ * @param {Function} config.onSort - Called after sort state changes
+ */
+export function createMobileSortDropdown(table, { getState, setState, onSort }) {
+  const container = table.closest('.table-container');
+  if (!container) return;
+
+  // Check if dropdown already exists
+  if (container.querySelector('.mobile-sort')) return;
+
+  const headers = table.querySelectorAll('th[data-sort]');
+  if (headers.length === 0) return;
+
+  // Build options from headers
+  const options = Array.from(headers).map(th => {
+    const col = th.dataset.sort;
+    const label = th.textContent.trim();
+    return { col, label };
+  });
+
+  // Create dropdown HTML
+  const wrapper = document.createElement('div');
+  wrapper.className = 'mobile-sort';
+  wrapper.innerHTML = `
+    <label class="mobile-sort__label">Sort by</label>
+    <select class="form-select form-select--sm mobile-sort__select">
+      ${options.map(opt => `
+        <option value="${opt.col}-asc">${opt.label} (A-Z)</option>
+        <option value="${opt.col}-desc">${opt.label} (Z-A)</option>
+      `).join('')}
+    </select>
+  `;
+
+  // Insert before table
+  container.insertBefore(wrapper, container.firstChild);
+
+  // Set initial value
+  const { sortColumn, sortDirection } = getState();
+  const select = wrapper.querySelector('select');
+  if (sortColumn) {
+    select.value = `${sortColumn}-${sortDirection}`;
+  }
+
+  // Handle changes
+  select.addEventListener('change', () => {
+    const [col, dir] = select.value.split('-');
+    setState({ sortColumn: col, sortDirection: dir });
+    onSort();
   });
 }
 
