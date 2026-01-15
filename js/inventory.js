@@ -174,10 +174,12 @@ function createInventoryRow(item) {
   return `
     <tr data-id="${item.id}" class="collection-row">
       <td>
-        <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a>
+        <span class="item-title-row">
+          <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a>
+          ${profitBadge}
+        </span>
       </td>
       <td class="table-actions">
-        ${profitBadge}
         <button class="btn btn--sm btn--ghost edit-item-btn" data-id="${item.id}">Edit</button>
         <button class="btn btn--sm btn--primary start-selling-btn" data-id="${item.id}">Sell</button>
       </td>
