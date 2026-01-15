@@ -3,81 +3,97 @@
     "athletic_streetwear": {
       "streetwear": {
         "bape": {
-          "m": 2.5,
-          "tips": "Verify authenticity."
+          "multiplier": 2.5,
+          "authenticity_notes": "Check WGM (World Gone Mad) shark hoodies for symmetrical teeth. Authentic tags have specific fonts and spacing. Gold ape head tags on older pieces."
         },
         "off_white": {
-          "m": 2.5
+          "multiplier": 2.5,
+          "authenticity_notes": "Check zip tie tag attachment, quotation marks font, and diagonal stripe alignment. Authentic labels have specific spacing."
         },
         "palace": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "Check Triferg logo symmetry and wash tag fonts. UK-made pieces most desirable."
         },
         "stussy": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "Check signature script logo quality. Vintage pieces have different tag styles by era."
         },
         "supreme": {
-          "m": 3.0,
-          "tips": "Box logos highest."
+          "multiplier": 3.0,
+          "authenticity_notes": "Box logo stitching should be tight with no loose threads. Check wash tag fonts and spacing. Made in USA/Canada for older pieces."
         }
       },
       "vintage": {
-        "adidas_vintage": {
-          "m": 2.5,
-          "tips": "Trefoil era, Made in W Germany/France."
+        "adidas": {
+          "multiplier": 2.5,
+          "notes": "Est. 1949, Germany. Trefoil era (pre-1990) most valuable; Made in W. Germany or France labels.",
+          "authenticity_notes": "Trefoil logo era most valuable. Made in W Germany or France indicates pre-1990. Check label fonts and country of origin."
         },
         "arcteryx": {
-          "m": 2.5
+          "multiplier": 2.5,
+          "authenticity_notes": "Check dead bird logo quality. Canadian-made pieces. Authentic zippers have Arc'teryx branding."
         },
         "carhartt": {
-          "m": 1.8,
-          "tips": "USA made, WIP line."
+          "multiplier": 1.8,
+          "authenticity_notes": "Made in USA labels most valuable. WIP line has different labels. Check stitching quality and label fonts."
         },
         "champion_reverse_weave": {
-          "m": 2.0,
-          "tips": "USA made, college pieces."
+          "multiplier": 2.0,
+          "authenticity_notes": "Made in USA labels most valuable. Check C logo embroidery quality. Vintage has different label styles."
         },
-        "nike_vintage": {
-          "m": 3.0,
-          "tips": "Grey/silver/orange tag. ACG, Cortez."
+        "nike": {
+          "multiplier": 3.0,
+          "notes": "Est. 1964, USA. Grey/silver/orange tag era (1970s-80s) most valuable.",
+          "authenticity_notes": "Grey/silver/orange tag eras most valuable. Check swoosh quality. Made in USA labels for vintage."
         },
         "north_face": {
-          "m": 1.8,
-          "tips": "Nuptse, vintage Gore-tex."
+          "multiplier": 1.8,
+          "authenticity_notes": "Check hologram tags on newer pieces. Vintage Gore-tex labels. Made in USA for older pieces."
         },
         "patagonia": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "Check label fonts and spacing. Made in USA for vintage. Authentic fleece has specific texture."
         },
         "starter_jackets": {
           "era": "1990s",
-          "m": 2.5
+          "multiplier": 2.5,
+          "authenticity_notes": "Check satin quality and embroidery detail. Made in Korea/USA labels. Team licensing tags."
         }
       }
     },
     "denim": {
       "contemporary": {
         "agolde": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "Check interior labels and hardware quality. Made in USA."
         },
         "citizens_of_humanity": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "Check interior labels and pocket stitching. Made in USA."
         },
         "frame": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "Check interior labels and hardware. Made in USA."
         },
         "j_brand": {
-          "m": 1.8
+          "multiplier": 1.8,
+          "authenticity_notes": "Check interior label fonts and hardware quality."
         },
         "mother": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "Check interior labels and hardware. Made in USA."
         },
         "paige": {
-          "m": 1.8
+          "multiplier": 1.8,
+          "authenticity_notes": "Check interior labels and hardware quality."
         },
         "rag_bone": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "Check interior labels and hardware. Made in USA for mainline."
         },
         "seven_mankind": {
-          "m": 1.5
+          "multiplier": 1.5,
+          "authenticity_notes": "Check interior labels and distinctive back pocket stitching pattern."
         }
       },
       "japanese_selvedge": {
@@ -90,34 +106,60 @@
           "fullcount",
           "sugar_cane"
         ],
-        "m": 3.0
+        "multiplier": 3.0,
+        "authenticity_notes": "Made in Japan. Check selvedge edge (visible when cuffed). Heavy denim weight. Quality hardware and stitching."
       },
       "vintage_premium": {
-        "lee_vintage": {
-          "m": 2.5,
-          "tips": "Union made, storm rider."
+        "lee": {
+          "multiplier": 2.5,
+          "notes": "Est. 1889, USA. Union Made era, Storm Rider jackets collectible.",
+          "authenticity_notes": "Union Made labels. Storm Rider jackets. Check label fonts and construction. USA made."
         },
-        "levis_vintage": {
-          "m": 4.0,
-          "tips": "Big E, redline selvedge. Pre-1971 highest."
+        "levis": {
+          "multiplier": 4.0,
+          "notes": "Est. 1853, USA. Big E red tab (pre-1971), USA-made most valuable.",
+          "authenticity_notes": "Big E on red tab (pre-1971). Redline selvedge visible on cuffs. Check back pocket stitching. USA made labels."
         },
-        "wrangler_vintage": {
-          "m": 2.0,
-          "tips": "USA made, western."
+        "wrangler": {
+          "multiplier": 2.0,
+          "notes": "Est. 1947, USA. Rope label era, USA-made most valuable.",
+          "authenticity_notes": "USA made labels. Check W stitching on back pockets. Rope label era for vintage."
         }
       }
     },
     "tier_A": {
       "brands": {
         "acne_studios": {
-          "m": 2.5
+          "multiplier": 2.5,
+          "authenticity_notes": "Check interior labels and Swedish sizing. Made in Portugal/Italy."
+        },
+        "aidan_mattox": {
+          "multiplier": 1.8,
+          "notes": "Retails $300-800. Resale 20-50% of retail.",
+          "authenticity_notes": "Check interior labels for brand name and care instructions."
+        },
+        "aquascutum": {
+          "multiplier": 2.5,
+          "notes": "Look for 'Made in England', royal warrant on tag. Vintage pre-2000 most valuable.",
+          "authenticity_notes": "Made in England label. Royal warrant crest on label. Pre-2000 pieces have different label styles."
         },
         "akris": {
-          "m": 3.0
+          "multiplier": 3.0,
+          "authenticity_notes": "Made in Switzerland. Check interior silk lining and quality of construction."
+        },
+        "amiri": {
+          "multiplier": 3.0,
+          "notes": "26% growth on TRR 2025.",
+          "authenticity_notes": "Check interior labels and hardware quality. Made in USA/Italy. Watch for fakes."
         },
         "all_saints": {
-          "m": 1.8,
-          "tips": "Leather jackets."
+          "multiplier": 1.8,
+          "authenticity_notes": "Check interior labels and hardware. Leather jackets should have quality zippers."
+        },
+        "alo_yoga": {
+          "multiplier": 1.8,
+          "notes": "Growing on Poshmark.",
+          "authenticity_notes": "Check interior labels and size tags."
         },
         "aritzia": {
           "alt": [
@@ -125,89 +167,174 @@
             "Babaton",
             "TNA"
           ],
-          "m": 1.5,
-          "tips": "Strong Canadian demand."
+          "multiplier": 1.5,
+          "authenticity_notes": "Check sub-brand labels (Wilfred, Babaton, TNA). Canadian brand."
         },
         "brooks_brothers": {
-          "m": 1.7,
-          "tips": "Golden Fleece line highest."
+          "multiplier": 1.7,
+          "authenticity_notes": "Golden Fleece logo indicates mainline. Check label fonts. USA made for vintage."
         },
         "claudie_pierlot": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "French brand. Check interior labels and construction quality."
         },
         "coach": {
-          "m": 1.5,
-          "tips": "Pre-2000 USA made = tier A."
+          "multiplier": 1.5,
+          "notes": "92 searches/minute on eBay 2025. #5 on TRR search. 2.1M eBay listings. 8 items listed per minute.",
+          "authenticity_notes": "Pre-2000 USA made = tier A. Vintage creed stamps have serial numbers. Check leather quality and stitching."
         },
         "cos": {
-          "m": 1.8
+          "multiplier": 1.8,
+          "authenticity_notes": "H&M Group brand. Check interior labels."
+        },
+        "danier": {
+          "multiplier": 1.8,
+          "notes": "Made in Canada pieces more valuable.",
+          "authenticity_notes": "Made in Canada label most valuable. Check leather quality."
         },
         "dvf": {
-          "m": 2.0,
-          "tips": "Wrap dresses. 1970s vintage very valuable."
+          "multiplier": 2.0,
+          "authenticity_notes": "Check interior labels. 1970s vintage has different label styles. Made in USA for vintage."
         },
         "eileen_fisher": {
-          "m": 1.8,
-          "tips": "Good plus-size demand."
+          "multiplier": 1.8,
+          "notes": "Strong plus-size demand.",
+          "authenticity_notes": "Check interior labels and fabric content tags."
+        },
+        "ellen_tracy": {
+          "multiplier": 1.5,
+          "notes": "1980s-90s peak era most valuable.",
+          "authenticity_notes": "1980s-90s pieces have different label styles. Check construction quality."
         },
         "equipment": {
-          "m": 2.0,
-          "tips": "Silk blouses."
+          "multiplier": 2.0,
+          "authenticity_notes": "Check interior labels and silk quality. Made in China for most pieces."
         },
         "escada": {
-          "m": 2.5,
-          "tips": "1980s-90s power suits."
+          "alt": ["Escada by Margaretha Ley"],
+          "multiplier": 2.5,
+          "notes": "Margaretha Ley era (1978-1992) most collectible.",
+          "authenticity_notes": "Made in Germany most valuable. Margaretha Ley label (1978-1992) = highest value. Check label fonts and construction."
+        },
+        "gloverall": {
+          "multiplier": 2.0,
+          "notes": "UK made most valuable.",
+          "authenticity_notes": "UK made label. Wooden toggle closures. Check label fonts."
+        },
+        "holt_renfrew": {
+          "multiplier": 2.0,
+          "notes": "Vintage 1960s-90s collectible. Average resale $300-800.",
+          "authenticity_notes": "Canadian department store private label. Check label era and construction."
+        },
+        "golden_goose": {
+          "multiplier": 2.5,
+          "notes": "Top premium brand on Vestiaire 2024.",
+          "authenticity_notes": "Made in Italy. Check star logo and distressing quality. Watch for fakes on sneakers."
         },
         "hugo_boss": {
-          "m": 2.0,
-          "tips": "Boss > Hugo > Orange > Green."
+          "multiplier": 2.0,
+          "authenticity_notes": "Boss > Hugo > Orange > Green hierarchy. Check interior labels and construction."
+        },
+        "isabel_marant": {
+          "multiplier": 2.5,
+          "notes": "Comeback Brand of the Year on TRR 2025.",
+          "authenticity_notes": "Made in France/Portugal. Etoile line = diffusion (lower value). Check label fonts."
         },
         "j_crew": {
-          "m": 1.3,
-          "tips": "Collection line more valuable."
+          "multiplier": 1.3,
+          "authenticity_notes": "Collection line more valuable. Check interior labels."
+        },
+        "jacquemus": {
+          "multiplier": 3.0,
+          "notes": "36% price growth on eBay 2025.",
+          "authenticity_notes": "Made in France/Italy. Check label fonts and hardware quality. Watch for fakes."
+        },
+        "jonathan_simkhai": {
+          "multiplier": 2.5,
+          "notes": "Resale typically 10-30% of retail.",
+          "authenticity_notes": "Check interior labels and construction quality."
         },
         "kate_spade": {
-          "m": 1.7
+          "multiplier": 1.7,
+          "authenticity_notes": "Check interior labels and hardware. Spade logo should be clean."
         },
         "lafayette_148": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "Check interior labels. Quality construction."
+        },
+        "lululemon": {
+          "multiplier": 2.0,
+          "notes": "#1 Poshmark seller in athleisure 2025.",
+          "authenticity_notes": "Check size dot in pocket for style number. Logo should be crisp. Check seam quality."
+        },
+        "lucian_matis": {
+          "multiplier": 2.5,
+          "notes": "Made in Canada.",
+          "authenticity_notes": "Made in Canada label. Canadian designer."
         },
         "maje": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "French brand. Check interior labels and construction."
+        },
+        "marc_aurel": {
+          "multiplier": 1.8,
+          "notes": "Resale typically 10-50% of retail.",
+          "authenticity_notes": "German brand. Check interior labels and fabric quality."
         },
         "max_mara": {
-          "m": 2.5,
-          "tips": "Coats valuable. Weekend line less so."
+          "multiplier": 2.5,
+          "authenticity_notes": "Made in Italy. Weekend = diffusion line (lower value). Check interior labels and construction."
+        },
+        "nanette_lepore": {
+          "multiplier": 1.8,
+          "notes": "Resale 30-50% of retail.",
+          "authenticity_notes": "Check interior labels and construction quality."
         },
         "rag_bone": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "Check interior labels. Made in USA for mainline denim."
         },
         "ralph_lauren_polo": {
-          "m": 1.8,
-          "tips": "RRL and Polo Sport vintage can be tier S."
+          "multiplier": 1.8,
+          "authenticity_notes": "RRL and Polo Sport vintage = tier S value. Check polo player logo quality. Made in USA for vintage."
         },
         "reiss": {
-          "m": 1.8
+          "multiplier": 1.8,
+          "authenticity_notes": "British brand. Check interior labels."
+        },
+        "rhude": {
+          "multiplier": 2.5,
+          "notes": "66% growth on TRR 2025.",
+          "authenticity_notes": "Check interior labels and hardware. Watch for fakes."
         },
         "sandro": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "French brand. Check interior labels and construction."
         },
         "st_john": {
-          "m": 2.5,
-          "tips": "Knit suits. USA made more valuable."
+          "multiplier": 2.5,
+          "authenticity_notes": "USA made more valuable. Check santana knit construction. Look for St. John logo buttons."
         },
         "ted_baker": {
-          "m": 1.7
+          "multiplier": 1.7,
+          "authenticity_notes": "British brand. Check interior labels and hardware quality."
         },
         "theory": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "Check interior labels and construction quality."
+        },
+        "toteme": {
+          "multiplier": 2.5,
+          "notes": "Big search increase on TRR 2025.",
+          "authenticity_notes": "Swedish brand. Check interior labels and construction."
         },
         "tory_burch": {
-          "m": 1.8
+          "multiplier": 1.8,
+          "authenticity_notes": "Check T logo quality and hardware. Interior labels should be clean."
         },
         "vince": {
-          "m": 2.0,
-          "tips": "Cashmere pieces."
+          "multiplier": 2.0,
+          "authenticity_notes": "Check interior labels. Cashmere pieces should have quality handfeel."
         }
       },
       "description": "Quality contemporary with good resale",
@@ -218,8 +345,15 @@
     },
     "tier_B": {
       "brands": {
+        "anne_klein": {
+          "alt": ["Anne Klein 2", "AK Anne Klein"],
+          "multiplier": 1.3,
+          "notes": "Watches resell around $20. Vintage 1970s-90s pieces have collector interest.",
+          "authenticity_notes": "Vintage 1970s-90s pieces have different label styles. Check label fonts and construction."
+        },
         "ann_taylor": {
-          "m": 1.2
+          "multiplier": 1.2,
+          "authenticity_notes": "Check interior labels and construction."
         },
         "anthropologie": {
           "alt": [
@@ -227,40 +361,63 @@
             "Pilcro",
             "Moulinette Soeurs"
           ],
-          "m": 1.6
+          "multiplier": 1.6,
+          "authenticity_notes": "Check sub-brand labels (Maeve, Pilcro, Moulinette Soeurs). Check interior tags."
         },
         "bcbg": {
-          "m": 1.4
+          "multiplier": 1.4,
+          "authenticity_notes": "Check interior labels. BCBG Max Azria = mainline."
         },
         "club_monaco": {
-          "m": 1.4
+          "multiplier": 1.4,
+          "authenticity_notes": "Check interior labels. Canadian brand."
         },
         "free_people": {
-          "m": 1.5
+          "multiplier": 1.5,
+          "authenticity_notes": "Check interior labels and construction."
+        },
+        "bardot": {
+          "multiplier": 1.3,
+          "authenticity_notes": "Australian brand. Check interior labels."
         },
         "gap": {
-          "m": 1.1,
-          "tips": "1990s vintage higher."
+          "multiplier": 1.1,
+          "authenticity_notes": "1990s vintage has different label styles. Made in USA for older pieces."
+        },
+        "jones_new_york": {
+          "alt": ["Jones New York Separates", "Jones New York Essentials"],
+          "multiplier": 1.3,
+          "notes": "1980s-90s vintage collectible.",
+          "authenticity_notes": "1980s-90s pieces have early rectangular border tags. Check label fonts."
         },
         "loft": {
-          "m": 1.1
+          "multiplier": 1.1,
+          "authenticity_notes": "Ann Taylor diffusion line. Check interior labels."
         },
         "mango": {
-          "m": 1.2
+          "multiplier": 1.2,
+          "authenticity_notes": "Spanish brand. Check interior labels."
         },
         "massimo_dutti": {
-          "m": 1.5
+          "multiplier": 1.5,
+          "authenticity_notes": "Inditex Group brand. Check interior labels and construction quality."
+        },
+        "melanie_lyne": {
+          "multiplier": 1.3,
+          "notes": "Canadian demand.",
+          "authenticity_notes": "Canadian brand. Check interior labels."
         },
         "topshop": {
-          "m": 1.3,
-          "tips": "Discontinued, nostalgia value."
+          "multiplier": 1.3,
+          "authenticity_notes": "British brand (discontinued). Check interior labels."
         },
         "uniqlo": {
-          "m": 1.3,
-          "tips": "+J collabs higher."
+          "multiplier": 1.3,
+          "authenticity_notes": "+J and designer collabs have special labels. Check interior tags."
         },
         "zara": {
-          "m": 1.2
+          "multiplier": 1.2,
+          "authenticity_notes": "Spanish brand. Check interior labels."
         }
       },
       "description": "Reliable modest resale",
@@ -272,126 +429,186 @@
     "tier_S": {
       "brands": {
         "alexander_mcqueen": {
-          "m": 4.5,
-          "tips": "McQueen era (pre-2010) highest value."
+          "multiplier": 4.5,
+          "notes": "Est. 1992, UK by Lee Alexander McQueen. McQueen era (pre-2010) most valuable; known for dramatic tailoring and skull motifs.",
+          "authenticity_notes": "McQueen era (pre-2010) most valuable. Made in Italy. Check skull motifs and label quality. Heavy faking."
         },
         "armani_mainline": {
-          "m": 3.0,
-          "tips": "Giorgio > Emporio (2.0) > A|X (1.3)."
+          "multiplier": 3.0,
+          "notes": "Est. 1975, Italy by Giorgio Armani. Known for deconstructed tailoring; Giorgio > Emporio > A|X value hierarchy.",
+          "authenticity_notes": "Giorgio > Emporio > A|X hierarchy. Check label fonts and Made in Italy. Giorgio Armani label = mainline."
         },
         "balenciaga": {
-          "m": 4.5
+          "multiplier": 4.5,
+          "notes": "Est. 1919, Spain by Cristóbal Balenciaga. Known for architectural silhouettes; Nicolas Ghesquière era (1997-2012) highly collectible.",
+          "authenticity_notes": "Made in Italy. Check interior labels and hardware. Heavy faking - verify serial numbers on bags."
         },
         "bottega_veneta": {
-          "m": 4.0,
-          "tips": "Intrecciato weave signature."
+          "multiplier": 4.0,
+          "notes": "Est. 1966, Italy. Known for intrecciato leather weave; Daniel Lee era (2018-2021) highly sought.",
+          "authenticity_notes": "Intrecciato weave is signature. Made in Italy. Check leather quality and weave consistency."
         },
         "burberry": {
-          "m": 3.5,
-          "tips": "Burberrys' (apostrophe) = vintage, more valuable."
+          "multiplier": 3.5,
+          "notes": "Est. 1856, UK by Thomas Burberry. Known for trench coats and nova check; Burberrys' (apostrophe) = pre-1999.",
+          "authenticity_notes": "Burberrys' (apostrophe) = vintage pre-1999. Made in England most valuable. Check nova check alignment."
         },
         "carolina_herrera": {
-          "m": 2.5
+          "multiplier": 2.5,
+          "authenticity_notes": "Check interior labels. Made in Italy/Spain for mainline."
         },
         "celine": {
-          "m": 4.0,
-          "tips": "Phoebe Philo era (2008-2018) sought."
+          "multiplier": 4.0,
+          "authenticity_notes": "Phoebe Philo era (2008-2018) = CÉLINE with accent. Post-2018 = CELINE no accent. Made in Italy."
         },
         "chanel": {
-          "m": 8.0,
-          "tips": "Jackets, bags iconic. Verify via chain weight, stitching."
+          "multiplier": 8.0,
+          "notes": "#2 most searched on TRR. Highest product views per person on Vestiaire. Bags most searched item on TRR.",
+          "authenticity_notes": "Check authenticity card and hologram. Chain weight should be heavy. Stitching count consistent. Made in France/Italy. Heavy faking."
+        },
+        "chrome_hearts": {
+          "multiplier": 4.0,
+          "notes": "36% growth on eBay 2025. Rising men's brand on Poshmark.",
+          "authenticity_notes": "Made in USA. Sterling silver should be marked 925. Check dagger cross and floral motifs. Heavy faking."
         },
         "christian_dior": {
-          "m": 5.0,
-          "tips": "Galliano era (1997-2011). Watch for licensed vs mainline."
+          "multiplier": 5.0,
+          "authenticity_notes": "Galliano era (1997-2011) most sought. Check Christian Dior PARIS label. Made in France/Italy. Licensed items less valuable."
         },
         "comme_des_garcons": {
-          "m": 4.5,
-          "tips": "Play (heart) less valuable than mainline."
+          "multiplier": 4.5,
+          "authenticity_notes": "Play (heart logo) = diffusion line. Check label placement and fonts. Made in Japan for mainline."
         },
         "dolce_gabbana": {
-          "m": 3.0
+          "multiplier": 3.0,
+          "authenticity_notes": "Made in Italy. Check label fonts and construction. D&G = diffusion (lower value)."
         },
         "emilio_pucci": {
-          "m": 3.5,
-          "tips": "1960s-70s prints highly collectible."
+          "multiplier": 3.5,
+          "authenticity_notes": "1960s-70s prints most valuable. Check signature prints and Made in Italy label."
+        },
+        "fear_of_god": {
+          "multiplier": 3.5,
+          "notes": "125% sales growth on eBay 2025.",
+          "authenticity_notes": "Essentials = diffusion. Main line made in Italy/USA. Check label fonts and hardware. Heavy faking."
         },
         "fendi": {
-          "m": 3.5
+          "multiplier": 3.5,
+          "notes": "Baguette bag among most coveted on eBay 2025.",
+          "authenticity_notes": "Made in Italy. Check FF logo consistency. Baguette bags have serial numbers. Check leather quality."
         },
         "ferragamo": {
-          "m": 3.0
+          "multiplier": 3.0,
+          "notes": "Big search increase on TRR 2025.",
+          "authenticity_notes": "Made in Italy. Vara flats have distinctive bow. Check Gancini hardware quality."
         },
         "givenchy": {
-          "m": 4.0
+          "multiplier": 4.0,
+          "authenticity_notes": "Made in Italy/France. Check 4G logo consistency. Vintage Givenchy labels differ from modern."
+        },
+        "goyard": {
+          "multiplier": 5.0,
+          "notes": "Saint Louis tote +18% value 2025 on TRR. 47% sales growth on eBay.",
+          "authenticity_notes": "No retail stores outside Paris. Hand-painted chevron pattern. Check Y pattern alignment. Very heavy faking."
         },
         "gucci": {
-          "m": 4.0,
-          "tips": "Tom Ford era (1994-2004) most sought."
+          "multiplier": 4.0,
+          "notes": "Led pre-loved sales on Vestiaire 2025. Jackie and Marmont bags top sellers.",
+          "authenticity_notes": "Tom Ford era (1994-2004) most sought. Check GG alignment. Made in Italy. Serial numbers on bags. Heavy faking."
         },
         "hermes": {
-          "m": 10.0,
-          "tips": "Scarves, ties valuable. Check blind stamp dates."
+          "multiplier": 10.0,
+          "notes": "Birkin 30 +15% value 2025. Kelly bags sell 50% above MSRP on TRR.",
+          "authenticity_notes": "Check blind stamp for date. Made in France. Hand-saddle-stitched. Heavy faking - expert authentication recommended."
         },
         "issey_miyake": {
-          "m": 4.0,
-          "tips": "Pleats Please line collectible."
+          "multiplier": 4.0,
+          "authenticity_notes": "Pleats Please line collectible. Made in Japan. Check pleat consistency and label fonts."
         },
         "jean_paul_gaultier": {
-          "m": 4.0,
-          "tips": "1990s mesh tops iconic."
+          "multiplier": 4.0,
+          "notes": "200% menswear growth on Vestiaire 2025.",
+          "authenticity_notes": "1990s mesh tops iconic. Made in France/Italy. Check label fonts and sailor stripe quality."
         },
         "loewe": {
-          "m": 3.5
+          "multiplier": 3.5,
+          "notes": "#6 most searched on TRR 2025.",
+          "authenticity_notes": "Made in Spain. Check anagram logo embossing quality. Puzzle bag stitching precise. Heavy faking on bags."
         },
         "louis_vuitton": {
-          "m": 5.0,
-          "tips": "Check date codes, canvas alignment."
+          "multiplier": 5.0,
+          "notes": "#1 most searched on Poshmark, TRR, eBay. 2.6M+ listings on eBay. 13 items listed per minute.",
+          "authenticity_notes": "Made in France/Spain/USA. Date codes required (format varies by era). Canvas alignment at seams. Most faked brand - expert auth recommended."
+        },
+        "maison_margiela": {
+          "multiplier": 4.0,
+          "notes": "22% price growth on eBay 2025. Top growth on Vestiaire. Climbed from 31st to 25th globally.",
+          "authenticity_notes": "Four white stitches at back. Blank label era (pre-2014) collectible. Made in Italy. Check stitch quality."
         },
         "marc_jacobs": {
-          "m": 2.5,
-          "tips": "Marc by Marc diffusion less valuable."
+          "multiplier": 2.5,
+          "authenticity_notes": "Made in Italy for mainline. Marc by Marc Jacobs is diffusion (lower value). Check label font and hardware quality."
         },
         "missoni": {
-          "m": 3.0,
-          "tips": "Zigzag knits."
+          "multiplier": 3.0,
+          "authenticity_notes": "Made in Italy. Signature zigzag knit patterns. Check knit quality and color registration. Family-owned."
+        },
+        "miu_miu": {
+          "multiplier": 4.5,
+          "notes": "31% price increase 2025. Market Mover of the Year on TRR. #4 most searched. 32% growth on eBay.",
+          "authenticity_notes": "Prada sister brand. Made in Italy. Check hardware engravings. Serial numbers on bags. Moderate faking."
         },
         "oscar_de_la_renta": {
-          "m": 3.0
+          "multiplier": 3.0,
+          "authenticity_notes": "Made in USA or Italy. Check label fonts and construction. Red carpet gowns most valuable."
         },
         "prada": {
-          "m": 4.0,
-          "tips": "1990s nylon, Linea Rossa collectible."
+          "multiplier": 4.0,
+          "notes": "#3 most searched on TRR. 11% resale value increase over 5 years.",
+          "authenticity_notes": "Made in Italy. Serial number cards on bags. 1990s nylon/Linea Rossa era collectible. Triangle logo precise. Heavy faking."
         },
         "ralph_lauren_purple": {
-          "m": 4.0,
-          "tips": "Purple Label only. Other lines tier A/B."
+          "multiplier": 4.0,
+          "authenticity_notes": "Purple Label only - Made in Italy. Other RL lines (Polo, Lauren) are tier A/B. Check purple label tag."
+        },
+        "roberto_cavalli": {
+          "multiplier": 3.5,
+          "notes": "Big search increase on TRR 2025.",
+          "authenticity_notes": "Made in Italy. Animal prints signature. Just Cavalli diffusion (lower value). Check label and hardware."
         },
         "thierry_mugler": {
-          "m": 5.0,
-          "tips": "Power suits extremely collectible."
+          "multiplier": 5.0,
+          "authenticity_notes": "Made in France. 1980s-90s power suits extremely collectible. Sculptural shoulders. Check construction quality."
         },
         "valentino": {
-          "m": 4.0,
-          "tips": "Garavani mainline highest."
+          "multiplier": 4.0,
+          "authenticity_notes": "Valentino Garavani mainline (highest). Made in Italy. Red signature color. Check rockstud hardware quality on modern pieces."
         },
         "versace": {
-          "m": 4.0,
-          "tips": "Gianni era pre-1997 most collectible."
+          "multiplier": 4.0,
+          "authenticity_notes": "Made in Italy. Gianni era (pre-1997) most collectible. Medusa head precise. Versus diffusion lower value. Heavy faking."
+        },
+        "the_row": {
+          "multiplier": 4.0,
+          "notes": "27% value increase 2025. Fastest growing brand on TRR. Ranked #7 globally.",
+          "authenticity_notes": "Made in USA/Italy. Minimal branding. Check fabric quality and construction. Limited faking currently."
         },
         "vivienne_westwood": {
-          "m": 3.5,
-          "tips": "Orb logo, vintage punk era valuable."
+          "multiplier": 3.5,
+          "notes": "60% growth in 2024. Y2K revival brand. Big Gen Z demand.",
+          "authenticity_notes": "Made in UK/Italy. Orb logo. 1980s punk era most valuable. Check orb emblem precision. Moderate faking."
         },
         "yohji_yamamoto": {
-          "m": 4.5
+          "multiplier": 4.5,
+          "authenticity_notes": "Made in Japan. Avant-garde black designs. Y's diffusion (lower value). Check label typography and construction."
         },
         "yves_saint_laurent": {
           "alt": [
             "YSL Rive Gauche",
             "Saint Laurent Paris"
           ],
-          "m": 5.0
+          "multiplier": 5.0,
+          "authenticity_notes": "Rive Gauche (vintage) vs Saint Laurent Paris (modern). Made in France/Italy. Le Smoking tuxedo iconic. Check YSL cassandre logo precision."
         }
       },
       "description": "Luxury designer \u2014 always purchase if reasonably priced",
@@ -403,98 +620,111 @@
     "tier_vintage": {
       "brands": {
         "azzedine_alaia": {
-          "m": 5.0,
-          "tips": "Body-con."
+          "multiplier": 5.0,
+          "authenticity_notes": "Made in France/Italy. Body-con construction. Laser-cut leather signature. Check seam precision and stretch quality."
         },
         "biba": {
           "era": "1960s-70s",
-          "m": 5.0
+          "multiplier": 5.0,
+          "authenticity_notes": "1960s-70s London boutique. Black and gold label. Art deco styling. Very rare - museum collectible."
         },
         "cacharel": {
           "era": "1970s-80s",
-          "m": 2.5
+          "multiplier": 2.5,
+          "authenticity_notes": "Made in France. 1970s-80s pieces most valuable. Liberty print collaborations collectible."
         },
         "ceil_chapman": {
           "era": "1940s-60s",
-          "m": 5.0
+          "multiplier": 5.0,
+          "authenticity_notes": "1940s-60s cocktail dresses. NYC couturier. Check union labels and construction quality."
         },
         "claude_montana": {
           "era": "1980s",
-          "m": 4.0
+          "multiplier": 4.0,
+          "authenticity_notes": "Made in France/Italy. 1980s power shoulders. Sculptural leather work. Check construction and label."
         },
         "courreges": {
           "era": "1960s-70s",
-          "m": 5.0,
-          "tips": "Space age."
+          "multiplier": 5.0,
+          "authenticity_notes": "Made in France. 1960s-70s space age designs. White go-go boots iconic. Check logo precision."
         },
         "gunne_sax": {
           "era": "1970s-80s",
-          "m": 3.0,
-          "tips": "Prairie dresses."
+          "multiplier": 3.0,
+          "authenticity_notes": "Made in USA (San Francisco). 1970s-80s prairie dresses. Jessica McClintock labels. Check lace and construction."
         },
         "halston": {
           "era": "1970s",
-          "m": 4.0,
-          "tips": "Original only, not licensed."
+          "multiplier": 4.0,
+          "authenticity_notes": "Original 1970s Halston only - not licensed lines. Made in USA. Ultrasuede, jersey draping signature."
         },
-        "kenzo_vintage": {
+        "kenzo": {
           "era": "1970s-90s",
-          "m": 3.5
+          "multiplier": 3.5,
+          "notes": "Est. 1970, France by Kenzo Takada. Takada era (1970s-90s) most collectible; bold florals and jungle prints.",
+          "authenticity_notes": "Kenzo Takada era (1970s-90s). Made in France. Bold florals and jungle prints. Check label styles."
         },
         "krizia": {
           "era": "1970s-90s",
-          "m": 3.0
+          "multiplier": 3.0,
+          "authenticity_notes": "Made in Italy. Animal motifs (especially panther). 1970s-90s pieces most valuable."
         },
-        "laura_ashley_vintage": {
+        "laura_ashley": {
           "era": "1970s-90s",
-          "m": 2.5,
-          "tips": "UK/Wales made most valuable."
+          "multiplier": 2.5,
+          "notes": "Est. 1953, UK. Made in Wales labels most valuable; 1970s-80s prairie florals.",
+          "authenticity_notes": "Made in UK/Wales labels most valuable. 1970s-80s prairie florals. Check country of origin."
         },
         "lilli_ann": {
           "era": "1940s-70s",
-          "m": 4.0,
-          "tips": "SF label, suits and coats."
+          "multiplier": 4.0,
+          "authenticity_notes": "San Francisco label (1940s-70s). Suits and coats. Check union labels and French fabrics."
         },
-        "moschino_vintage": {
+        "moschino": {
           "era": "1980s-90s",
-          "m": 4.0,
-          "tips": "Franco era."
+          "multiplier": 4.0,
+          "notes": "Est. 1983, Italy by Franco Moschino. Franco era (1983-1994) most valuable; ironic/pop art designs.",
+          "authenticity_notes": "Franco Moschino era (1980s-90s). Made in Italy. Ironic/pop art pieces most valuable. Check label and humor elements."
         },
         "norma_kamali": {
           "era": "1980s",
-          "m": 3.5,
-          "tips": "Sweatshirt gowns, sleeping bag coat."
+          "multiplier": 3.5,
+          "authenticity_notes": "Made in USA. 1980s sweatshirt gowns, sleeping bag coat iconic. OMO label. Check construction."
         },
         "ossie_clark": {
           "era": "1960s-70s",
-          "m": 6.0,
-          "tips": "Often Celia Birtwell prints."
+          "multiplier": 6.0,
+          "authenticity_notes": "Made in UK. Often with Celia Birtwell prints. 1960s-70s pieces museum-grade. Check Quorum or Radley labels."
         },
         "patrick_kelly": {
           "era": "1980s",
-          "m": 6.0,
-          "tips": "Rare."
+          "multiplier": 6.0,
+          "authenticity_notes": "1980s Paris couture. Made in France. Black American designer - very rare. Button embellishments signature."
         },
         "pauline_trigere": {
           "era": "1950s-80s",
-          "m": 4.0
+          "multiplier": 4.0,
+          "authenticity_notes": "Made in USA. 1950s-80s. NYC couturier. Wool coats, bias-cut dresses. Check union labels."
         },
         "pendleton": {
-          "m": 2.5,
-          "tips": "Wool shirts, blankets."
+          "multiplier": 2.5,
+          "authenticity_notes": "Made in USA. Wool shirts, blankets. Check for Portland OR label. Vintage wool shirts collectible."
         },
-        "pierre_cardin_vintage": {
+        "pierre_cardin": {
           "era": "1960s-70s",
-          "m": 3.0,
-          "tips": "Only vintage valuable."
+          "multiplier": 3.0,
+          "notes": "Est. 1950, France. Space age era (1960s-70s) valuable; avoid later licensed products.",
+          "authenticity_notes": "Only 1960s-70s vintage valuable. Made in France. Space age designs. Avoid licensed products."
         },
         "romeo_gigli": {
           "era": "1980s-90s",
-          "m": 4.0
+          "multiplier": 4.0,
+          "authenticity_notes": "Made in Italy. 1980s-90s romantic/orientalist designs. Soft shoulders, rich colors. Check label and draping."
         },
         "stephen_sprouse": {
           "era": "1980s",
-          "m": 5.0
+          "multiplier": 5.0,
+          "authenticity_notes": "1980s NYC designer. Neon colors, graffiti prints. LV collaboration 2001. Very collectible, limited production."
         }
       },
       "description": "Vintage labels with collector value",
@@ -552,56 +782,104 @@
     "tier_A": {
       "brands": {
         "alden": {
-          "m": 3.5,
-          "tips": "Shell cordovan highest."
+          "multiplier": 3.5,
+          "authenticity_notes": "Made in USA. Shell cordovan leather highest value. Check for Horween shell stamps. Goodyear welt construction."
         },
         "allen_edmonds": {
-          "m": 2.5
+          "multiplier": 2.5,
+          "authenticity_notes": "Made in USA. Goodyear welt. Check heel stamp for factory info. Port Washington, WI production."
+        },
+        "chie_mihara": {
+          "multiplier": 2.5,
+          "notes": "Made in Spain. Retails $300-450, resale ~1/3 retail.",
+          "authenticity_notes": "Made in Spain. Check leather quality and sole construction. Spanish craftsmanship."
         },
         "aquazzura": {
-          "m": 3.0
+          "multiplier": 3.0,
+          "authenticity_notes": "Made in Italy. Check sole stamp and leather quality. Limited faking currently."
         },
         "birkenstock": {
-          "m": 1.8
+          "multiplier": 1.8,
+          "authenticity_notes": "Made in Germany on footbed. Check cork quality and buckle engravings. Heavy faking."
         },
         "churchs": {
-          "m": 3.0
+          "multiplier": 3.0,
+          "authenticity_notes": "Made in England (Northampton). Goodyear welt. Pre-Prada (pre-1999) most collectible."
         },
         "cole_haan": {
-          "m": 1.8
+          "multiplier": 1.8,
+          "authenticity_notes": "Check country of origin - USA-made vintage more valuable. Now mostly imported."
         },
         "crockett_jones": {
-          "m": 3.0
+          "multiplier": 3.0,
+          "authenticity_notes": "Made in England (Northampton). Hand-lasted. Check for factory stamps inside."
         },
         "dr_martens": {
-          "m": 2.0,
-          "tips": "Made in England highest."
+          "multiplier": 2.0,
+          "authenticity_notes": "Made in England boots highest value. Check sole for 'Made in England'. Yellow stitching, air-cushioned sole."
         },
-        "florsheim_vintage": {
-          "m": 2.0,
-          "tips": "Imperial line, USA made."
+        "florsheim": {
+          "multiplier": 2.0,
+          "notes": "Est. 1892, USA (Chicago). Imperial line, USA/Chicago-made most valuable.",
+          "authenticity_notes": "Imperial line, USA made most valuable. Check union labels on vintage. Look for Chicago IL tags."
+        },
+        "fly_london": {
+          "multiplier": 2.0,
+          "notes": "Made in Portugal.",
+          "authenticity_notes": "Made in Portugal. Check leather quality and sole construction. Portuguese manufacturing."
         },
         "frye": {
-          "m": 2.5,
-          "tips": "Boots."
+          "multiplier": 2.5,
+          "authenticity_notes": "Made in USA on vintage. Campus boot iconic. Check for Marlborough MA labels on older pairs."
         },
         "gianvito_rossi": {
-          "m": 3.0
+          "multiplier": 3.0,
+          "authenticity_notes": "Made in Italy. Check leather sole stamp and quality. Minimal faking."
         },
         "grenson": {
-          "m": 2.5
+          "multiplier": 2.5,
+          "authenticity_notes": "Made in England (Rushden). Goodyear welt. Check factory stamps inside shoe."
+        },
+        "john_fluevog": {
+          "multiplier": 3.0,
+          "notes": "Made in Portugal/Brazil/Peru. 'Resists Satan' sole inscription authenticates. Discontinued styles valuable.",
+          "authenticity_notes": "Made in Portugal/Brazil/Peru. 'Resists Alkali, Water, Acid, Fatigue, and Satan' sole. Vancouver brand."
         },
         "loake": {
-          "m": 2.0
+          "multiplier": 2.0,
+          "authenticity_notes": "Made in England (Kettering). Goodyear welt on 1880 range. Check for English origin stamp."
+        },
+        "miz_mooz": {
+          "multiplier": 2.0,
+          "notes": "Made in Italy and Portugal.",
+          "authenticity_notes": "Made in Italy/Portugal. Check leather quality and sole construction."
+        },
+        "on_running": {
+          "multiplier": 2.0,
+          "notes": "15% growth on eBay 2025.",
+          "authenticity_notes": "Swiss brand. CloudTec sole technology. Check box labels and quality. Growing counterfeit market."
         },
         "red_wing": {
-          "m": 2.5
+          "multiplier": 2.5,
+          "authenticity_notes": "Made in USA (Red Wing, MN). Check leather type and size tag for production info. Heritage line most valuable."
+        },
+        "roots": {
+          "multiplier": 2.0,
+          "notes": "Made in Canada pieces most valuable. TUFF boots collectible.",
+          "authenticity_notes": "Made in Canada labels most valuable. Canadian brand. TUFF boots, Negative Heel collectible."
         },
         "stuart_weitzman": {
-          "m": 2.5
+          "multiplier": 2.5,
+          "authenticity_notes": "Made in Spain. Check sole stamp. 5050 boot iconic. Minimal faking."
+        },
+        "think": {
+          "multiplier": 2.0,
+          "notes": "Made in Austria.",
+          "authenticity_notes": "Made in Austria. Eco-friendly production. Check sole and insole for branding."
         },
         "wolverine_1000_mile": {
-          "m": 2.5
+          "multiplier": 2.5,
+          "authenticity_notes": "Made in USA. Horween Chromexcel leather. Goodyear welt. Check for Big Rapids, MI tags."
         }
       },
       "multiplier_range": [
@@ -612,40 +890,48 @@
     "tier_S": {
       "brands": {
         "bottega_veneta": {
-          "m": 4.0
+          "multiplier": 4.0,
+          "authenticity_notes": "Made in Italy. Intrecciato weave signature. Check weave precision. Heavy faking on bags and accessories."
         },
         "chanel": {
-          "m": 6.0
+          "multiplier": 6.0,
+          "authenticity_notes": "Made in Italy/France. Serial numbers on ballet flats. CC logo precision. Very heavy faking - expert auth recommended."
         },
         "christian_louboutin": {
-          "m": 5.0,
-          "sig": "Red sole"
+          "multiplier": 5.0,
+          "authenticity_notes": "Red lacquered sole signature. Made in Italy. Check sole color (specific red), logo stamp, serial numbers. Heavy faking."
         },
         "ferragamo": {
-          "m": 3.5,
-          "tips": "Vara iconic."
+          "multiplier": 3.5,
+          "authenticity_notes": "Made in Italy. Vara bow iconic. Check metal hardware and leather quality. Serial numbers on newer styles."
         },
         "gucci": {
-          "m": 4.0
+          "multiplier": 4.0,
+          "authenticity_notes": "Made in Italy. Check GG alignment, hardware quality, serial numbers. Horsebit loafer iconic. Heavy faking."
         },
         "jimmy_choo": {
-          "m": 4.0
+          "multiplier": 4.0,
+          "authenticity_notes": "Made in Italy. Check sole stamp, leather quality, hardware. Moderate faking."
         },
         "manolo_blahnik": {
-          "m": 5.0
+          "multiplier": 5.0,
+          "authenticity_notes": "Made in Italy. Cobalt blue sole interior. Check craftsmanship. BB pump iconic. Moderate faking."
         },
         "prada": {
-          "m": 4.0
+          "multiplier": 4.0,
+          "authenticity_notes": "Made in Italy. Check triangle logo, hardware quality. Serial numbers on cards. Heavy faking."
         },
         "roger_vivier": {
-          "m": 5.0
+          "multiplier": 5.0,
+          "authenticity_notes": "Made in France/Italy. Pilgrim buckle iconic. Check buckle quality and sole construction. Limited faking."
         },
         "tods": {
-          "m": 3.0
+          "multiplier": 3.0,
+          "authenticity_notes": "Made in Italy. Gommino driving shoes signature. Check pebble sole and leather quality."
         },
         "valentino": {
-          "m": 4.0,
-          "tips": "Rockstud."
+          "multiplier": 4.0,
+          "authenticity_notes": "Made in Italy. Rockstud hardware - check stud precision and placement. Moderate faking."
         }
       },
       "multiplier_range": [
@@ -657,44 +943,54 @@
       "brands": {
         "andrea_pfister": {
           "era": "1970s-80s",
-          "m": 4.0
+          "multiplier": 4.0,
+          "authenticity_notes": "Made in Italy. 1970s-80s avant-garde designs. Hand-painted and sculptural. Check Italian labels."
         },
         "andrew_geller": {
           "era": "1950s-60s",
-          "m": 3.5
+          "multiplier": 3.5,
+          "authenticity_notes": "1950s-60s American designer. Check NYC labels. Architectural heels collectible."
         },
         "bally": {
-          "m": 2.5,
-          "tips": "Swiss, vintage esp."
+          "multiplier": 2.5,
+          "authenticity_notes": "Made in Switzerland (vintage). Check for Swiss origin on older pairs. Now made in Italy."
         },
         "beth_levine": {
           "era": "1950s-70s",
-          "m": 5.0
+          "multiplier": 5.0,
+          "authenticity_notes": "1950s-70s NYC designer. Topless shoe, clear vinyl innovations. Herbert Levine label. Museum collectible."
         },
         "bruno_magli": {
-          "m": 2.5
+          "multiplier": 2.5,
+          "authenticity_notes": "Made in Italy (Bologna). Check leather quality and Italian craftsmanship."
         },
         "charles_jourdan": {
           "era": "1970s-80s",
-          "m": 3.0
+          "multiplier": 3.0,
+          "authenticity_notes": "Made in France. 1970s-80s sculptural heels. Guy Bourdin ad campaigns era collectible."
         },
         "david_evins": {
-          "m": 4.0
+          "multiplier": 4.0,
+          "authenticity_notes": "Made in USA. 'King of Pumps'. Designed for celebrities. Check union labels and construction."
         },
         "delman": {
-          "m": 3.0
+          "multiplier": 3.0,
+          "authenticity_notes": "Made in USA vintage. NYC luxury shoemaker. Check union labels on older pairs."
         },
         "herbert_levine": {
           "era": "1950s-70s",
-          "m": 5.0
+          "multiplier": 5.0,
+          "authenticity_notes": "1950s-70s NYC brand. Beth Levine designed. Innovative designs. Museum collectible."
         },
         "i_miller": {
           "era": "1940s-70s",
-          "m": 3.0
+          "multiplier": 3.0,
+          "authenticity_notes": "1940s-70s NYC retailer. Check union labels. Andy Warhol illustrated their ads."
         },
         "maud_frizon": {
           "era": "1980s",
-          "m": 3.5
+          "multiplier": 3.5,
+          "authenticity_notes": "Made in France. 1980s sculptural designs. Cone heels signature. Check French labels."
         }
       },
       "multiplier_range": [

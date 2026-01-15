@@ -288,8 +288,9 @@
         "payment_processing": "included",
         "listing_fee": null,
         "shipping": {
-          "type": "prepaid_label",
-          "notes": "Tracked shipping labels provided"
+          "type": "prepaid_label_variable",
+          "who_pays": "buyer",
+          "notes": "Prepaid label provided, buyer pays actual cost based on weight"
         }
       },
       "audience": "Canadian fashion buyers, budget-conscious shoppers",

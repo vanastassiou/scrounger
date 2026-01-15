@@ -9,6 +9,7 @@ import { initVisits, openLogVisitModal } from './visits.js';
 import { initSelling, listItemForSale } from './selling.js';
 import { initDashboardActions } from './dashboard-actions.js';
 import { initSettings } from './settings.js';
+import { initReferences } from './references.js';
 import {
   initSync,
   isSyncEnabled,
@@ -51,7 +52,8 @@ async function init() {
     initVisits(),
     initSelling(),
     initDashboardActions(),
-    initSettings()
+    initSettings(),
+    initReferences()
   ]);
 
   // Render dashboard stats
