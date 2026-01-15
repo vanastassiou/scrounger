@@ -2199,3 +2199,83 @@
   display: block;
   margin-top: 2px;
 }
+
+/* =============================================================================
+   SELLING RECOMMENDATIONS
+   ============================================================================= */
+
+.recommendations-section {
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  border-left: 3px solid var(--color-primary);
+}
+
+.recommendations-title {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.recommendation-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--space-xs) 0;
+}
+
+.recommendation-label {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.recommendation-value {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.recommendation-reasons,
+.recommendation-breakdown {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-sm);
+  padding-left: var(--space-xs);
+}
+
+.alternatives-details {
+  margin-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-sm);
+}
+
+.alternatives-details summary {
+  cursor: pointer;
+  color: var(--color-primary);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.alternatives-details summary:hover {
+  text-decoration: underline;
+}
+
+.platform-comparison-table {
+  margin-top: var(--space-sm);
+}
+
+.platform-comparison-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: var(--space-md);
+  padding: var(--space-xs) 0;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.platform-comparison-row:last-child {
+  border-bottom: none;
+}
