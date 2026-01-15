@@ -4,12 +4,12 @@
 
 import { state } from './state.js';
 import { computeVisitsFromInventory, getInventoryForVisit, deleteInventoryItem } from './db.js';
-import { showToast, createModalController } from './ui.js';
+import { showToast } from './ui.js';
 import {
   $, formatCurrency, formatDate, getTodayDate, capitalize, formatStatus, escapeHtml,
   createChainStoreDropdown, createSortableTable, sortData, updateSortIndicators
 } from './utils.js';
-import { initStoreDropdown } from './components.js';
+import { createLazyModal, initStoreDropdown, renderDetailSections } from './components.js';
 import { openAddItemModal, openEditItemModal, openViewItemModal } from './inventory.js';
 import { openViewStoreModal } from './stores.js';
 
@@ -187,114 +187,102 @@ async function handleTableClick(e) {
 // VISIT ITEMS MODAL (read-only view)
 // =============================================================================
 
-let visitItemsModal = null;
+let visitItemsClickHandlerSetup = false;
 
-async function openVisitItemsModal(storeId, date) {
-  const dialog = $('#visit-items-dialog');
-  if (!dialog) return;
+const visitItemsModal = createLazyModal('#visit-items-dialog', {
+  onOpen: (dialog, { store, storeName, date, items }) => {
+    // Setup click handler for item links (once)
+    if (!visitItemsClickHandlerSetup) {
+      visitItemsClickHandlerSetup = true;
+      const contentEl = dialog.querySelector('#visit-items-content');
+      if (contentEl) {
+        contentEl.addEventListener('click', (e) => {
+          const link = e.target.closest('.table-link');
+          if (link) {
+            e.preventDefault();
+            openViewItemModal(link.dataset.id);
+          }
+        });
+      }
+    }
 
-  if (!visitItemsModal) {
-    visitItemsModal = createModalController(dialog);
+    // Update modal title
+    const titleEl = dialog.querySelector('#visit-items-title');
+    if (titleEl) {
+      titleEl.textContent = `${storeName} - ${formatDate(date)}`;
+    }
 
-    // Add click handler for item links (once)
-    const contentEl = $('#visit-items-content');
+    // Render content
+    const contentEl = dialog.querySelector('#visit-items-content');
     if (contentEl) {
-      contentEl.addEventListener('click', (e) => {
-        const link = e.target.closest('.table-link');
-        if (link) {
-          e.preventDefault();
-          const itemId = link.dataset.id;
-          openViewItemModal(itemId);
-        }
-      });
+      contentEl.innerHTML = renderVisitItemsDetails(store, items);
     }
   }
+});
 
-  // Get store name
+async function openVisitItemsModal(storeId, date) {
   const store = state.getStore(storeId);
   const storeName = store?.name ?? storeId;
-
-  // Get items for this visit
   const items = await getInventoryForVisit(storeId, date);
 
-  // Update modal title
-  const titleEl = $('#visit-items-title');
-  if (titleEl) {
-    titleEl.textContent = `${storeName} - ${formatDate(date)}`;
-  }
-
-  // Render content
-  const contentEl = $('#visit-items-content');
-  if (contentEl) {
-    contentEl.innerHTML = renderVisitItemsDetails(store, items);
-  }
-
-  visitItemsModal.open();
+  visitItemsModal.open({ store, storeName, date, items });
 }
 
 function renderVisitItemsDetails(store, items) {
-  const sections = [];
-
-  // Items section
-  if (items.length > 0) {
-    const total = items.reduce((sum, item) => sum + (item.purchase_price || 0), 0);
-
-    let itemsHtml = '<div class="table-container"><table class="table table-responsive table--compact"><thead><tr>';
-    itemsHtml += '<th>Item</th><th>Category</th><th>Brand</th><th>Cost</th>';
-    itemsHtml += '</tr></thead><tbody>';
-
-    for (const item of items) {
-      const title = item.title || 'Untitled item';
-      const category = capitalize(item.category);
-      const brand = item.brand || '-';
-      const price = formatCurrency(item.purchase_price || 0);
-      itemsHtml += `<tr>`;
-      itemsHtml += `<td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(title)}</a></td>`;
-      itemsHtml += `<td data-label="Category">${category}</td>`;
-      itemsHtml += `<td data-label="Brand">${escapeHtml(brand)}</td>`;
-      itemsHtml += `<td data-label="Cost">${price}</td>`;
-      itemsHtml += `</tr>`;
-    }
-
-    itemsHtml += '</tbody><tfoot><tr>';
-    itemsHtml += `<td colspan="3" class="text-muted">Total</td>`;
-    itemsHtml += `<td><strong>${formatCurrency(total)}</strong></td>`;
-    itemsHtml += '</tr></tfoot></table></div>';
-
-    sections.push(`<section class="detail-section"><h3 class="detail-section-title">Items (${items.length})</h3>${itemsHtml}</section>`);
-  } else {
-    sections.push(`<section class="detail-section"><h3 class="detail-section-title">Items</h3><p class="text-muted">No items recorded for this visit.</p></section>`);
+  if (items.length === 0) {
+    return renderDetailSections([
+      { title: 'Items', content: '<p class="text-muted">No items recorded for this visit.</p>' }
+    ]);
   }
 
-  return sections.join('');
+  const total = items.reduce((sum, item) => sum + (item.purchase_price || 0), 0);
+  let itemsHtml = '<div class="table-container"><table class="table table-responsive table--compact"><thead><tr><th>Item</th><th>Category</th><th>Brand</th><th>Cost</th></tr></thead><tbody>';
+
+  for (const item of items) {
+    const title = item.title || 'Untitled item';
+    const category = capitalize(item.category);
+    const brand = item.brand || '-';
+    const price = formatCurrency(item.purchase_price || 0);
+    itemsHtml += `<tr><td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(title)}</a></td><td data-label="Category">${category}</td><td data-label="Brand">${escapeHtml(brand)}</td><td data-label="Cost">${price}</td></tr>`;
+  }
+
+  itemsHtml += `</tbody><tfoot><tr><td colspan="3" class="text-muted">Total</td><td><strong>${formatCurrency(total)}</strong></td></tr></tfoot></table></div>`;
+
+  return renderDetailSections([
+    { title: `Items (${items.length})`, content: itemsHtml }
+  ]);
 }
 
 // =============================================================================
 // LOG VISIT MODAL (Multi-Step Workflow)
 // =============================================================================
 
-let logVisitModal = null;
+let logVisitStoreDropdownInitialized = false;
+
+const logVisitModal = createLazyModal('#log-visit-dialog', {
+  onOpen: (dialog) => {
+    // Initialize store dropdown (once)
+    if (!logVisitStoreDropdownInitialized) {
+      logVisitStoreDropdownInitialized = true;
+      populateStoreSelect();
+    }
+
+    // Reset workflow
+    resetVisitWorkflow();
+
+    // Reset form and show step 1
+    const form = dialog.querySelector('#visit-step1-form');
+    if (form) {
+      form.reset();
+      const dateInput = dialog.querySelector('#visit-date');
+      if (dateInput) dateInput.value = getTodayDate();
+    }
+
+    showStep(1);
+  }
+});
 
 export function openLogVisitModal() {
-  const dialog = $('#log-visit-dialog');
-  if (!dialog) return;
-
-  if (!logVisitModal) {
-    logVisitModal = createModalController(dialog);
-    populateStoreSelect();
-  }
-
-  // Reset workflow
-  resetVisitWorkflow();
-
-  // Reset form and show step 1
-  const form = $('#visit-step1-form');
-  if (form) {
-    form.reset();
-    $('#visit-date').value = getTodayDate();
-  }
-
-  showStep(1);
   logVisitModal.open();
 }
 

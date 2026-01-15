@@ -455,3 +455,78 @@ export function compressImage(file, maxDimension = 1200, quality = 0.85) {
     img.src = url;
   });
 }
+
+// =============================================================================
+// FORM HANDLER
+// =============================================================================
+
+/**
+ * Create a form submission handler with validation, transformation, and callbacks.
+ * Replaces repeated form handling patterns across modules.
+ *
+ * Usage:
+ *   const handler = createFormHandler({
+ *     formSelector: '#store-form',
+ *     validate: (formData) => ({ valid: !!formData.get('name'), errors: ['Name is required'] }),
+ *     transform: (formData) => ({ name: formData.get('name').trim(), tier: formData.get('tier') }),
+ *     onSubmit: async (data) => await db.addStore(data),
+ *     onSuccess: () => { showToast('Saved'); modal.close(); },
+ *     onError: (err) => showToast('Failed to save')
+ *   });
+ *
+ * @param {Object} config
+ * @param {string} config.formSelector - CSS selector for form element
+ * @param {Function} [config.validate] - (formData) => { valid: boolean, errors: string[] }
+ * @param {Function} [config.transform] - (formData) => object to pass to onSubmit
+ * @param {Function} config.onSubmit - Async (data) => void, called with transformed data
+ * @param {Function} [config.onSuccess] - Called after successful submission
+ * @param {Function} [config.onError] - Called with error if submission fails
+ * @param {boolean} [config.resetOnSuccess=true] - Whether to reset form after success
+ * @returns {Object} Handler with reset(), getForm() methods
+ */
+export function createFormHandler(config) {
+  const form = $(config.formSelector);
+  if (!form) return null;
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+
+    const formData = new FormData(form);
+
+    // Validate
+    if (config.validate) {
+      const validation = config.validate(formData);
+      if (!validation.valid) {
+        if (config.onError) {
+          config.onError(new Error(validation.errors?.[0] || 'Validation failed'));
+        }
+        return;
+      }
+    }
+
+    // Transform
+    const data = config.transform
+      ? config.transform(formData)
+      : Object.fromEntries(formData);
+
+    // Submit
+    try {
+      await config.onSubmit(data);
+      if (config.resetOnSuccess !== false) {
+        form.reset();
+      }
+      if (config.onSuccess) config.onSuccess();
+    } catch (err) {
+      console.error('Form submission error:', err);
+      if (config.onError) config.onError(err);
+    }
+  }
+
+  form.addEventListener('submit', handleSubmit);
+
+  return {
+    reset: () => form.reset(),
+    getForm: () => form,
+    destroy: () => form.removeEventListener('submit', handleSubmit)
+  };
+}

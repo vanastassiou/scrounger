@@ -69,3 +69,76 @@ export const state = {
     }
   }
 };
+
+// =============================================================================
+// MODULE STATE FACTORY
+// =============================================================================
+
+/**
+ * Create encapsulated module state with optional change notification.
+ * Replaces scattered module-level let variables with a consistent pattern.
+ *
+ * Usage:
+ *   const moduleState = createModuleState({
+ *     data: [],
+ *     sortColumn: 'title',
+ *     sortDirection: 'asc',
+ *     filterCategory: null,
+ *     searchTerm: ''
+ *   }, () => renderTable());
+ *
+ *   moduleState.set({ searchTerm: 'query' }); // triggers onChange
+ *   moduleState.get('sortColumn'); // returns 'title'
+ *   moduleState.get(); // returns full state object
+ *
+ * @param {Object} initialState - Default state values
+ * @param {Function} [onChange] - Called when state changes with (newState, prevState)
+ * @returns {Object} State controller with get, set, reset methods
+ */
+export function createModuleState(initialState, onChange = null) {
+  let currentState = { ...initialState };
+
+  return {
+    /**
+     * Get state value(s).
+     * @param {string} [key] - Specific key to get, or undefined for full state
+     * @returns {*} Value or full state object (copy)
+     */
+    get(key) {
+      if (key !== undefined) {
+        return currentState[key];
+      }
+      return { ...currentState };
+    },
+
+    /**
+     * Update state with partial values.
+     * @param {Object} updates - Key-value pairs to update
+     * @returns {Object} Updated full state (copy)
+     */
+    set(updates) {
+      const prevState = { ...currentState };
+      Object.assign(currentState, updates);
+      if (onChange) onChange(currentState, prevState);
+      return { ...currentState };
+    },
+
+    /**
+     * Reset state to initial values.
+     */
+    reset() {
+      const prevState = { ...currentState };
+      currentState = { ...initialState };
+      if (onChange) onChange(currentState, prevState);
+    },
+
+    /**
+     * Check if state has a specific key.
+     * @param {string} key
+     * @returns {boolean}
+     */
+    has(key) {
+      return key in currentState;
+    }
+  };
+}
