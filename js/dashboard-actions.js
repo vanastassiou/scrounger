@@ -22,7 +22,8 @@ const TILE_CONFIG = {
   photo: { label: 'Needs photo', countId: 'tile-count-photo' },
   ready: { label: 'Ready to list', countId: 'tile-count-ready' },
   shipping: { label: 'Needs packaging', countId: 'tile-count-shipping' },
-  awaiting: { label: 'Ready to ship', countId: 'tile-count-awaiting' }
+  awaiting: { label: 'Ready to ship', countId: 'tile-count-awaiting' },
+  pending: { label: 'Awaiting delivery', countId: 'tile-count-pending' }
 };
 
 // =============================================================================
@@ -49,7 +50,8 @@ export async function loadActionItems() {
     photo: pipelineItems.filter(i => i.status === 'needs_photo'),
     ready: pipelineItems.filter(i => i.status === 'unlisted'),
     shipping: pipelineItems.filter(i => i.status === 'sold'),
-    awaiting: pipelineItems.filter(i => i.status === 'packaged')
+    awaiting: pipelineItems.filter(i => i.status === 'packaged'),
+    pending: pipelineItems.filter(i => i.status === 'shipped')
   };
 
   updateTileCounts();
@@ -60,8 +62,6 @@ export async function loadActionItems() {
 // =============================================================================
 
 function updateTileCounts() {
-  let anyVisible = false;
-
   Object.entries(TILE_CONFIG).forEach(([actionType, config]) => {
     const tile = $(`.action-tile[data-action="${actionType}"]`);
     const countEl = $(`#${config.countId}`);
@@ -72,13 +72,13 @@ function updateTileCounts() {
 
     countEl.textContent = count;
 
-    // Show/hide tile based on count
-    setVisible(tile, count > 0);
-    if (count > 0) anyVisible = true;
+    // Show all tiles, but mute ones with no items
+    tile.classList.remove('hidden');
+    tile.classList.toggle('action-tile--muted', count === 0);
   });
 
-  // Show/hide empty state
-  setVisible('#action-tiles-empty', !anyVisible);
+  // Hide empty state since we always show tiles
+  setVisible('#action-tiles-empty', false);
 }
 
 // =============================================================================
