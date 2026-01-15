@@ -34,14 +34,12 @@ export const SUBCATEGORIES = {
 
 export const STATUS_OPTIONS = [
   'in_collection',
+  'needs_photo',
   'unlisted',
-  'photographed',
   'listed',
-  'pending_sale',
+  'sold',
   'packaged',
   'shipped',
-  'confirmed_received',
-  'sold',
   'returned',
   'donated',
   'kept'
@@ -268,14 +266,12 @@ export const MAX_TREND_ADJUSTMENT = 0.20; // +/-20% max
 export const INTENT_OPTIONS = ['personal_keep', 'resale', 'undecided'];
 
 export const PIPELINE_STATUSES = [
+  'needs_photo',
   'unlisted',
-  'photographed',
   'listed',
-  'pending_sale',
+  'sold',
   'packaged',
-  'shipped',
-  'confirmed_received',
-  'sold'
+  'shipped'
 ];
 
 export const RESALE_PLATFORMS = [

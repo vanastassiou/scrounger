@@ -236,8 +236,8 @@ function normalizeColours(colours) {
 export function getSeasonalOpportunities(items) {
   // Consider items that could be listed:
   // - Collection items not marked for personal keep
-  // - Early pipeline items (unlisted, photographed)
-  const listableStatuses = ['in_collection', 'unlisted', 'photographed'];
+  // - Early pipeline items (needs_photo, unlisted)
+  const listableStatuses = ['in_collection', 'needs_photo', 'unlisted'];
   const listable = items.filter(i =>
     listableStatuses.includes(i.status) && i.intent !== 'personal_keep'
   );
