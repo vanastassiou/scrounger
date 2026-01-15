@@ -5,6 +5,11 @@
       "url": "https://poshmark.ca",
       "available_in_canada": true,
       "categories": ["clothing", "shoes", "jewelry", "accessories"],
+      "fee_summary": {
+        "listing_fee": "Free",
+        "sale_cut": "$3.95 flat on sales under $20; 20% on sales $20+. Payment processing included.",
+        "total": "$3.95 or 20% of sale price"
+      },
       "fees": {
         "commission_tiers": [
           { "threshold_cad": 20, "fee_type": "flat", "amount_cad": 3.95 },
@@ -43,15 +48,20 @@
       "url": "https://ebay.ca",
       "available_in_canada": true,
       "categories": ["clothing", "shoes", "jewelry", "accessories"],
+      "fee_summary": {
+        "listing_fee": "Free (250/month), then $0.30 per listing",
+        "sale_cut": "13.6% of sale price. Payment processing included.",
+        "total": "13.6% of sale price + $0.30/listing after 250 free"
+      },
       "fees": {
         "commission_tiers": [
-          { "category": "most_categories", "fee_type": "percentage", "amount": 12.9 },
-          { "category": "jewelry_watches", "fee_type": "percentage", "amount": 12.9, "cap_cad": 500 }
+          { "category": "most_categories", "fee_type": "percentage", "amount": 13.6 },
+          { "category": "jewelry_watches", "fee_type": "percentage", "amount": 13.6, "cap_cad": 500 }
         ],
         "payment_processing": "included_in_final_value",
         "listing_fee": {
           "free_listings_per_month": 250,
-          "per_listing_after": 0.35
+          "per_listing_after": 0.30
         },
         "shipping": {
           "type": "seller_arranged",
@@ -83,6 +93,11 @@
       "url": "https://etsy.com",
       "available_in_canada": true,
       "categories": ["clothing", "shoes", "jewelry", "accessories"],
+      "fee_summary": {
+        "listing_fee": "$0.20 USD per listing (4-month duration)",
+        "sale_cut": "6.5% transaction fee + 3% + $0.25 payment processing",
+        "total": "~10% of sale price + $0.20 USD per listing"
+      },
       "fees": {
         "commission": 6.5,
         "payment_processing": {
@@ -90,7 +105,7 @@
           "flat_fee_cad": 0.25
         },
         "listing_fee": {
-          "per_listing_cad": 0.26,
+          "per_listing_usd": 0.20,
           "duration_months": 4
         },
         "shipping": {
@@ -123,16 +138,22 @@
       "url": "https://depop.com",
       "available_in_canada": true,
       "categories": ["clothing", "shoes", "jewelry", "accessories"],
+      "fee_summary": {
+        "listing_fee": "Free",
+        "sale_cut": "10% commission + 3.3% + $0.45 payment processing",
+        "total": "~14% of sale price"
+      },
       "fees": {
         "commission": 10,
         "payment_processing": {
-          "percentage": 2.9,
+          "percentage": 3.3,
+          "flat_fee_usd": 0.45,
           "notes": "Plus currency conversion fees if applicable"
         },
         "listing_fee": null,
         "shipping": {
           "type": "seller_arranged",
-          "notes": "No prepaid labels in Canada; seller handles shipping"
+          "notes": "No prepaid labels in Canada; buy postage through Canada Post or third-party carrier"
         }
       },
       "audience": "Gen Z (90% under 26), trend-focused, streetwear enthusiasts",
@@ -159,6 +180,11 @@
       "url": "https://vestiairecollective.com",
       "available_in_canada": true,
       "categories": ["clothing", "shoes", "jewelry", "accessories"],
+      "fee_summary": {
+        "listing_fee": "Free (minimum $34 listing price)",
+        "sale_cut": "$15 flat on sales under $125; 12% on sales $125–$25,000; $3,000 cap above. Plus 3% payment processing (min $4).",
+        "total": "~15% of sale price"
+      },
       "fees": {
         "commission_tiers": [
           { "range_cad": [0, 125], "fee_type": "flat", "amount_cad": 15 },
@@ -201,6 +227,11 @@
       "url": "https://therealreal.com",
       "available_in_canada": true,
       "categories": ["clothing", "shoes", "jewelry", "accessories"],
+      "fee_summary": {
+        "listing_fee": "Free (consignment model)",
+        "sale_cut": "30–80% based on sale price. You keep 20% (under $100 USD) up to 70% ($750+ USD).",
+        "total": "You receive 20–70% of sale price"
+      },
       "fees": {
         "commission_tiers": [
           { "range_usd": [0, 99], "seller_payout_percentage": 20 },
@@ -244,6 +275,11 @@
       "url": "https://grailed.com",
       "available_in_canada": true,
       "categories": ["clothing", "shoes", "accessories"],
+      "fee_summary": {
+        "listing_fee": "Free",
+        "sale_cut": "9% commission + 3.5–5% payment processing",
+        "total": "~13% of sale price"
+      },
       "fees": {
         "commission": 9,
         "payment_processing": {
@@ -253,7 +289,7 @@
         "listing_fee": null,
         "shipping": {
           "type": "seller_arranged",
-          "notes": "Seller handles shipping; international buyers common"
+          "notes": "Buy your own postage; international buyers common so have customs forms ready"
         }
       },
       "audience": "Men's fashion enthusiasts, streetwear collectors, designer menswear buyers",
@@ -280,6 +316,11 @@
       "url": "https://starluv.com",
       "available_in_canada": true,
       "categories": ["clothing", "shoes", "accessories"],
+      "fee_summary": {
+        "listing_fee": "Free",
+        "sale_cut": "$1.95 flat on sales under $25; 7.5% on sales $25+. Payment processing included.",
+        "total": "$1.95 or 7.5% of sale price"
+      },
       "fees": {
         "commission_tiers": [
           { "threshold_cad": 25, "fee_type": "flat", "amount_cad": 1.95 },
