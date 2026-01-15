@@ -103,6 +103,90 @@ export const ERA_BONUSES = {
   unknown: 1.0
 };
 
+// Material value tier multipliers (maps to value_tier in materials.json)
+export const MATERIAL_TIER_MULTIPLIERS = {
+  highest: 1.25,      // Cordovan, exotic leather, platinum, 24k gold
+  high: 1.15,         // Cashmere, silk, full-grain leather, sterling
+  'medium-high': 1.08, // Wool, linen, nubuck, gold-filled, pearl
+  medium: 1.0,        // Cotton, rayon, suede, corrected-grain leather
+  'low-medium': 0.95, // Acetate, vintage nylon, rolled-gold
+  low: 0.88,          // Polyester, acrylic, brass, "genuine leather"
+  avoid: 0.75         // Bonded leather, PU/PVC, pot metal
+};
+
+// Size multipliers for clothing
+export const CLOTHING_SIZE_TIERS = {
+  premium: { multiplier: 1.08, sizes: ['XS', 'S', 'M', '0', '2', '4', '6', '8'] },
+  standard: { multiplier: 1.0, sizes: ['L', '10', '12'] },
+  extended: { multiplier: 0.95, sizes: ['XL', 'XXL', '14', '16', '18', '1X', '2X', '3X'] },
+  outlier: { multiplier: 0.88, sizes: ['XXXL', '20', '22', '24', '4X', '5X'] }
+};
+
+// Size multipliers for shoes (women's sizes)
+export const SHOE_SIZE_TIERS = {
+  premium: { multiplier: 1.10, minSize: 7, maxSize: 9, widths: ['standard', 'wide'] },
+  standard: { multiplier: 1.0, minSize: 6, maxSize: 10 },
+  narrow_market: { multiplier: 0.90 }
+};
+
+// Size multipliers for jewelry
+export const JEWELRY_SIZE_RULES = {
+  adjustable: { multiplier: 1.08, closures: ['toggle', 'hook_and_eye', 'magnetic'] },
+  ring_premium: { multiplier: 1.05, sizes: ['6', '6.5', '7', '7.5', '8'] },
+  ring_standard: { multiplier: 1.0, sizes: ['5', '5.5', '8.5', '9'] },
+  ring_narrow: { multiplier: 0.90 },
+  necklace_premium: { multiplier: 1.03, lengths: [16, 18, 20] },
+  necklace_standard: { multiplier: 1.0, lengths: [14, 22, 24] }
+};
+
+// Platform demographic fit adjustments
+export const PLATFORM_FIT_ADJUSTMENTS = {
+  depop: {
+    // Gen Z, trend-focused - smaller sizes premium
+    size_small_bonus: 0.05,     // XS-M gets +5%
+    size_large_penalty: -0.05,  // XL+ gets -5%
+    material_compress: 0.5      // Compress material multiplier toward 1.0 by 50%
+  },
+  poshmark: {
+    // Women 18-45, size-inclusive
+    size_outlier_penalty: -0.03 // Reduced outlier penalty (vs -0.12)
+  },
+  vestiaire_collective: {
+    // Luxury buyers - standard sizes expected
+    size_outlier_penalty: -0.10,
+    material_low_extra_penalty: -0.05 // Low-tier materials get extra penalty
+  },
+  therealreal: {
+    // High-end luxury - same as Vestiaire
+    size_outlier_penalty: -0.10,
+    material_low_extra_penalty: -0.05
+  },
+  etsy: {
+    // Vintage enthusiasts, eco-conscious
+    size_compress: 0.5,           // Size matters less
+    natural_fiber_bonus: 0.05     // +5% for high-tier natural materials
+  },
+  grailed: {
+    // Men's fashion - different size rules apply
+    mens_sizing: true
+  },
+  ebay: {
+    // Broad audience, collectors
+    size_compress: 0.5            // Size matters less
+  },
+  starluv: {
+    // Budget-conscious Canadian - standard rules
+  }
+};
+
+// Flaw impact on pricing (stacks with condition multiplier)
+export const FLAW_IMPACT = {
+  severity: { minor: -0.02, moderate: -0.05, significant: -0.10 },
+  affects_wearability: -0.05,
+  repairable_discount: 0.5,  // Halves the flaw penalty if repairable
+  max_penalty: -0.25         // Floor on total flaw adjustment
+};
+
 export const INTENT_OPTIONS = ['personal_keep', 'resale', 'undecided'];
 
 export const PIPELINE_STATUSES = [

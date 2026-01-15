@@ -3,10 +3,20 @@
 // =============================================================================
 // Generates platform, price, and profit recommendations for the Start Selling flow
 
-import { CONDITION_MULTIPLIERS, ERA_BONUSES } from './config.js';
+import {
+  CONDITION_MULTIPLIERS,
+  ERA_BONUSES,
+  MATERIAL_TIER_MULTIPLIERS,
+  CLOTHING_SIZE_TIERS,
+  SHOE_SIZE_TIERS,
+  JEWELRY_SIZE_RULES,
+  PLATFORM_FIT_ADJUSTMENTS,
+  FLAW_IMPACT
+} from './config.js';
 import { calculatePlatformFees } from './fees.js';
 
 let brandsLookup = null;
+let materialsLookup = null;
 
 // =============================================================================
 // BRAND LOOKUP
@@ -82,6 +92,486 @@ export async function getBrandMultiplier(brand) {
   }
 
   return null;
+}
+
+// =============================================================================
+// MATERIAL LOOKUP
+// =============================================================================
+
+/**
+ * Load materials data and build a lookup map of material name → value_tier.
+ */
+async function loadMaterialsLookup() {
+  if (materialsLookup) return materialsLookup;
+
+  try {
+    const response = await fetch('/data/materials.json');
+    const data = await response.json();
+    materialsLookup = new Map();
+
+    function extractMaterials(obj, path = '') {
+      if (!obj || typeof obj !== 'object') return;
+
+      // If this object has a value_tier, it's a material entry
+      if (obj.value_tier) {
+        const materialName = path.split('.').pop();
+        if (materialName) {
+          const normalized = normalizeMaterialName(materialName);
+          materialsLookup.set(normalized, obj.value_tier);
+
+          // Also index label_terms if present
+          if (obj.label_terms && Array.isArray(obj.label_terms)) {
+            for (const term of obj.label_terms) {
+              materialsLookup.set(normalizeMaterialName(term), obj.value_tier);
+            }
+          }
+        }
+        return;
+      }
+
+      for (const [key, value] of Object.entries(obj)) {
+        if (typeof value === 'object' && value !== null && key !== 'meta') {
+          extractMaterials(value, path ? `${path}.${key}` : key);
+        }
+      }
+    }
+
+    extractMaterials(data);
+    return materialsLookup;
+  } catch (err) {
+    console.error('Failed to load materials data:', err);
+    return new Map();
+  }
+}
+
+function normalizeMaterialName(name) {
+  return name.toLowerCase()
+    .replace(/[_\-\s]+/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * Look up a material's value tier.
+ * @param {string} materialName - Material name
+ * @returns {Promise<string|null>} Value tier or null
+ */
+export async function getMaterialValueTier(materialName) {
+  if (!materialName) return null;
+
+  const lookup = await loadMaterialsLookup();
+  const normalized = normalizeMaterialName(materialName);
+
+  if (lookup.has(normalized)) {
+    return lookup.get(normalized);
+  }
+
+  // Try partial matching
+  for (const [key, tier] of lookup) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return tier;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get numeric multiplier for a material's value tier.
+ * @param {string} materialName - Material name
+ * @returns {Promise<number>} Multiplier (defaults to 1.0)
+ */
+export async function getMaterialTierMultiplier(materialName) {
+  const tier = await getMaterialValueTier(materialName);
+  if (!tier) return 1.0;
+  return MATERIAL_TIER_MULTIPLIERS[tier] || 1.0;
+}
+
+/**
+ * Calculate weighted material multiplier from item composition.
+ * @param {object} item - Item with primary_material and secondary_materials
+ * @returns {Promise<{multiplier: number, breakdown: Array, tier: string}>}
+ */
+export async function calculateMaterialMultiplier(item) {
+  const materials = [];
+
+  // Primary material
+  if (item.primary_material?.name) {
+    const pct = item.primary_material.percentage || 100;
+    const mult = await getMaterialTierMultiplier(item.primary_material.name);
+    const tier = await getMaterialValueTier(item.primary_material.name);
+    materials.push({
+      name: item.primary_material.name,
+      percentage: pct,
+      multiplier: mult,
+      tier: tier || 'medium'
+    });
+  }
+
+  // Secondary materials
+  if (item.secondary_materials?.length > 0) {
+    for (const mat of item.secondary_materials) {
+      if (mat.name) {
+        const mult = await getMaterialTierMultiplier(mat.name);
+        const tier = await getMaterialValueTier(mat.name);
+        materials.push({
+          name: mat.name,
+          percentage: mat.percentage || 0,
+          multiplier: mult,
+          tier: tier || 'medium'
+        });
+      }
+    }
+  }
+
+  // Default if no materials
+  if (materials.length === 0) {
+    return { multiplier: 1.0, breakdown: [], tier: 'unknown' };
+  }
+
+  // Normalize percentages if they don't sum to 100
+  const totalPct = materials.reduce((sum, m) => sum + m.percentage, 0);
+  if (totalPct > 0 && totalPct !== 100) {
+    materials.forEach(m => {
+      m.percentage = (m.percentage / totalPct) * 100;
+    });
+  }
+
+  // Calculate weighted average
+  const weightedMultiplier = materials.reduce(
+    (sum, m) => sum + (m.multiplier * m.percentage / 100),
+    0
+  );
+
+  // Determine overall tier based on primary material
+  const primaryTier = materials[0]?.tier || 'medium';
+
+  return {
+    multiplier: Math.round(weightedMultiplier * 100) / 100,
+    breakdown: materials,
+    tier: primaryTier
+  };
+}
+
+// =============================================================================
+// SIZE MULTIPLIERS
+// =============================================================================
+
+/**
+ * Get size multiplier for clothing items.
+ * @param {string} labeledSize - Size label
+ * @returns {{multiplier: number, tier: string}}
+ */
+export function getClothingSizeMultiplier(labeledSize) {
+  if (!labeledSize) return { multiplier: 1.0, tier: 'unknown' };
+
+  const normalized = labeledSize.toUpperCase().trim();
+
+  for (const [tierName, config] of Object.entries(CLOTHING_SIZE_TIERS)) {
+    if (config.sizes.some(s => normalized.includes(s) || normalized === s)) {
+      return { multiplier: config.multiplier, tier: tierName };
+    }
+  }
+
+  return { multiplier: 1.0, tier: 'standard' };
+}
+
+/**
+ * Get size multiplier for shoe items.
+ * @param {string} labeledSize - Size label
+ * @param {string} width - Width option
+ * @returns {{multiplier: number, tier: string}}
+ */
+export function getShoeSizeMultiplier(labeledSize, width) {
+  if (!labeledSize) return { multiplier: 1.0, tier: 'unknown' };
+
+  const size = parseFloat(labeledSize);
+  if (isNaN(size)) return { multiplier: 1.0, tier: 'unknown' };
+
+  const w = width || 'standard';
+  const { premium, standard, narrow_market } = SHOE_SIZE_TIERS;
+
+  // Premium: sizes 7-9 with standard or wide width
+  if (size >= premium.minSize && size <= premium.maxSize) {
+    if (premium.widths.includes(w)) {
+      return { multiplier: premium.multiplier, tier: 'premium' };
+    }
+  }
+
+  // Standard: sizes 6-10
+  if (size >= standard.minSize && size <= standard.maxSize) {
+    return { multiplier: standard.multiplier, tier: 'standard' };
+  }
+
+  // Narrow market: everything else
+  return { multiplier: narrow_market.multiplier, tier: 'narrow_market' };
+}
+
+/**
+ * Get size multiplier for jewelry items.
+ * @param {object} item - Item with subcategory, closure_type, ring_size, measurements
+ * @returns {{multiplier: number, tier: string}}
+ */
+export function getJewelrySizeMultiplier(item) {
+  const { adjustable, ring_premium, ring_standard, ring_narrow, necklace_premium, necklace_standard } = JEWELRY_SIZE_RULES;
+
+  // Check for adjustable closure
+  if (item.closure_type && adjustable.closures.includes(item.closure_type)) {
+    return { multiplier: adjustable.multiplier, tier: 'adjustable' };
+  }
+
+  // Check description for "adjustable" keyword
+  if (item.description?.toLowerCase().includes('adjustable')) {
+    return { multiplier: adjustable.multiplier, tier: 'adjustable' };
+  }
+
+  // Ring sizing
+  if (item.subcategory === 'ring' && item.ring_size) {
+    const size = item.ring_size.toString();
+    if (ring_premium.sizes.includes(size)) {
+      return { multiplier: ring_premium.multiplier, tier: 'ring_premium' };
+    }
+    if (ring_standard.sizes.includes(size)) {
+      return { multiplier: ring_standard.multiplier, tier: 'ring_standard' };
+    }
+    return { multiplier: ring_narrow.multiplier, tier: 'ring_narrow' };
+  }
+
+  // Necklace/pendant chain length
+  if ((item.subcategory === 'necklace' || item.subcategory === 'pendant') &&
+      item.measurements?.chain_length_inches) {
+    const length = item.measurements.chain_length_inches;
+    if (necklace_premium.lengths.includes(length)) {
+      return { multiplier: necklace_premium.multiplier, tier: 'necklace_premium' };
+    }
+    if (necklace_standard.lengths.includes(length)) {
+      return { multiplier: necklace_standard.multiplier, tier: 'necklace_standard' };
+    }
+  }
+
+  return { multiplier: 1.0, tier: 'standard' };
+}
+
+/**
+ * Get size multiplier based on item category.
+ * @param {object} item - Full inventory item
+ * @returns {{multiplier: number, tier: string, category: string}}
+ */
+export function getSizeMultiplier(item) {
+  let result;
+
+  switch (item.category) {
+    case 'clothing':
+      result = getClothingSizeMultiplier(item.labeled_size);
+      break;
+    case 'shoes':
+      result = getShoeSizeMultiplier(item.labeled_size, item.width);
+      break;
+    case 'jewelry':
+      result = getJewelrySizeMultiplier(item);
+      break;
+    default:
+      result = { multiplier: 1.0, tier: 'n/a' };
+  }
+
+  return { ...result, category: item.category || 'unknown' };
+}
+
+// =============================================================================
+// FLAW ADJUSTMENT
+// =============================================================================
+
+/**
+ * Calculate flaw-based adjustment to condition.
+ * @param {Array} flaws - Array of flaw objects
+ * @returns {{adjustment: number, details: Array}}
+ */
+export function calculateFlawAdjustment(flaws) {
+  if (!flaws || flaws.length === 0) {
+    return { adjustment: 0, details: [] };
+  }
+
+  let totalPenalty = 0;
+  const details = [];
+
+  for (const flaw of flaws) {
+    let penalty = FLAW_IMPACT.severity[flaw.severity] || -0.03;
+
+    if (flaw.affects_wearability) {
+      penalty += FLAW_IMPACT.affects_wearability;
+    }
+
+    if (flaw.repairable) {
+      penalty *= FLAW_IMPACT.repairable_discount;
+    }
+
+    totalPenalty += penalty;
+    details.push({
+      type: flaw.flaw_type,
+      severity: flaw.severity,
+      penalty: Math.round(penalty * 100) / 100
+    });
+  }
+
+  // Cap the penalty at max
+  const finalPenalty = Math.max(totalPenalty, FLAW_IMPACT.max_penalty);
+
+  return {
+    adjustment: Math.round(finalPenalty * 100) / 100,
+    details
+  };
+}
+
+// =============================================================================
+// PLATFORM FIT
+// =============================================================================
+
+/**
+ * Get platform-specific fit modifier based on item attributes.
+ * @param {object} item - Full inventory item
+ * @param {string} platformId - Platform identifier
+ * @param {object} factors - Pre-calculated factors { material, size }
+ * @returns {{modifier: number, adjustments: Array}}
+ */
+export function getPlatformFitModifier(item, platformId, factors) {
+  const config = PLATFORM_FIT_ADJUSTMENTS[platformId];
+  if (!config) {
+    return { modifier: 1.0, adjustments: [] };
+  }
+
+  let modifier = 1.0;
+  const adjustments = [];
+
+  // Size adjustments
+  if (config.size_small_bonus && factors.size.tier === 'premium') {
+    modifier += config.size_small_bonus;
+    adjustments.push({ factor: 'size', adjustment: config.size_small_bonus, reason: 'Small sizes preferred' });
+  }
+
+  if (config.size_large_penalty && (factors.size.tier === 'extended' || factors.size.tier === 'outlier')) {
+    modifier += config.size_large_penalty;
+    adjustments.push({ factor: 'size', adjustment: config.size_large_penalty, reason: 'Larger sizes less demand' });
+  }
+
+  if (config.size_outlier_penalty && factors.size.tier === 'outlier') {
+    // Replace default outlier penalty with platform-specific one
+    const defaultPenalty = CLOTHING_SIZE_TIERS.outlier.multiplier - 1; // -0.12
+    const platformPenalty = config.size_outlier_penalty;
+    const diff = platformPenalty - defaultPenalty;
+    modifier += diff;
+    adjustments.push({ factor: 'size', adjustment: diff, reason: 'Platform size tolerance' });
+  }
+
+  if (config.size_compress) {
+    // Compress size multiplier toward 1.0
+    const sizeDeviation = factors.size.multiplier - 1.0;
+    const compressed = sizeDeviation * (1 - config.size_compress);
+    const diff = compressed - sizeDeviation;
+    modifier += diff;
+    if (Math.abs(diff) > 0.01) {
+      adjustments.push({ factor: 'size', adjustment: Math.round(diff * 100) / 100, reason: 'Size matters less' });
+    }
+  }
+
+  // Material adjustments
+  if (config.material_compress) {
+    // Compress material multiplier toward 1.0
+    const matDeviation = factors.material.multiplier - 1.0;
+    const compressed = matDeviation * (1 - config.material_compress);
+    const diff = compressed - matDeviation;
+    modifier += diff;
+    if (Math.abs(diff) > 0.01) {
+      adjustments.push({ factor: 'material', adjustment: Math.round(diff * 100) / 100, reason: 'Trend over material' });
+    }
+  }
+
+  if (config.material_low_extra_penalty && ['low', 'avoid'].includes(factors.material.tier)) {
+    modifier += config.material_low_extra_penalty;
+    adjustments.push({ factor: 'material', adjustment: config.material_low_extra_penalty, reason: 'Premium expected' });
+  }
+
+  if (config.natural_fiber_bonus && ['high', 'highest'].includes(factors.material.tier)) {
+    modifier += config.natural_fiber_bonus;
+    adjustments.push({ factor: 'material', adjustment: config.natural_fiber_bonus, reason: 'Eco-conscious buyers' });
+  }
+
+  return {
+    modifier: Math.round(modifier * 100) / 100,
+    adjustments
+  };
+}
+
+// =============================================================================
+// ADJUSTED PRICE CALCULATION
+// =============================================================================
+
+/**
+ * Calculate adjusted listing price from user's base comp price.
+ * @param {number} baseListingPrice - User-provided comp-based price
+ * @param {object} item - Full inventory item
+ * @param {string} platformId - Target platform
+ * @returns {Promise<{adjustedPrice: number, breakdown: object}>}
+ */
+export async function calculateAdjustedPrice(baseListingPrice, item, platformId) {
+  // 1. Material multiplier
+  const materialResult = await calculateMaterialMultiplier(item);
+
+  // 2. Size multiplier
+  const sizeResult = getSizeMultiplier(item);
+
+  // 3. Condition multiplier (existing)
+  const conditionMultiplier = CONDITION_MULTIPLIERS[item.overall_condition] || 0.85;
+
+  // 4. Flaw adjustment
+  const flawResult = calculateFlawAdjustment(item.flaws);
+  const flawMultiplier = 1.0 + flawResult.adjustment;
+
+  // 5. Platform fit modifier
+  const platformFit = getPlatformFitModifier(item, platformId, {
+    material: materialResult,
+    size: sizeResult
+  });
+
+  // Calculate final adjusted price
+  const adjustedPrice = Math.round(
+    baseListingPrice *
+    materialResult.multiplier *
+    sizeResult.multiplier *
+    conditionMultiplier *
+    flawMultiplier *
+    platformFit.modifier *
+    100
+  ) / 100;
+
+  return {
+    adjustedPrice,
+    breakdown: {
+      baseListingPrice,
+      material: {
+        multiplier: materialResult.multiplier,
+        tier: materialResult.tier,
+        composition: materialResult.breakdown
+      },
+      size: {
+        multiplier: sizeResult.multiplier,
+        tier: sizeResult.tier,
+        category: sizeResult.category
+      },
+      condition: {
+        multiplier: conditionMultiplier,
+        level: item.overall_condition
+      },
+      flaws: {
+        multiplier: flawMultiplier,
+        adjustment: flawResult.adjustment,
+        details: flawResult.details
+      },
+      platformFit: {
+        modifier: platformFit.modifier,
+        platformId,
+        adjustments: platformFit.adjustments
+      }
+    }
+  };
 }
 
 // =============================================================================
