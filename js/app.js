@@ -19,7 +19,7 @@ import {
   selectFolder,
   syncOnOpen
 } from './sync.js';
-import { clearAllData, getItemsNotInPipeline, exportArchive, getAllArchived, bulkUpdateStatus } from './db.js';
+import { getItemsNotInPipeline } from './db.js';
 import { escapeHtml } from './utils.js';
 
 // =============================================================================
@@ -66,9 +66,6 @@ async function init() {
 
   // Item picker modal event handlers
   initSelectItemDialog();
-
-  // Dev tools
-  document.getElementById('clear-data-btn')?.addEventListener('click', handleClearData);
 
   // Sync on app open
   if (isConnected() && isFolderConfigured()) {
@@ -193,24 +190,6 @@ async function showSetupWizard() {
     }
   });
 }
-
-// =============================================================================
-// DEV TOOLS
-// =============================================================================
-
-function handleClearData() {
-  // Open the clear data modal (initialized by settings.js)
-  const dialog = document.getElementById('clear-data-dialog');
-  if (dialog) {
-    dialog.showModal();
-  }
-}
-
-// Expose for console access
-window.clearAllData = clearAllData;
-window.exportArchive = exportArchive;
-window.getAllArchived = getAllArchived;
-window.bulkUpdateStatus = bulkUpdateStatus;
 
 // =============================================================================
 // SELECT ITEM DIALOG (List for Sale)
