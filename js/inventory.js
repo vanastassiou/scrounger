@@ -19,7 +19,8 @@ import {
 } from './config.js';
 import { queueSync } from './sync.js';
 import { generateSellingRecommendations, formatPlatformName, calculateTrendMultiplier, calculateEnhancedResaleValue } from './recommendations.js';
-import { calculatePlatformFees } from './fees.js';
+import { calculatePlatformFees, round } from './fees.js';
+import { calculateSuggestedResaleValue } from './data-loaders.js';
 
 let inventoryData = [];
 let inventoryTableCtrl = null;
@@ -37,9 +38,6 @@ const PHOTO_TYPES = ['front', 'back', 'detail', 'label', 'flaw', 'hallmark', 'cl
 // Start Selling modal state
 let currentSellingItem = null; // Item being listed for sale
 
-// Brands data cache for resale value suggestions
-let brandsLookup = null;
-
 // =============================================================================
 // HELPER FUNCTIONS
 // =============================================================================
@@ -53,110 +51,6 @@ function navigateToSelling() {
   document.querySelector('.tab[data-tab="inventory"]')?.click();
   const sellingTab = document.querySelector('.sub-tab[data-inv-view="selling"]');
   if (sellingTab) sellingTab.click();
-}
-
-/**
- * Load and flatten brands data for quick lookup.
- * Returns a Map of normalized brand names to their multipliers.
- */
-async function loadBrandsLookup() {
-  if (brandsLookup) return brandsLookup;
-
-  try {
-    const response = await fetch('/data/brands-clothing-shoes.json');
-    const data = await response.json();
-    brandsLookup = new Map();
-
-    // Recursively extract brand multipliers from nested structure
-    function extractBrands(obj, path = '') {
-      if (!obj || typeof obj !== 'object') return;
-
-      // If this object has an 'm' property, it's a brand entry
-      if (typeof obj.m === 'number') {
-        const brandName = path.split('.').pop();
-        if (brandName) {
-          const normalized = normalizeBrandName(brandName);
-          brandsLookup.set(normalized, { multiplier: obj.m, tips: obj.tips || null });
-
-          // Also add alternate names if present
-          if (obj.alt && Array.isArray(obj.alt)) {
-            for (const alt of obj.alt) {
-              brandsLookup.set(normalizeBrandName(alt), { multiplier: obj.m, tips: obj.tips || null });
-            }
-          }
-        }
-        return;
-      }
-
-      // Recurse into nested objects
-      for (const [key, value] of Object.entries(obj)) {
-        if (typeof value === 'object' && value !== null) {
-          extractBrands(value, path ? `${path}.${key}` : key);
-        }
-      }
-    }
-
-    extractBrands(data);
-    console.log(`Loaded ${brandsLookup.size} brands for resale suggestions`);
-    return brandsLookup;
-  } catch (err) {
-    console.error('Failed to load brands data:', err);
-    return new Map();
-  }
-}
-
-/**
- * Normalize brand name for matching (lowercase, remove special chars).
- */
-function normalizeBrandName(name) {
-  return name.toLowerCase()
-    .replace(/[_\-\s]+/g, '') // Remove underscores, hyphens, spaces
-    .replace(/[^a-z0-9]/g, ''); // Remove other special chars
-}
-
-/**
- * Look up a brand and return its multiplier and tips.
- * @param {string} brand - The brand name to look up
- * @returns {Promise<{multiplier: number, tips: string|null}|null>}
- */
-async function getBrandMultiplier(brand) {
-  if (!brand) return null;
-
-  const lookup = await loadBrandsLookup();
-  const normalized = normalizeBrandName(brand);
-
-  // Try exact match first
-  if (lookup.has(normalized)) {
-    return lookup.get(normalized);
-  }
-
-  // Try partial match (brand contains or is contained by a known brand)
-  for (const [key, value] of lookup) {
-    if (normalized.includes(key) || key.includes(normalized)) {
-      return value;
-    }
-  }
-
-  return null;
-}
-
-/**
- * Calculate suggested resale value based on purchase price and brand multiplier.
- */
-async function calculateSuggestedResaleValue(item) {
-  if (!item.purchase_price) return null;
-
-  const brandInfo = await getBrandMultiplier(item.brand);
-  if (!brandInfo) return null;
-
-  const purchaseCost = (item.purchase_price || 0) + (item.tax_paid || 0);
-  const suggestedValue = Math.round(purchaseCost * brandInfo.multiplier * 100) / 100;
-
-  return {
-    value: suggestedValue,
-    multiplier: brandInfo.multiplier,
-    tips: brandInfo.tips
-  };
 }
 
 // =============================================================================
@@ -185,10 +79,6 @@ function setupInventorySubTabs() {
     htmlDataAttr: 'invSub',
     defaultView: 'collection'
   });
-}
-
-export function switchToSellingView() {
-  inventorySubTabController?.activate('selling');
 }
 
 async function loadInventory() {
@@ -1881,8 +1771,8 @@ async function renderPlatformComparison(recommendedPlatforms, costBasis, suggest
       score: 0,
       reasons: [],
       fees,
-      netPayout: Math.round(netPayout * 100) / 100,
-      profit: Math.round(profit * 100) / 100,
+      netPayout: round(netPayout),
+      profit: round(profit),
       feePercent,
       isRecommended: false,
       trendSummary
@@ -2049,42 +1939,42 @@ function calculatePlatformBreakdowns(salePrice, costBasis) {
 }
 
 /**
- * Render a single platform card.
+ * Render a single platform comparison card.
  */
 function renderPlatformCard(p, options = {}) {
   const { highlighted = false } = options;
   const profitClass = p.profit >= 0 ? 'value--positive' : 'value--negative';
-  const cardClass = highlighted ? 'platform-card platform-card--best' : 'platform-card';
+  const cardClass = highlighted ? 'platform-comparison-card platform-comparison-card--best' : 'platform-comparison-card';
 
   // Build fee breakdown lines
   const feeLines = [];
   if (p.commission > 0) {
     const desc = p.breakdown.commission ? ` (${p.breakdown.commission})` : '';
-    feeLines.push(`<div class="platform-card__fee-line"><span>Commission</span><span>${formatCurrency(p.commission)}${desc}</span></div>`);
+    feeLines.push(`<div class="platform-comparison-card__fee-line"><span>Commission</span><span>${formatCurrency(p.commission)}${desc}</span></div>`);
   }
   if (p.paymentProcessing > 0) {
     const desc = p.breakdown.paymentProcessing ? ` (${p.breakdown.paymentProcessing})` : '';
-    feeLines.push(`<div class="platform-card__fee-line"><span>Payment processing</span><span>${formatCurrency(p.paymentProcessing)}${desc}</span></div>`);
+    feeLines.push(`<div class="platform-comparison-card__fee-line"><span>Payment processing</span><span>${formatCurrency(p.paymentProcessing)}${desc}</span></div>`);
   }
   if (p.listingFee > 0) {
-    feeLines.push(`<div class="platform-card__fee-line"><span>Listing fee</span><span>${formatCurrency(p.listingFee)}</span></div>`);
+    feeLines.push(`<div class="platform-comparison-card__fee-line"><span>Listing fee</span><span>${formatCurrency(p.listingFee)}</span></div>`);
   }
 
   return `
     <div class="${cardClass}">
-      <div class="platform-card__name">${escapeHtml(p.name)}</div>
-      <div class="platform-card__fees">
+      <div class="platform-comparison-card__name">${escapeHtml(p.name)}</div>
+      <div class="platform-comparison-card__fees">
         ${feeLines.join('')}
-        <div class="platform-card__fee-line platform-card__fee-total">
+        <div class="platform-comparison-card__fee-line platform-comparison-card__fee-total">
           <span>Total fees</span>
           <span>-${formatCurrency(p.totalFees)}</span>
         </div>
       </div>
-      <div class="platform-card__detail">
+      <div class="platform-comparison-card__detail">
         <span>Net payout</span>
         <span>${formatCurrency(p.netPayout)}</span>
       </div>
-      <div class="platform-card__profit">
+      <div class="platform-comparison-card__profit">
         <span>Est. profit</span>
         <span class="${profitClass}">${formatCurrency(p.profit)}</span>
       </div>

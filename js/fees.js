@@ -276,6 +276,6 @@ export function getPlatformShipping(platformId) {
 /**
  * Round to 2 decimal places
  */
-function round(num) {
+export function round(num) {
   return Math.round(num * 100) / 100;
 }
