@@ -103,9 +103,6 @@ async function showSetupWizard() {
   const dialog = document.getElementById('setup-wizard-dialog');
   if (!dialog) return;
 
-  const step2 = document.getElementById('setup-step-2');
-  const step1Status = document.getElementById('setup-step-1-status');
-  const step2Status = document.getElementById('setup-step-2-status');
   const connectBtn = document.getElementById('setup-connect-btn');
   const folderBtn = document.getElementById('setup-folder-btn');
   const doneBtn = document.getElementById('setup-done-btn');
@@ -115,42 +112,30 @@ async function showSetupWizard() {
     const connected = isConnected();
     const folderConfigured = isFolderConfigured();
 
-    // Step 1: Connection
+    // Connect button
     if (!syncEnabled) {
-      step1Status.textContent = 'Not configured';
-      step1Status.className = 'sync-step-status sync-step-status--error';
       connectBtn.textContent = 'Sync not available';
       connectBtn.disabled = true;
     } else if (connected) {
-      step1Status.textContent = 'Connected';
-      step1Status.className = 'sync-step-status sync-step-status--success';
-      connectBtn.textContent = 'Connected';
+      connectBtn.textContent = 'Connected to Google Drive';
       connectBtn.disabled = true;
     } else {
-      step1Status.textContent = 'Pending';
-      step1Status.className = 'sync-step-status sync-step-status--pending';
-      connectBtn.textContent = 'Connect to Google Drive';
+      connectBtn.textContent = 'Connect Google Drive account';
       connectBtn.disabled = false;
     }
 
-    // Step 2: Folder
+    // Folder button
     if (connected) {
-      step2.classList.remove('sync-step--disabled');
       folderBtn.disabled = false;
-
       if (folderConfigured) {
-        step2Status.textContent = 'Configured';
-        step2Status.className = 'sync-step-status sync-step-status--success';
-        folderBtn.textContent = 'Folder Selected';
+        folderBtn.textContent = 'Folder selected';
         folderBtn.disabled = true;
       } else {
-        step2Status.textContent = 'Pending';
-        step2Status.className = 'sync-step-status sync-step-status--pending';
-        folderBtn.textContent = 'Select Folder';
+        folderBtn.textContent = 'Select sync folder';
       }
     } else {
-      step2.classList.add('sync-step--disabled');
       folderBtn.disabled = true;
+      folderBtn.textContent = 'Select sync folder';
     }
 
     // Done button

@@ -60,9 +60,16 @@ export function formatRelativeTime(dateStr) {
   const date = new Date(dateStr);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffDays === 0) return 'Today';
+  if (diffSecs < 60) return 'a few seconds ago';
+  if (diffMins === 1) return '1 minute ago';
+  if (diffMins < 60) return `${diffMins} minutes ago`;
+  if (diffHours === 1) return '1 hour ago';
+  if (diffHours < 24) return `${diffHours} hours ago`;
   if (diffDays === 1) return 'Yesterday';
   if (diffDays < 7) return `${diffDays} days ago`;
   if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
@@ -170,9 +177,9 @@ export function calculateProfit(item) {
  */
 export function formatProfitDisplay(profit) {
   const formatted = formatCurrency(profit);
-  let className = 'profit--neutral';
-  if (profit > 0) className = 'profit--positive';
-  if (profit < 0) className = 'profit--negative';
+  let className = 'value--neutral';
+  if (profit > 0) className = 'value--positive';
+  if (profit < 0) className = 'value--negative';
 
   return { formatted, className };
 }
@@ -230,7 +237,7 @@ export function renderProfitWaterfall(data, options = {}) {
   }
 
   // Profit total
-  const profitClass = profit >= 0 ? 'profit--positive' : 'profit--negative';
+  const profitClass = profit >= 0 ? 'value--positive' : 'value--negative';
   html += `<div class="profit-waterfall__line profit-waterfall__line--total">
     <span class="profit-waterfall__label">Profit</span>
     <span class="profit-waterfall__value ${profitClass}">${formatCurrency(profit)}</span>

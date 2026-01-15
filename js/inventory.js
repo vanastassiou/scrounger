@@ -914,7 +914,14 @@ export async function renderInventoryStats() {
     profitEl.textContent = formatted;
     profitEl.className = `stat-value ${className}`;
   }
-  if (marginEl) marginEl.textContent = `${analytics.profitMargin.toFixed(1)}%`;
+  if (marginEl) {
+    const margin = analytics.profitMargin;
+    marginEl.textContent = `${margin.toFixed(1)}%`;
+    let marginClass = 'value--neutral';
+    if (margin > 0) marginClass = 'value--positive';
+    if (margin < 0) marginClass = 'value--negative';
+    marginEl.className = `stat-value ${marginClass}`;
+  }
 }
 
 // =============================================================================
@@ -2046,7 +2053,7 @@ function calculatePlatformBreakdowns(salePrice, costBasis) {
  */
 function renderPlatformCard(p, options = {}) {
   const { highlighted = false } = options;
-  const profitClass = p.profit >= 0 ? 'profit--positive' : 'profit--negative';
+  const profitClass = p.profit >= 0 ? 'value--positive' : 'value--negative';
   const cardClass = highlighted ? 'platform-card platform-card--best' : 'platform-card';
 
   // Build fee breakdown lines

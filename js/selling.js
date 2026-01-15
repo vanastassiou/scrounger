@@ -382,7 +382,7 @@ function renderPipelineRow(item) {
     const estimates = calculateEstimatedReturns(item);
     if (estimates.length > 0) {
       const best = estimates[0];
-      const profitClass = best.profit >= 0 ? 'profit--positive' : 'profit--negative';
+      const profitClass = best.profit >= 0 ? 'value--positive' : 'value--negative';
       const platformName = capitalize(best.platformId.replace('_', ' '));
       const tooltipText = `${formatCurrency(best.netPayout)} payout on ${platformName}`;
       estReturnHtml = `<span class="est-return" title="${escapeHtml(tooltipText)}">

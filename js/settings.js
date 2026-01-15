@@ -7,6 +7,7 @@ import {
   initSync,
   isSyncEnabled,
   isConnected,
+  getAccountEmail,
   isFolderConfigured,
   connect,
   disconnect,
@@ -34,6 +35,7 @@ let clearDataModal = null;
 let exportModal = null;
 let importModal = null;
 let importConfirmModal = null;
+let createFolderModal = null;
 
 // Pending import data
 let pendingImportData = null;
@@ -97,145 +99,104 @@ function initModals() {
     });
     document.getElementById('import-confirm-ok')?.addEventListener('click', executeImport);
   }
+
+  // Create folder modal
+  const createFolderDialog = document.getElementById('create-folder-dialog');
+  if (createFolderDialog) {
+    createFolderModal = createModalController(createFolderDialog);
+    document.getElementById('create-folder-cancel')?.addEventListener('click', () => {
+      createFolderModal.close();
+    });
+    document.getElementById('btn-pick-parent')?.addEventListener('click', handlePickParent);
+    document.getElementById('btn-create-folder')?.addEventListener('click', handleCreateFolder);
+  }
 }
 
 // =============================================================================
 // UI UPDATES
 // =============================================================================
 
-function updateSettingsUI() {
+async function updateSettingsUI() {
   const syncEnabled = isSyncEnabled();
   const connected = isConnected();
   const folderConfigured = isFolderConfigured();
   const folder = getFolder();
   const lastSync = getLastSync();
+  const canSync = connected && folderConfigured;
 
-  // Step 1: Connection status
+  // Row 1: Account
+  const accountValue = document.getElementById('sync-account-value');
   const connectBtn = document.getElementById('btn-connect');
-  const connectStatus = document.getElementById('sync-connect-status');
-  const step1Status = document.getElementById('sync-step-1-status');
+
+  if (accountValue) {
+    if (!syncEnabled) {
+      accountValue.textContent = 'not configured';
+    } else if (connected) {
+      const email = await getAccountEmail();
+      accountValue.textContent = email || '(signed in)';
+    } else {
+      accountValue.textContent = 'none';
+    }
+  }
 
   if (connectBtn) {
     if (!syncEnabled) {
-      connectBtn.textContent = 'Not configured';
+      connectBtn.textContent = 'Configure';
       connectBtn.disabled = true;
     } else if (connected) {
       connectBtn.textContent = 'Disconnect';
       connectBtn.disabled = false;
     } else {
-      connectBtn.textContent = 'Connect to Google Drive';
+      connectBtn.textContent = 'Connect';
       connectBtn.disabled = false;
     }
   }
 
-  if (connectStatus) {
-    if (!syncEnabled) {
-      connectStatus.textContent = 'Sync not configured. Copy google-config.example.js to google-config.js and add your credentials.';
-      connectStatus.className = 'sync-step-status sync-step-status--warning';
-    } else if (connected) {
-      connectStatus.textContent = 'Connected to Google Drive';
-      connectStatus.className = 'sync-step-status sync-step-status--success';
-    } else {
-      connectStatus.textContent = 'Not connected';
-      connectStatus.className = 'sync-step-status sync-step-status--pending';
-    }
-  }
-
-  if (step1Status) {
-    step1Status.textContent = connected ? 'Complete' : (syncEnabled ? 'Pending' : 'Disabled');
-  }
-
-  // Step 2: Folder configuration
-  const step2 = document.getElementById('sync-step-2');
-  const folderInput = document.getElementById('sync-folder-input');
-  const folderStatus = document.getElementById('sync-folder-status');
-  const step2Status = document.getElementById('sync-step-2-status');
-  const pickFolderBtn = document.getElementById('btn-pick-folder');
+  // Row 2: Folder
+  const folderRow = document.getElementById('sync-row-folder');
+  const folderValue = document.getElementById('sync-folder-value');
+  const folderMenuBtn = document.getElementById('btn-folder-menu');
   const removeFolderBtn = document.getElementById('btn-remove-folder');
-  const pickParentBtn = document.getElementById('btn-pick-parent');
-  const createFolderBtn = document.getElementById('btn-create-folder');
   const parentFolderName = document.getElementById('sync-parent-folder-name');
 
-  if (step2) {
-    step2.classList.toggle('sync-step--disabled', !connected);
+  if (folderRow) {
+    folderRow.classList.toggle('sync-row--disabled', !connected);
   }
 
-  if (folderInput) {
-    folderInput.disabled = !connected;
+  if (folderValue) {
+    folderValue.textContent = folder ? folder.name : 'none';
   }
 
-  if (pickFolderBtn) pickFolderBtn.disabled = !connected;
-  if (pickParentBtn) pickParentBtn.disabled = !connected;
-  if (createFolderBtn) createFolderBtn.disabled = !connected;
+  if (folderMenuBtn) {
+    folderMenuBtn.textContent = folder ? 'Change' : 'Select folder';
+  }
+
   if (removeFolderBtn) {
-    removeFolderBtn.disabled = !connected || !folderConfigured;
+    removeFolderBtn.disabled = !folderConfigured;
   }
 
-  // Update parent folder display
+  // Update parent folder display in create folder modal
   if (parentFolderName) {
     parentFolderName.textContent = selectedParentFolder ? selectedParentFolder.name : 'My Drive (root)';
   }
 
-  if (folderStatus) {
-    if (folder) {
-      folderStatus.textContent = `Syncing to: ${folder.name}`;
-      folderStatus.className = 'sync-step-status sync-step-status--success';
-    } else {
-      folderStatus.textContent = 'No folder selected';
-      folderStatus.className = 'sync-step-status sync-step-status--pending';
-    }
-  }
-
-  if (step2Status) {
-    step2Status.textContent = folderConfigured ? 'Complete' : 'Pending';
-  }
-
-  // Step 3: Sync status
-  const step3 = document.getElementById('sync-step-3');
+  // Row 3: Sync
+  const syncRow = document.getElementById('sync-row-sync');
+  const lastValue = document.getElementById('sync-last-value');
   const syncNowBtn = document.getElementById('btn-sync-now');
-  const lastSyncEl = document.getElementById('last-sync-time');
-  const syncStatusEl = document.getElementById('sync-current-status');
-  const step3Status = document.getElementById('sync-step-3-status');
 
-  const canSync = connected && folderConfigured;
+  if (syncRow) {
+    syncRow.classList.toggle('sync-row--disabled', !canSync);
+  }
 
-  if (step3) {
-    step3.classList.toggle('sync-step--disabled', !canSync);
+  if (lastValue) {
+    lastValue.textContent = lastSync ? formatRelativeTime(new Date(lastSync)) : 'Never';
   }
 
   if (syncNowBtn) {
     const status = getSyncStatus();
     syncNowBtn.disabled = !canSync || status.status === 'syncing';
-    syncNowBtn.textContent = status.status === 'syncing' ? 'Backing up...' : 'Back Up to Drive';
-  }
-
-  if (lastSyncEl) {
-    if (lastSync) {
-      lastSyncEl.textContent = formatRelativeTime(new Date(lastSync));
-    } else {
-      lastSyncEl.textContent = 'Never';
-    }
-  }
-
-  if (syncStatusEl) {
-    const status = getSyncStatus();
-    if (status.error) {
-      syncStatusEl.textContent = `Error: ${status.error}`;
-      syncStatusEl.className = 'sync-step-status sync-step-status--error';
-    } else if (status.status === 'syncing') {
-      syncStatusEl.textContent = 'Syncing...';
-      syncStatusEl.className = 'sync-step-status sync-step-status--syncing';
-    } else if (lastSync) {
-      syncStatusEl.textContent = 'Ready';
-      syncStatusEl.className = 'sync-step-status sync-step-status--success';
-    } else {
-      syncStatusEl.textContent = 'Ready to sync';
-      syncStatusEl.className = 'sync-step-status sync-step-status--pending';
-    }
-  }
-
-  if (step3Status) {
-    step3Status.textContent = lastSync ? 'Active' : 'Ready';
+    syncNowBtn.textContent = status.status === 'syncing' ? 'Syncing...' : 'Sync now';
   }
 
   // Update export/import Drive buttons
@@ -266,11 +227,20 @@ function bindSettingsEvents() {
   // Connect/Disconnect button
   document.getElementById('btn-connect')?.addEventListener('click', handleConnectClick);
 
-  // Folder management
+  // Folder dropdown menu
+  document.getElementById('btn-folder-menu')?.addEventListener('click', handleFolderMenuToggle);
   document.getElementById('btn-pick-folder')?.addEventListener('click', handlePickFolder);
-  document.getElementById('btn-pick-parent')?.addEventListener('click', handlePickParent);
-  document.getElementById('btn-create-folder')?.addEventListener('click', handleCreateFolder);
+  document.getElementById('btn-create-folder-open')?.addEventListener('click', handleCreateFolderOpen);
   document.getElementById('btn-remove-folder')?.addEventListener('click', handleRemoveFolder);
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('folder-dropdown-menu');
+    const menuBtn = document.getElementById('btn-folder-menu');
+    if (dropdown && !dropdown.hidden && !dropdown.contains(e.target) && e.target !== menuBtn) {
+      dropdown.hidden = true;
+    }
+  });
 
   // Sync button
   document.getElementById('btn-sync-now')?.addEventListener('click', handleSyncNow);
@@ -280,6 +250,30 @@ function bindSettingsEvents() {
   document.getElementById('btn-restore-backup')?.addEventListener('click', () => openImportModal('restore'));
   document.getElementById('btn-import-merge')?.addEventListener('click', () => openImportModal('merge'));
   document.getElementById('btn-clear-data')?.addEventListener('click', handleClearData);
+}
+
+function handleFolderMenuToggle() {
+  const dropdown = document.getElementById('folder-dropdown-menu');
+  if (dropdown) {
+    dropdown.hidden = !dropdown.hidden;
+  }
+}
+
+function handleCreateFolderOpen() {
+  // Close dropdown
+  const dropdown = document.getElementById('folder-dropdown-menu');
+  if (dropdown) dropdown.hidden = true;
+
+  // Reset state
+  selectedParentFolder = null;
+  const input = document.getElementById('create-folder-name');
+  if (input) input.value = '';
+  updateSettingsUI();
+
+  // Open modal
+  if (createFolderModal) {
+    createFolderModal.open();
+  }
 }
 
 async function handleConnectClick() {
@@ -293,6 +287,10 @@ async function handleConnectClick() {
 }
 
 async function handlePickFolder() {
+  // Close dropdown
+  const dropdown = document.getElementById('folder-dropdown-menu');
+  if (dropdown) dropdown.hidden = true;
+
   const btn = document.getElementById('btn-pick-folder');
   if (btn) btn.disabled = true;
 
@@ -320,7 +318,7 @@ async function handlePickParent() {
 }
 
 async function handleCreateFolder() {
-  const input = document.getElementById('sync-folder-input');
+  const input = document.getElementById('create-folder-name');
   const folderName = input?.value.trim();
 
   if (!folderName) {
@@ -338,9 +336,8 @@ async function handleCreateFolder() {
       // Reset state
       selectedParentFolder = null;
       if (input) input.value = '';
-      // Close the details
-      const details = document.getElementById('sync-create-folder-details');
-      if (details) details.open = false;
+      // Close the modal
+      if (createFolderModal) createFolderModal.close();
     }
     updateSettingsUI();
   } finally {
@@ -349,6 +346,10 @@ async function handleCreateFolder() {
 }
 
 function handleRemoveFolder() {
+  // Close dropdown
+  const dropdown = document.getElementById('folder-dropdown-menu');
+  if (dropdown) dropdown.hidden = true;
+
   if (confirm('Remove sync folder? Data will remain on Google Drive.')) {
     removeFolder();
     updateSettingsUI();
@@ -365,12 +366,8 @@ async function handleSyncNow() {
 
   try {
     await syncNow();
-    updateSettingsUI();
   } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = 'Back Up to Drive';
-    }
+    updateSettingsUI();
   }
 }
 
@@ -641,19 +638,38 @@ async function executeImport() {
 
 function handleClearData() {
   if (clearDataModal) {
+    // Update UI based on Drive connection state
+    const driveSection = document.getElementById('clear-data-drive-section');
+    const noDriveMsg = document.getElementById('clear-data-no-drive');
+    const checkbox = document.getElementById('clear-data-disconnect');
+
+    const connected = isConnected();
+    if (driveSection) driveSection.hidden = !connected;
+    if (noDriveMsg) noDriveMsg.hidden = connected;
+    if (checkbox) checkbox.checked = true;
+
     clearDataModal.open();
   }
 }
 
 async function executeClearData() {
   const confirmBtn = document.getElementById('clear-data-confirm');
+  const checkbox = document.getElementById('clear-data-disconnect');
+
   if (confirmBtn) {
     confirmBtn.disabled = true;
     confirmBtn.textContent = 'Deleting...';
   }
 
   try {
+    const shouldDisconnect = checkbox?.checked && isConnected();
+
     await clearAllData();
+
+    if (shouldDisconnect) {
+      disconnect();
+    }
+
     showToast('All data cleared');
 
     // Reload the page
