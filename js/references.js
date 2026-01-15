@@ -503,9 +503,10 @@ function renderPlatforms() {
 }
 
 function renderPlatformRow(key, p) {
+  const capitalize = s => s.charAt(0).toUpperCase() + s.slice(1);
   const formatList = (items) => {
-    if (!items || items.length === 0) return '';
-    return items.map(item => escapeHtml(item)).join(', ');
+    if (!items || items.length === 0) return '-';
+    return `<ul class="compact-list">${items.map(item => `<li>${escapeHtml(capitalize(item))}</li>`).join('')}</ul>`;
   };
 
   // Truncate lists for conciseness
@@ -519,99 +520,152 @@ function renderPlatformRow(key, p) {
     : escapeHtml(p.name);
 
   // Detailed fees breakdown
-  const feesHtml = formatFeesDetailed(p.fees);
+  const feesHtml = formatFeesDetailed(p.fees, p.fee_summary);
   const shippingHtml = formatShipping(p.fees?.shipping);
 
   return `
     <tr data-platform="${escapeHtml(key)}" data-fees="${getFeesNumeric(p.fees)}">
       <td>${nameHtml}</td>
       <td data-label="Audience">${formatList(demographics)}</td>
+      <td data-label="Best For">${formatList(bestFor)}</td>
       <td data-label="Fees">${feesHtml}</td>
       <td data-label="Shipping">${shippingHtml}</td>
-      <td data-label="Best For">${formatList(bestFor)}</td>
       <td data-label="Pros">${formatList(pros)}</td>
       <td data-label="Cons">${formatList(cons)}</td>
     </tr>
   `;
 }
 
-function formatFeesDetailed(fees) {
+function formatFeesDetailed(fees, feeSummary) {
+  // Use fee_summary if available (cleaner human-readable format)
+  if (feeSummary) {
+    return `<ul class="compact-list">
+      <li><strong>Listing:</strong> ${escapeHtml(feeSummary.listing_fee)}</li>
+      <li><strong>Sale cut:</strong> ${escapeHtml(feeSummary.sale_cut)}</li>
+      <li><strong>Total:</strong> ${escapeHtml(feeSummary.total)}</li>
+    </ul>`;
+  }
+
+  // Fallback to parsing fees object if no summary
   if (!fees) return 'Unknown';
 
   const parts = [];
+  let hasListingFee = false;
+  let listingFeeAmount = 0;
 
-  // Commission + payment processing combined
-  let commissionText = '';
-  let paymentText = '';
-
+  // Commission tiers
   if (fees.commission_tiers) {
     const tiers = fees.commission_tiers;
     if (tiers[0]?.seller_payout_percentage !== undefined) {
-      // TheRealReal-style: show what you keep at each tier
-      const tierDetails = tiers.map(t => {
+      // TheRealReal-style: show fees at each tier (what TRR takes)
+      tiers.forEach(t => {
         const rangeStart = t.range_usd[0];
         const rangeEnd = t.range_usd[1];
-        const range = rangeEnd ? `$${rangeStart}-${rangeEnd}` : `$${rangeStart}+`;
-        return `${t.seller_payout_percentage}% if ${range}`;
-      }).join(', ');
-      commissionText = `You keep: ${tierDetails} (USD)`;
+        const range = rangeEnd ? `$${rangeStart}-$${rangeEnd}` : `$${rangeStart}+`;
+        const fee = 100 - t.seller_payout_percentage;
+        parts.push(`${range}: ${fee}%`);
+      });
+      parts.push('(USD pricing)');
     } else if (tiers[0]?.range_cad) {
       // Vestiaire-style: tiered by price range
-      const mainTier = tiers.find(t => t.fee_type === 'percentage');
-      commissionText = mainTier ? `${mainTier.amount}%` : 'Tiered';
-    } else if (tiers[0]?.fee_type === 'flat' && tiers[1]?.fee_type === 'percentage' && tiers[0]?.threshold_cad) {
-      // Poshmark/Starluv-style: flat under threshold, % above
-      commissionText = `$${tiers[0].amount_cad} under $${tiers[0].threshold_cad}, ${tiers[1].amount}% above`;
+      tiers.forEach(t => {
+        const rangeStart = t.range_cad[0];
+        const rangeEnd = t.range_cad[1];
+        const range = rangeEnd ? `$${rangeStart}-$${rangeEnd}` : `$${rangeStart}+`;
+        if (t.fee_type === 'flat') {
+          parts.push(`${range}: $${t.amount_cad} flat`);
+        } else {
+          parts.push(`${range}: ${t.amount}%`);
+        }
+      });
+    } else if (tiers[0]?.threshold_cad !== undefined) {
+      // Poshmark/Starluv-style: threshold-based
+      const flatTier = tiers.find(t => t.fee_type === 'flat');
+      const pctTier = tiers.find(t => t.fee_type === 'percentage');
+      if (flatTier) {
+        parts.push(`Under $${flatTier.threshold_cad}: $${flatTier.amount_cad} flat`);
+      }
+      if (pctTier) {
+        parts.push(`$${flatTier?.threshold_cad || 0}+: ${pctTier.amount}%`);
+      }
+    } else if (tiers[0]?.category) {
+      // eBay category-based
+      const defaultTier = tiers.find(t => t.category === 'most_categories');
+      if (defaultTier) {
+        parts.push(`${defaultTier.amount}% final value fee`);
+      }
     }
   } else if (fees.commission !== undefined) {
-    commissionText = fees.commission === 0 ? 'No commission' : `${fees.commission}%`;
+    if (fees.commission === 0) {
+      parts.push('No commission');
+    } else {
+      parts.push(`${fees.commission}% commission`);
+    }
   }
 
-  // Payment processing (combine with commission if both exist)
+  // Payment processing
   if (fees.payment_processing && typeof fees.payment_processing === 'object') {
     const pp = fees.payment_processing;
     if (pp.percentage) {
-      paymentText = pp.flat_fee_cad ? `${pp.percentage}% + $${pp.flat_fee_cad}` : `${pp.percentage}%`;
+      let paymentText = `${pp.percentage}%`;
+      if (pp.flat_fee_cad) {
+        paymentText += ` + $${pp.flat_fee_cad}`;
+      }
+      parts.push(`Payment: ${paymentText}`);
+    } else if (pp.range_percentage) {
+      const midRate = (pp.range_percentage[0] + pp.range_percentage[1]) / 2;
+      parts.push(`Payment: ~${midRate.toFixed(1)}%`);
     }
-  }
-
-  if (commissionText && paymentText) {
-    parts.push(`~${estimateTotalFee(fees)}% total (${commissionText} sale + ${paymentText} payment)`);
-  } else if (commissionText) {
-    parts.push(commissionText + (fees.commission !== undefined && fees.commission !== 0 ? ' of sale' : ''));
   }
 
   // Listing fee
   if (fees.listing_fee) {
     if (fees.listing_fee.per_listing_cad) {
-      const duration = fees.listing_fee.duration_months ? ` every ${fees.listing_fee.duration_months} mo` : '';
-      parts.push(`$${fees.listing_fee.per_listing_cad} to list${duration}`);
+      hasListingFee = true;
+      listingFeeAmount = fees.listing_fee.per_listing_cad;
+      const duration = fees.listing_fee.duration_months ? ` (renews ${fees.listing_fee.duration_months} mo)` : '';
+      parts.push(`Listing fee: $${listingFeeAmount}${duration}`);
     } else if (fees.listing_fee.free_listings_per_month) {
       parts.push(`${fees.listing_fee.free_listings_per_month} free listings/mo`);
     }
   }
 
+  // Total fees estimate when there are multiple fee types
+  const hasPaymentProcessing = fees.payment_processing && typeof fees.payment_processing === 'object';
+  if (hasListingFee || (fees.commission !== undefined && hasPaymentProcessing)) {
+    const totalPercent = estimateTotalFee(fees);
+    if (totalPercent > 0) {
+      const listingNote = hasListingFee ? ` + $${listingFeeAmount}` : '';
+      parts.push(`Total: ~${totalPercent}%${listingNote}`);
+    }
+  }
+
   if (parts.length === 0) return 'See details';
-  return parts.map(p => escapeHtml(p)).join(', ');
+  return `<ul class="compact-list">${parts.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>`;
 }
 
 function formatShipping(shipping) {
-  if (!shipping) return '—';
+  if (!shipping) return '-';
 
   if (shipping.type === 'prepaid_label' && shipping.cost_cad) {
     const parts = [`$${shipping.cost_cad} flat label`, 'Buyer pays'];
     if (shipping.weight_limit_lbs) parts.push(`Up to ${shipping.weight_limit_lbs} lbs`);
-    return parts.join(', ');
+    return `<ul class="compact-list">${parts.map(p => `<li>${p}</li>`).join('')}</ul>`;
   } else if (shipping.type === 'prepaid_label_variable') {
-    return 'Label provided, Buyer pays actual cost';
+    return `<ul class="compact-list"><li>Label provided</li><li>Buyer pays actual cost</li></ul>`;
   } else if (shipping.type === 'consignment') {
-    return 'Free kit provided';
+    return '<ul class="compact-list"><li>Free kit provided</li></ul>';
   } else if (shipping.type === 'seller_arranged') {
-    return 'You handle it';
+    const capitalize = s => s.charAt(0).toUpperCase() + s.slice(1);
+    if (shipping.notes) {
+      const parts = shipping.notes.split(';').map(s => s.trim()).filter(Boolean);
+      return `<ul class="compact-list">${parts.map(p => `<li>${escapeHtml(capitalize(p))}</li>`).join('')}</ul>`;
+    }
+    return '<ul class="compact-list"><li>You arrange shipping</li></ul>';
   } else if (shipping.type === 'seller_ships_to_authentication') {
-    return 'Ship to auth center';
+    return '<ul class="compact-list"><li>Ship to auth center</li></ul>';
   }
-  return '—';
+  return '-';
 }
 
 function getFeesNumeric(fees) {
