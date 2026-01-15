@@ -4,11 +4,11 @@
 
 import {
   $, $$, escapeHtml,
-  createSortableTable, createFilterButtons, emptyStateRow
+  createSortableTable, createFilterButtons, emptyStateRow, updateSortIndicators
 } from './utils.js';
 import { createSubTabController } from './components.js';
 import {
-  loadSeasonalData, getAllMonthsData, getCurrentMonthKey, getNextMonthKey
+  loadSeasonalData, getAllMonthsData, getCurrentMonthKey, getNextMonthKey, getSeasonalSources
 } from './seasonal.js';
 
 let brandsData = [];
@@ -369,7 +369,7 @@ function renderTable() {
 
   // Render
   if (filtered.length === 0) {
-    tbody.innerHTML = emptyStateRow(5, 'No matching brands found');
+    tbody.innerHTML = emptyStateRow({ colspan: 5, icon: 'R', message: 'No matching brands found' });
     updateCount(0, brandsData.length);
     return;
   }
@@ -385,13 +385,17 @@ function renderTable() {
           ${escapeHtml(brand.name)}
           ${brand.alt?.length ? `<span class="brand-alt">(${escapeHtml(brand.alt.join(', '))})</span>` : ''}
         </td>
-        <td>${escapeHtml(categoryLabel)}</td>
-        <td><span class="${tierClass}">${escapeHtml(brand.tier)}</span></td>
-        <td class="text-right">${brand.multiplier != null ? brand.multiplier + 'x' : '-'}</td>
-        <td class="brand-notes">${escapeHtml(notesHtml)}</td>
+        <td data-label="Type">${escapeHtml(categoryLabel)}</td>
+        <td data-label="Tier"><span class="${tierClass}">${escapeHtml(brand.tier)}</span></td>
+        <td data-label="Multiplier">${brand.multiplier != null ? brand.multiplier + 'x' : '-'}</td>
+        <td data-label="Notes" class="brand-notes">${escapeHtml(notesHtml)}</td>
       </tr>
     `;
   }).join('');
+
+  // Update sort indicators
+  const table = $('#references-table');
+  if (table) updateSortIndicators(table, sortColumn, sortDirection);
 
   updateCount(filtered.length, brandsData.length);
 }
@@ -489,6 +493,10 @@ function renderPlatforms() {
   const rows = platformEntries.map(([key, p]) => renderPlatformRow(key, p)).join('');
   tbody.innerHTML = rows;
 
+  // Update sort indicators
+  const table = $('#platforms-table');
+  if (table) updateSortIndicators(table, platformSortColumn, platformSortDirection);
+
   if (countEl) {
     countEl.textContent = `${platformEntries.length} platform${platformEntries.length === 1 ? '' : 's'}`;
   }
@@ -497,7 +505,7 @@ function renderPlatforms() {
 function renderPlatformRow(key, p) {
   const formatList = (items) => {
     if (!items || items.length === 0) return '';
-    return `<ul class="compact-list">${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
+    return items.map(item => escapeHtml(item)).join(', ');
   };
 
   // Truncate lists for conciseness
@@ -517,12 +525,12 @@ function renderPlatformRow(key, p) {
   return `
     <tr data-platform="${escapeHtml(key)}" data-fees="${getFeesNumeric(p.fees)}">
       <td>${nameHtml}</td>
-      <td>${formatList(demographics)}</td>
-      <td>${feesHtml}</td>
-      <td>${shippingHtml}</td>
-      <td>${formatList(bestFor)}</td>
-      <td>${formatList(pros)}</td>
-      <td>${formatList(cons)}</td>
+      <td data-label="Audience">${formatList(demographics)}</td>
+      <td data-label="Fees">${feesHtml}</td>
+      <td data-label="Shipping">${shippingHtml}</td>
+      <td data-label="Best For">${formatList(bestFor)}</td>
+      <td data-label="Pros">${formatList(pros)}</td>
+      <td data-label="Cons">${formatList(cons)}</td>
     </tr>
   `;
 }
@@ -584,17 +592,18 @@ function formatFeesDetailed(fees) {
   }
 
   if (parts.length === 0) return 'See details';
-  return `<ul class="compact-list">${parts.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>`;
+  return parts.map(p => escapeHtml(p)).join(', ');
 }
 
 function formatShipping(shipping) {
   if (!shipping) return '—';
 
   if (shipping.type === 'prepaid_label' && shipping.cost_cad) {
-    const weightNote = shipping.weight_limit_lbs ? `Up to ${shipping.weight_limit_lbs} lbs` : '';
-    return `<ul class="compact-list"><li>$${shipping.cost_cad} flat label</li><li>Buyer pays</li>${weightNote ? `<li>${weightNote}</li>` : ''}</ul>`;
+    const parts = [`$${shipping.cost_cad} flat label`, 'Buyer pays'];
+    if (shipping.weight_limit_lbs) parts.push(`Up to ${shipping.weight_limit_lbs} lbs`);
+    return parts.join(', ');
   } else if (shipping.type === 'prepaid_label_variable') {
-    return `<ul class="compact-list"><li>Label provided</li><li>Buyer pays actual cost</li></ul>`;
+    return 'Label provided, Buyer pays actual cost';
   } else if (shipping.type === 'consignment') {
     return 'Free kit provided';
   } else if (shipping.type === 'seller_arranged') {
@@ -772,7 +781,11 @@ function getPlatformBadge(p) {
 }
 
 function formatTagName(tag) {
-  return tag.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  return tag.replace(/_/g, ' ');
+}
+
+function getPlatformName(key) {
+  return platformsData?.platforms?.[key]?.name || key;
 }
 
 // =============================================================================
@@ -782,8 +795,9 @@ function formatTagName(tag) {
 let trendsLoaded = false;
 
 async function renderTrendsView() {
-  const container = $('#trends-calendar');
-  if (!container) return;
+  const tbody = $('#trends-tbody');
+  const sourcesContainer = $('#trends-sources');
+  if (!tbody) return;
 
   // Load seasonal data if not already loaded
   if (!trendsLoaded) {
@@ -793,82 +807,102 @@ async function renderTrendsView() {
 
   const months = getAllMonthsData();
   if (!months || months.length === 0) {
-    container.innerHTML = '<p class="text-muted">Unable to load seasonal data</p>';
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><div class="empty-icon">T</div><p>Unable to load seasonal data</p></td></tr>';
     return;
   }
 
   const currentMonth = getCurrentMonthKey();
   const nextMonth = getNextMonthKey();
 
-  container.innerHTML = months.map(month => renderTrendsMonth(month, currentMonth, nextMonth)).join('');
-}
-
-function renderTrendsMonth(month, currentMonth, nextMonth) {
-  const isCurrent = month.key === currentMonth;
-  const isNext = month.key === nextMonth;
-
-  const monthClass = isCurrent ? 'trends-month trends-month--current' :
-    isNext ? 'trends-month trends-month--next' : 'trends-month';
-
-  const badge = isCurrent ? '<span class="trends-month__badge trends-month__badge--current">Now</span>' :
-    isNext ? '<span class="trends-month__badge trends-month__badge--next">Next</span>' : '';
-
-  // Render themes
-  const themesHtml = month.themes?.length
-    ? `<div class="trends-themes">${month.themes.map(t => `<span class="trends-theme">${escapeHtml(t)}</span>`).join('')}</div>`
-    : '';
-
-  // Render hot categories
-  const categoriesHtml = month.hot_categories?.length
-    ? `<div class="trends-categories">${month.hot_categories.map(renderTrendsCategory).join('')}</div>`
-    : '';
-
-  // Render platform notes
-  const platformsHtml = month.platform_notes && Object.keys(month.platform_notes).length
-    ? renderPlatformNotes(month.platform_notes)
-    : '';
-
-  return `
-    <div class="${monthClass}">
-      <div class="trends-month__header">
-        <span class="trends-month__name">${escapeHtml(month.label)}</span>
-        ${badge}
-      </div>
-      ${themesHtml}
-      ${categoriesHtml}
-      ${platformsHtml}
-    </div>
-  `;
-}
-
-function renderTrendsCategory(cat) {
-  const items = cat.subcategories || [];
-  const materials = cat.materials || [];
-  const colours = cat.colours || [];
-
-  const allItems = [...items, ...materials, ...colours];
-  const itemsHtml = allItems.map(item =>
-    `<span class="trends-category__item">${escapeHtml(formatTagName(item))}</span>`
+  tbody.innerHTML = months.map(month =>
+    renderTrendsRow(month, currentMonth, nextMonth)
   ).join('');
 
+  // Render sources separately
+  if (sourcesContainer) {
+    const sources = getSeasonalSources();
+    sourcesContainer.innerHTML = renderTrendsSources(sources);
+  }
+}
+
+function renderTrendsRow(month, currentMonth, nextMonth) {
+  const isCurrent = month.key === currentMonth;
+  const isNext = month.key === nextMonth;
+  const rowClass = isCurrent ? 'trends-row--current' : isNext ? 'trends-row--next' : '';
+
+  // Themes (bullet list)
+  const themesHtml = (month.themes || []).length > 0
+    ? `<ul class="compact-list">${month.themes.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`
+    : '-';
+
+  // Hot items: collect types, colours, materials separately
+  const types = [];
+  const colours = [];
+  const materials = [];
+  (month.hot_categories || []).forEach(cat => {
+    types.push(...(cat.subcategories || []));
+    colours.push(...(cat.colours || []));
+    materials.push(...(cat.materials || []));
+  });
+
+  const hotItemsList = [];
+  const uniqueTypes = [...new Set(types)];
+  const uniqueColours = [...new Set(colours)];
+  const uniqueMaterials = [...new Set(materials)];
+
+  if (uniqueTypes.length > 0) {
+    hotItemsList.push(`Types: ${uniqueTypes.map(i => escapeHtml(formatTagName(i))).join(', ')}`);
+  }
+  if (uniqueColours.length > 0) {
+    hotItemsList.push(`Colours: ${uniqueColours.map(i => escapeHtml(formatTagName(i))).join(', ')}`);
+  }
+  if (uniqueMaterials.length > 0) {
+    hotItemsList.push(`Materials: ${uniqueMaterials.map(i => escapeHtml(formatTagName(i))).join(', ')}`);
+  }
+
+  const hotItemsHtml = hotItemsList.length > 0
+    ? `<ul class="compact-list">${hotItemsList.map(item => `<li>${item}</li>`).join('')}</ul>`
+    : '-';
+
+  // Why: first reason from categories
+  const firstReason = month.hot_categories?.[0]?.reason || '';
+  const whyText = firstReason ? escapeHtml(firstReason) : '-';
+
+  // Platform tips (bullet list)
+  const platformNotes = month.platform_notes || {};
+  const platformEntries = Object.entries(platformNotes);
+  const platformsHtml = platformEntries.length > 0
+    ? `<ul class="compact-list">${platformEntries.map(([platform, tip]) => `<li>${escapeHtml(getPlatformName(platform))}: ${escapeHtml(tip)}</li>`).join('')}</ul>`
+    : '-';
+
   return `
-    <div class="trends-category">
-      <div class="trends-category__items">${itemsHtml}</div>
-      ${cat.reason ? `<div class="trends-reason">${escapeHtml(cat.reason)}</div>` : ''}
-    </div>
+    <tr class="${rowClass}">
+      <td>${escapeHtml(month.label)}</td>
+      <td data-label="Themes">${themesHtml}</td>
+      <td data-label="Hot Items">${hotItemsHtml}</td>
+      <td data-label="Why">${whyText}</td>
+      <td data-label="Platforms">${platformsHtml}</td>
+    </tr>
   `;
 }
 
-function renderPlatformNotes(notes) {
-  const entries = Object.entries(notes);
-  if (entries.length === 0) return '';
+function renderTrendsSources(sources) {
+  if (!sources?.citations?.length) return '';
 
-  const notesHtml = entries.map(([platform, tip]) => `
-    <div class="trends-platform">
-      <span class="trends-platform__name">${escapeHtml(platform)}:</span>
-      <span class="trends-platform__tip">${escapeHtml(tip)}</span>
-    </div>
+  const citationsHtml = sources.citations.map(citation => `
+    <li class="trends-sources__item">
+      <a href="${escapeHtml(citation.url)}" target="_blank" rel="noopener">
+        ${escapeHtml(citation.name)}
+      </a>
+    </li>
   `).join('');
 
-  return `<div class="trends-platforms">${notesHtml}</div>`;
+  return `
+    <details class="trends-sources">
+      <summary class="trends-sources__header">Sources</summary>
+      <ul class="trends-sources__list">
+        ${citationsHtml}
+      </ul>
+    </details>
+  `;
 }

@@ -115,61 +115,33 @@
 
       <div class="card">
         <h3 class="card-title">Action items</h3>
-        <div id="action-items-container">
-          <div class="action-item-group action-item-group--seasonal hidden" id="action-group-seasonal">
-            <div class="action-item-header">
-              <span class="action-icon">📅</span>
-              <span class="action-label">Perfect time to list</span>
-              <span class="action-badge" id="action-badge-seasonal">0</span>
-            </div>
-            <ul class="action-item-list" id="action-list-seasonal"></ul>
-          </div>
-
-          <div class="action-item-group">
-            <div class="action-item-header">
-              <span class="action-icon">📷</span>
-              <span class="action-label">Needs photographing</span>
-              <span class="action-badge" id="action-badge-photo">0</span>
-            </div>
-            <ul class="action-item-list" id="action-list-photo"></ul>
-          </div>
-
-          <div class="action-item-group">
-            <div class="action-item-header">
-              <span class="action-icon">📝</span>
-              <span class="action-label">Ready to list</span>
-              <span class="action-badge" id="action-badge-list">0</span>
-            </div>
-            <ul class="action-item-list" id="action-list-list"></ul>
-          </div>
-
-          <div class="action-item-group">
-            <div class="action-item-header">
-              <span class="action-icon">📦</span>
-              <span class="action-label">Needs shipping</span>
-              <span class="action-badge" id="action-badge-ship">0</span>
-            </div>
-            <ul class="action-item-list" id="action-list-ship"></ul>
-          </div>
-
-          <div class="action-item-group">
-            <div class="action-item-header">
-              <span class="action-icon">🚚</span>
-              <span class="action-label">Awaiting confirmation</span>
-              <span class="action-badge" id="action-badge-confirm">0</span>
-            </div>
-            <ul class="action-item-list" id="action-list-confirm"></ul>
-          </div>
-
-          <div class="action-item-group">
-            <div class="action-item-header">
-              <span class="action-icon">✅</span>
-              <span class="action-label">Confirm sale complete</span>
-              <span class="action-badge" id="action-badge-complete">0</span>
-            </div>
-            <ul class="action-item-list" id="action-list-complete"></ul>
-          </div>
+        <div class="action-tiles" id="action-tiles">
+          <button class="action-tile hidden" data-action="seasonal">
+            <span class="action-tile__count" id="tile-count-seasonal">0</span>
+            <span class="action-tile__label">Perfect time to list</span>
+          </button>
+          <button class="action-tile hidden" data-action="photo">
+            <span class="action-tile__count" id="tile-count-photo">0</span>
+            <span class="action-tile__label">Needs photo</span>
+          </button>
+          <button class="action-tile hidden" data-action="ready">
+            <span class="action-tile__count" id="tile-count-ready">0</span>
+            <span class="action-tile__label">Ready to list</span>
+          </button>
+          <button class="action-tile hidden" data-action="shipping">
+            <span class="action-tile__count" id="tile-count-shipping">0</span>
+            <span class="action-tile__label">Needs shipping</span>
+          </button>
+          <button class="action-tile hidden" data-action="awaiting">
+            <span class="action-tile__count" id="tile-count-awaiting">0</span>
+            <span class="action-tile__label">Awaiting confirmation</span>
+          </button>
+          <button class="action-tile hidden" data-action="confirm">
+            <span class="action-tile__count" id="tile-count-confirm">0</span>
+            <span class="action-tile__label">Confirm sale</span>
+          </button>
         </div>
+        <p class="text-muted text-center action-tiles-empty" id="action-tiles-empty">All clear!</p>
       </div>
 
       <div class="card">
@@ -205,7 +177,7 @@
         <input type="text" class="form-input" id="inventory-search" placeholder="Search items...">
 
         <div class="table-container">
-          <table class="table" id="inventory-table">
+          <table class="table table-responsive" id="inventory-table">
             <thead>
               <tr>
                 <th data-sort="title">Title</th>
@@ -287,15 +259,15 @@
 
         <!-- Pipeline Table -->
         <div class="table-container">
-          <table class="table" id="selling-table">
+          <table class="table table-responsive table--wide-actions" id="selling-table">
             <thead>
               <tr>
                 <th data-sort="title">Item</th>
                 <th data-sort="status">Status</th>
-                <th data-sort="purchase_price">Cost</th>
-                <th data-sort="sold_price">Price</th>
-                <th>Est. Return</th>
-                <th data-sort="profit">Profit</th>
+                <th data-sort="purchase_price" class="col-numeric">Cost</th>
+                <th data-sort="sold_price" class="col-numeric">Price</th>
+                <th class="col-numeric">Est. Return</th>
+                <th data-sort="profit" class="col-numeric">Profit</th>
                 <th data-sort="sold_platform">Platform</th>
                 <th>Actions</th>
               </tr>
@@ -344,7 +316,7 @@
         </div>
 
         <div class="table-container">
-          <table class="table" id="stores-table">
+          <table class="table table-responsive" id="stores-table">
             <thead>
               <tr>
                 <th data-sort="name">Name</th>
@@ -379,13 +351,13 @@
         <input type="text" class="form-input" id="brand-search" placeholder="Search brands...">
 
         <div class="table-container">
-          <table class="table" id="references-table">
+          <table class="table table-responsive table--compact" id="references-table">
             <thead>
               <tr>
                 <th data-sort="name">Brand</th>
                 <th data-sort="category">Type</th>
                 <th data-sort="tier">Tier</th>
-                <th data-sort="multiplier">Mult</th>
+                <th data-sort="multiplier" class="col-numeric">Mult</th>
                 <th>Notes</th>
               </tr>
             </thead>
@@ -402,7 +374,7 @@
         <input type="text" class="form-input" id="platform-search" placeholder="Search platforms...">
 
         <div class="table-container">
-          <table class="table" id="platforms-table">
+          <table class="table table-responsive table--compact" id="platforms-table">
             <thead>
               <tr>
                 <th data-sort="name">Name</th>
@@ -428,7 +400,23 @@
           <h3>Seasonal Selling Calendar</h3>
           <p class="text-muted">What sells best each month</p>
         </div>
-        <div id="trends-calendar" class="trends-calendar"></div>
+        <div class="table-container">
+          <table class="table table-responsive table--compact" id="trends-table">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Themes</th>
+                <th>Hot Items</th>
+                <th>Why</th>
+                <th>Platform notes</th>
+              </tr>
+            </thead>
+            <tbody id="trends-tbody">
+              <tr><td colspan="5" class="empty-state"><div class="empty-icon">T</div><p>Loading...</p></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="trends-sources"></div>
       </div>
     </section>
 
@@ -837,7 +825,7 @@
 
         <div id="visit-spreadsheet-container">
           <div class="table-container">
-            <table class="table" id="visit-spreadsheet">
+            <table class="table table-responsive" id="visit-spreadsheet">
               <thead>
                 <tr>
                   <th>Title</th>
@@ -1024,6 +1012,27 @@
 
         <button type="submit" class="btn btn--primary btn--block">Confirm sale</button>
       </form>
+    </div>
+  </dialog>
+
+  <!-- Action Items Modal -->
+  <dialog id="action-items-dialog" class="modal modal--large">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="action-items-title">Items</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="table-container">
+        <table class="table table-responsive">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="action-items-tbody"></tbody>
+        </table>
+      </div>
     </div>
   </dialog>
 
