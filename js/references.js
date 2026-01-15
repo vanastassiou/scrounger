@@ -7,12 +7,21 @@ import {
   createSortableTable, createFilterButtons, emptyStateRow, updateSortIndicators
 } from './utils.js';
 import { createSubTabController } from './components.js';
+import { showToast, createModalController } from './ui.js';
 import {
   loadSeasonalData, getAllMonthsData, getCurrentMonthKey, getNextMonthKey, getSeasonalSources
 } from './seasonal.js';
+import {
+  MATERIAL_TIER_MULTIPLIERS,
+  CLOTHING_SIZE_TIERS,
+  SHOE_SIZE_TIERS,
+  JEWELRY_SIZE_RULES,
+  PLATFORM_FIT_ADJUSTMENTS
+} from './config.js';
 
 let brandsData = [];
 let platformsData = null;
+let materialsData = null;
 let filterTier = null;
 let searchQuery = '';
 let platformSearchQuery = '';
@@ -20,6 +29,10 @@ let sortColumn = 'name';
 let sortDirection = 'asc';
 let platformSortColumn = 'name';
 let platformSortDirection = 'asc';
+let materialTiersSortColumn = 'tier';
+let materialTiersSortDirection = 'asc';
+let platformFitSortColumn = 'platform';
+let platformFitSortDirection = 'asc';
 let currentView = 'stores';
 
 // =============================================================================
@@ -331,6 +344,30 @@ function setupEventHandlers() {
       platformSortHandler(e);
     });
   }
+
+  // Add brand button
+  const addBrandBtn = $('#add-brand-btn');
+  if (addBrandBtn) {
+    addBrandBtn.addEventListener('click', openAddBrandModal);
+  }
+
+  // Add platform button
+  const addPlatformBtn = $('#add-platform-btn');
+  if (addPlatformBtn) {
+    addPlatformBtn.addEventListener('click', openAddPlatformModal);
+  }
+
+  // Brand form submission
+  const brandForm = $('#brand-form');
+  if (brandForm) {
+    brandForm.addEventListener('submit', handleBrandSubmit);
+  }
+
+  // Platform form submission
+  const platformForm = $('#platform-form');
+  if (platformForm) {
+    platformForm.addEventListener('submit', handlePlatformSubmit);
+  }
 }
 
 // =============================================================================
@@ -429,10 +466,10 @@ function setupSubTabs() {
     dataAttr: 'refView',
     views: {
       stores: '#ref-stores-view',
-      visits: '#ref-visits-view',
       brands: '#ref-brands-view',
       platforms: '#ref-platforms-view',
-      trends: '#ref-trends-view'
+      trends: '#ref-trends-view',
+      pricing: '#ref-pricing-view'
     },
     storageKey: 'referencesSubTab',
     htmlDataAttr: 'refSub',
@@ -441,6 +478,9 @@ function setupSubTabs() {
       currentView = view;
       if (view === 'trends') {
         renderTrendsView();
+      }
+      if (view === 'pricing') {
+        renderPricingView();
       }
     }
   });
@@ -960,4 +1000,531 @@ function renderTrendsSources(sources) {
       </ul>
     </details>
   `;
+}
+
+// =============================================================================
+// PRICING VIEW
+// =============================================================================
+
+let pricingLoaded = false;
+
+async function renderPricingView() {
+  if (pricingLoaded) return;
+
+  // Load materials data if not already loaded
+  if (!materialsData) {
+    try {
+      const response = await fetch('/data/materials.json');
+      materialsData = await response.json();
+    } catch (err) {
+      console.error('Failed to load materials:', err);
+    }
+  }
+
+  renderMaterialTiersTable();
+  renderSizeMultipliersGrid();
+  renderPlatformFitTable();
+  setupPricingTableSorting();
+
+  pricingLoaded = true;
+}
+
+function setupPricingTableSorting() {
+  // Material tiers table sorting
+  const materialTable = $('#material-tiers-table');
+  if (materialTable) {
+    const sortHandler = createSortableTable({
+      getState: () => ({ sortColumn: materialTiersSortColumn, sortDirection: materialTiersSortDirection }),
+      setState: (s) => { materialTiersSortColumn = s.sortColumn; materialTiersSortDirection = s.sortDirection; },
+      onSort: renderMaterialTiersTable
+    });
+    materialTable.addEventListener('click', sortHandler);
+  }
+
+  // Platform fit table sorting
+  const platformFitTable = $('#platform-fit-table');
+  if (platformFitTable) {
+    const sortHandler = createSortableTable({
+      getState: () => ({ sortColumn: platformFitSortColumn, sortDirection: platformFitSortDirection }),
+      setState: (s) => { platformFitSortColumn = s.sortColumn; platformFitSortDirection = s.sortDirection; },
+      onSort: renderPlatformFitTable
+    });
+    platformFitTable.addEventListener('click', sortHandler);
+  }
+}
+
+function renderMaterialTiersTable() {
+  const tbody = $('#material-tiers-tbody');
+  if (!tbody) return;
+
+  // Build comprehensive material lists from materials.json
+  const tierMaterials = buildMaterialsByTier();
+
+  // Build rows data for sorting
+  const tierOrder = { highest: 1, high: 2, 'medium-high': 3, medium: 4, 'low-medium': 5, low: 6, avoid: 7 };
+  let rowsData = Object.entries(MATERIAL_TIER_MULTIPLIERS).map(([tier, mult]) => ({
+    tier,
+    mult,
+    materials: tierMaterials[tier] || { clothing: [], shoes: [], jewelry: [] }
+  }));
+
+  // Sort based on current sort column
+  rowsData.sort((a, b) => {
+    let cmp = 0;
+    if (materialTiersSortColumn === 'tier') {
+      cmp = (tierOrder[a.tier] || 99) - (tierOrder[b.tier] || 99);
+    } else if (materialTiersSortColumn === 'mult') {
+      cmp = a.mult - b.mult;
+    }
+    return materialTiersSortDirection === 'asc' ? cmp : -cmp;
+  });
+
+  const rows = rowsData.map(({ tier, mult, materials }) => {
+    const pctChange = Math.round((mult - 1) * 100);
+    const pctClass = pctChange > 0 ? 'text-success' : pctChange < 0 ? 'text-danger' : '';
+    const pctDisplay = pctChange > 0 ? `+${pctChange}%` : `${pctChange}%`;
+    const materialsHtml = formatMaterialsByCategory(materials);
+
+    return `
+      <tr>
+        <td>${escapeHtml(formatTierName(tier))}</td>
+        <td class="col-numeric ${pctClass}">${mult.toFixed(2)}x <span class="text-muted">(${pctDisplay})</span></td>
+        <td>${materialsHtml}</td>
+      </tr>
+    `;
+  }).join('');
+
+  tbody.innerHTML = rows;
+
+  // Update sort indicators
+  const table = $('#material-tiers-table');
+  if (table) updateSortIndicators(table, materialTiersSortColumn, materialTiersSortDirection);
+}
+
+function formatMaterialsByCategory(materials) {
+  const categories = [
+    { key: 'clothing', label: 'Clothing' },
+    { key: 'shoes', label: 'Shoes' },
+    { key: 'jewelry', label: 'Jewelry' }
+  ];
+
+  const items = categories
+    .filter(cat => materials[cat.key]?.length > 0)
+    .map(cat => `<li><strong>${cat.label}:</strong> ${escapeHtml(materials[cat.key].join(', '))}</li>`);
+
+  if (items.length === 0) return '<span class="text-muted">—</span>';
+  return `<ul class="compact-list">${items.join('')}</ul>`;
+}
+
+function buildMaterialsByTier() {
+  const createTierEntry = () => ({ clothing: [], shoes: [], jewelry: [] });
+  const tierMaterials = {
+    highest: createTierEntry(),
+    high: createTierEntry(),
+    'medium-high': createTierEntry(),
+    medium: createTierEntry(),
+    'low-medium': createTierEntry(),
+    low: createTierEntry(),
+    avoid: createTierEntry()
+  };
+
+  if (!materialsData) return tierMaterials;
+
+  // Helper to add material to tier
+  const addMaterial = (tier, category, name) => {
+    if (tierMaterials[tier]) tierMaterials[tier][category].push(name);
+  };
+
+  // Process fabrics → clothing
+  if (materialsData.fabrics) {
+    const fabricSections = ['premium_natural', 'quality_synthetics_vintage', 'avoid_unless_designer'];
+    fabricSections.forEach(section => {
+      if (materialsData.fabrics[section]?.materials) {
+        Object.entries(materialsData.fabrics[section].materials).forEach(([key, mat]) => {
+          addMaterial(mat.value_tier, 'clothing', formatMaterialName(key));
+        });
+      }
+    });
+  }
+
+  // Process leathers → shoes
+  if (materialsData.leathers) {
+    const leatherSections = ['premium_leathers', 'mid_tier_leathers', 'low_quality_avoid'];
+    leatherSections.forEach(section => {
+      if (materialsData.leathers[section]) {
+        Object.entries(materialsData.leathers[section]).forEach(([key, mat]) => {
+          if (mat.value_tier) {
+            addMaterial(mat.value_tier, 'shoes', formatMaterialName(key));
+          }
+        });
+      }
+    });
+  }
+
+  // Process gemstones → jewelry
+  if (materialsData.gemstones) {
+    const gemstoneSections = ['precious_stones', 'semi_precious_valuable', 'vintage_costume_stones'];
+    gemstoneSections.forEach(section => {
+      if (materialsData.gemstones[section]) {
+        Object.entries(materialsData.gemstones[section]).forEach(([key, mat]) => {
+          if (mat.value_tier) {
+            addMaterial(mat.value_tier, 'jewelry', formatMaterialName(key));
+          }
+        });
+      }
+    });
+  }
+
+  // Process metals → jewelry
+  if (materialsData.metals_jewelry) {
+    const metalSections = ['precious_metals', 'gold_alternatives', 'base_metals'];
+    metalSections.forEach(section => {
+      if (materialsData.metals_jewelry[section]) {
+        Object.entries(materialsData.metals_jewelry[section]).forEach(([key, mat]) => {
+          const tier = mat.value_tier;
+          if (tier === 'very_low') {
+            addMaterial('avoid', 'jewelry', formatMaterialName(key));
+          } else if (tier) {
+            addMaterial(tier, 'jewelry', formatMaterialName(key));
+          }
+        });
+      }
+    });
+  }
+
+  return tierMaterials;
+}
+
+function formatMaterialName(key) {
+  // Convert snake_case to readable format
+  return key
+    .replace(/_/g, ' ')
+    .replace(/\b(pu|pvc)\b/gi, match => match.toUpperCase());
+}
+
+function renderSizeMultipliersGrid() {
+  const container = $('#size-tables-grid');
+  if (!container) return;
+
+  const clothingTable = renderSizeCategoryTable('Clothing', CLOTHING_SIZE_TIERS, 'sizes');
+  const shoesTable = renderShoeSizeTable();
+  const jewelryTable = renderJewelrySizeTable();
+
+  container.innerHTML = clothingTable + shoesTable + jewelryTable;
+}
+
+function renderSizeCategoryTable(title, tiers, sizesKey) {
+  const rows = Object.entries(tiers).map(([tierName, config]) => {
+    const pctChange = Math.round((config.multiplier - 1) * 100);
+    const pctClass = pctChange > 0 ? 'text-success' : pctChange < 0 ? 'text-danger' : '';
+    const pctDisplay = pctChange > 0 ? `+${pctChange}%` : `${pctChange}%`;
+    const sizesText = config[sizesKey]?.join(', ') || '';
+
+    return `
+      <tr>
+        <td>${escapeHtml(formatTierName(tierName))}</td>
+        <td class="col-numeric ${pctClass}">${pctDisplay}</td>
+        <td class="text-muted">${escapeHtml(sizesText)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <div class="size-table-card">
+      <h4>${escapeHtml(title)}</h4>
+      <table class="table table--compact">
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th class="col-numeric">Adj.</th>
+            <th>Sizes</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderShoeSizeTable() {
+  const { premium, standard, narrow_market } = SHOE_SIZE_TIERS;
+
+  const rows = [
+    { name: 'Premium', mult: premium.multiplier, detail: `Sizes ${premium.minSize}-${premium.maxSize}, ${premium.widths.join('/')} width` },
+    { name: 'Standard', mult: standard.multiplier, detail: `Sizes ${standard.minSize}-${standard.maxSize}` },
+    { name: 'Narrow Market', mult: narrow_market.multiplier, detail: 'Outside common range, narrow/extra-wide' }
+  ].map(row => {
+    const pctChange = Math.round((row.mult - 1) * 100);
+    const pctClass = pctChange > 0 ? 'text-success' : pctChange < 0 ? 'text-danger' : '';
+    const pctDisplay = pctChange > 0 ? `+${pctChange}%` : `${pctChange}%`;
+
+    return `
+      <tr>
+        <td>${escapeHtml(row.name)}</td>
+        <td class="col-numeric ${pctClass}">${pctDisplay}</td>
+        <td class="text-muted">${escapeHtml(row.detail)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <div class="size-table-card">
+      <h4>Shoes</h4>
+      <table class="table table--compact">
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th class="col-numeric">Adj.</th>
+            <th>Criteria</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderJewelrySizeTable() {
+  const rules = JEWELRY_SIZE_RULES;
+
+  const formatClosure = s => s.replace(/_/g, ' ');
+  const rows = [
+    { name: 'Adjustable', mult: rules.adjustable.multiplier, detail: `${rules.adjustable.closures.map(formatClosure).join(', ')} closures` },
+    { name: 'Ring Premium', mult: rules.ring_premium.multiplier, detail: `Sizes ${rules.ring_premium.sizes.join(', ')}` },
+    { name: 'Ring Standard', mult: rules.ring_standard.multiplier, detail: `Sizes ${rules.ring_standard.sizes.join(', ')}` },
+    { name: 'Ring Narrow', mult: rules.ring_narrow.multiplier, detail: 'Outlier sizes (<5, >10)' },
+    { name: 'Necklace Premium', mult: rules.necklace_premium.multiplier, detail: `${rules.necklace_premium.lengths.join(', ')}" chains` }
+  ].map(row => {
+    const pctChange = Math.round((row.mult - 1) * 100);
+    const pctClass = pctChange > 0 ? 'text-success' : pctChange < 0 ? 'text-danger' : '';
+    const pctDisplay = pctChange > 0 ? `+${pctChange}%` : `${pctChange}%`;
+
+    return `
+      <tr>
+        <td>${escapeHtml(row.name)}</td>
+        <td class="col-numeric ${pctClass}">${pctDisplay}</td>
+        <td class="text-muted">${escapeHtml(row.detail)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  return `
+    <div class="size-table-card">
+      <h4>Jewelry</h4>
+      <table class="table table--compact">
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th class="col-numeric">Adj.</th>
+            <th>Criteria</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderPlatformFitTable() {
+  const tbody = $('#platform-fit-tbody');
+  if (!tbody) return;
+
+  const platformNames = {
+    depop: 'Depop',
+    poshmark: 'Poshmark',
+    vestiaire_collective: 'Vestiaire',
+    therealreal: 'TheRealReal',
+    etsy: 'Etsy',
+    grailed: 'Grailed',
+    ebay: 'eBay',
+    starluv: 'Starluv'
+  };
+
+  // Build rows data for sorting
+  let rowsData = Object.entries(PLATFORM_FIT_ADJUSTMENTS).map(([platformId, config]) => ({
+    platformId,
+    name: platformNames[platformId] || platformId,
+    config
+  }));
+
+  // Sort based on current sort column
+  rowsData.sort((a, b) => {
+    let cmp = 0;
+    if (platformFitSortColumn === 'platform') {
+      cmp = a.name.localeCompare(b.name);
+    }
+    return platformFitSortDirection === 'asc' ? cmp : -cmp;
+  });
+
+  const rows = rowsData.map(({ name, config }) => {
+    const sizeText = formatSizeAdjustmentProse(config);
+    const matText = formatMaterialAdjustmentProse(config);
+
+    return `
+      <tr>
+        <td>${escapeHtml(name)}</td>
+        <td>${escapeHtml(sizeText)}</td>
+        <td>${escapeHtml(matText)}</td>
+      </tr>
+    `;
+  }).join('');
+
+  tbody.innerHTML = rows;
+
+  // Update sort indicators
+  const table = $('#platform-fit-table');
+  if (table) updateSortIndicators(table, platformFitSortColumn, platformFitSortDirection);
+}
+
+function formatSizeAdjustmentProse(config) {
+  const parts = [];
+
+  if (config.size_small_bonus && config.size_large_penalty) {
+    const smallPct = Math.round(config.size_small_bonus * 100);
+    const largePct = Math.round(config.size_large_penalty * 100);
+    parts.push(`Small sizes (XS–M) sell +${smallPct}% higher; large sizes (XL+) sell ${largePct}% lower`);
+  } else if (config.size_outlier_penalty) {
+    const pct = Math.round(config.size_outlier_penalty * 100);
+    parts.push(`Extended/outlier sizes penalized ${pct}%`);
+  } else if (config.size_compress) {
+    parts.push('Size matters less (prices compress toward average)');
+  } else if (config.mens_sizing) {
+    parts.push("Men's sizing rules apply");
+  }
+
+  return parts.length > 0 ? parts.join('; ') : 'Standard rules apply';
+}
+
+function formatMaterialAdjustmentProse(config) {
+  const parts = [];
+
+  if (config.material_compress) {
+    parts.push('Material quality matters less (prices compress toward average)');
+  }
+  if (config.material_low_extra_penalty) {
+    const pct = Math.round(config.material_low_extra_penalty * 100);
+    parts.push(`Low-tier materials penalized an extra ${pct}%`);
+  }
+  if (config.natural_fiber_bonus) {
+    const pct = Math.round(config.natural_fiber_bonus * 100);
+    parts.push(`Natural fibers get +${pct}% bonus`);
+  }
+
+  return parts.length > 0 ? parts.join('; ') : 'Standard rules apply';
+}
+
+function formatTierName(tier) {
+  // Sentence case: capitalize first letter only
+  return tier.charAt(0).toUpperCase() + tier.slice(1);
+}
+
+// =============================================================================
+// ADD BRAND MODAL
+// =============================================================================
+
+let addBrandModal = null;
+
+function openAddBrandModal() {
+  const dialog = $('#add-brand-dialog');
+  if (!dialog) return;
+
+  if (!addBrandModal) {
+    addBrandModal = createModalController(dialog);
+  }
+
+  const form = $('#brand-form');
+  if (form) form.reset();
+
+  addBrandModal.open();
+}
+
+function handleBrandSubmit(e) {
+  e.preventDefault();
+
+  const form = e.target;
+  const formData = new FormData(form);
+
+  const brand = {
+    name: formData.get('name')?.trim(),
+    key: formData.get('name')?.trim().toLowerCase().replace(/\s+/g, '_'),
+    tier: formData.get('tier'),
+    category: formData.get('category'),
+    multiplier: parseFloat(formData.get('multiplier')) || 1.0,
+    notes: formData.get('notes')?.trim() || '',
+    alt: formData.get('alt_names')?.split(',').map(s => s.trim()).filter(Boolean) || []
+  };
+
+  if (!brand.name) {
+    showToast('Brand name is required');
+    return;
+  }
+  if (!brand.tier) {
+    showToast('Tier is required');
+    return;
+  }
+  if (!brand.category) {
+    showToast('Category is required');
+    return;
+  }
+
+  // Add to local brandsData and re-render
+  brandsData.push(brand);
+  showToast('Brand added');
+  addBrandModal.close();
+  renderTable();
+}
+
+// =============================================================================
+// ADD PLATFORM MODAL
+// =============================================================================
+
+let addPlatformModal = null;
+
+function openAddPlatformModal() {
+  const dialog = $('#add-platform-dialog');
+  if (!dialog) return;
+
+  if (!addPlatformModal) {
+    addPlatformModal = createModalController(dialog);
+  }
+
+  const form = $('#platform-form');
+  if (form) form.reset();
+
+  addPlatformModal.open();
+}
+
+function handlePlatformSubmit(e) {
+  e.preventDefault();
+
+  const form = e.target;
+  const formData = new FormData(form);
+
+  const name = formData.get('name')?.trim();
+  if (!name) {
+    showToast('Platform name is required');
+    return;
+  }
+
+  const key = name.toLowerCase().replace(/\s+/g, '_');
+  const platform = {
+    name,
+    audience: formData.get('demographic')?.trim() || '',
+    fees: {
+      commission: parseFloat(formData.get('fee_percent')) || 0,
+      flat_fee: parseFloat(formData.get('flat_fee')) || 0
+    },
+    best_for: formData.get('best_for')?.split(',').map(s => s.trim()).filter(Boolean) || [],
+    shipping: { type: 'seller_arranged', notes: formData.get('shipping')?.trim() || '' },
+    pros: formData.get('pros')?.split('\n').map(s => s.trim()).filter(Boolean) || [],
+    cons: formData.get('cons')?.split('\n').map(s => s.trim()).filter(Boolean) || []
+  };
+
+  // Add to local platformsData and re-render
+  if (platformsData && platformsData.platforms) {
+    platformsData.platforms[key] = platform;
+    showToast('Platform added');
+    addPlatformModal.close();
+    renderPlatforms();
+  }
 }

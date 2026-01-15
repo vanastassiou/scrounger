@@ -105,11 +105,6 @@ function renderVisitsTable() {
     return;
   }
 
-  // Calculate summary
-  const totalVisits = visitsData.length;
-  const totalSpent = visitsData.reduce((sum, v) => sum + (v.total_spent || 0), 0);
-  const totalItems = visitsData.reduce((sum, v) => sum + (v.purchases_count || 0), 0);
-
   // Sort visits
   const sorted = [...visitsData];
   sortData(sorted, sortColumn, sortDirection, (visit, col) => {
@@ -122,15 +117,11 @@ function renderVisitsTable() {
     }
   });
 
-  container.innerHTML = `
-    <div class="visits-summary">
-      <div><span class="text-muted">Visits:</span> <strong>${totalVisits}</strong></div>
-      <div><span class="text-muted">Spent:</span> <strong>${formatCurrency(totalSpent)}</strong></div>
-      <div><span class="text-muted">Items:</span> <strong>${totalItems}</strong></div>
-    </div>
+  const totalVisits = sorted.length;
 
+  container.innerHTML = `
     <div class="table-container">
-      <table class="table table-responsive" id="visits-table">
+      <table class="table table-responsive table--compact" id="visits-table">
         <thead>
           <tr>
             <th data-sort="date">Date</th>
