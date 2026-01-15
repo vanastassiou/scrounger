@@ -2,7 +2,7 @@
 // DASHBOARD ACTION ITEMS MODULE
 // =============================================================================
 
-import { getInventoryInPipeline } from './db.js';
+import { getInventoryInPipeline, getAllInventory } from './db.js';
 import { $, $$ } from './utils.js';
 import { setVisible, show, hide } from './components.js';
 import { loadSeasonalData, getSeasonalOpportunities } from './seasonal.js';
@@ -17,10 +17,13 @@ export async function initDashboardActions() {
 }
 
 export async function loadActionItems() {
-  const items = await getInventoryInPipeline();
+  const pipelineItems = await getInventoryInPipeline();
+  const allItems = await getAllInventory();
 
-  // Get seasonal opportunities from listable items
-  const seasonalMatches = getSeasonalOpportunities(items);
+  // Get seasonal opportunities from all listable items (pipeline + collection with resale intent)
+  const seasonalMatches = getSeasonalOpportunities(allItems);
+
+  const items = pipelineItems;
 
   const actionGroups = {
     seasonal: seasonalMatches,
