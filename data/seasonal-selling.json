@@ -1,176 +1,255 @@
 {
   "meta": {
     "document_type": "seasonal_selling_guide",
-    "version": "1.0",
-    "description": "Month-by-month resale guidance with category matching rules"
+    "version": "2.0",
+    "last_updated": "2026-01",
+    "description": "Month-by-month resale guidance based on platform data and market research"
+  },
+  "sources": {
+    "citations": [
+      {
+        "id": "poshmark-holiday",
+        "name": "Poshmark Holiday Listing Guide",
+        "url": "https://blog.poshmark.com/2025/11/21/2025-holiday-listing-guide/",
+        "source": "blog.poshmark.com",
+        "article_date": "2025-11-21",
+        "accessed_date": "2026-01-12"
+      },
+      {
+        "id": "poshmark-trends",
+        "name": "Poshmark Trend Report",
+        "url": "https://blog.poshmark.com/category/the-trend-report/",
+        "source": "blog.poshmark.com",
+        "accessed_date": "2026-01-12"
+      },
+      {
+        "id": "ebay-seasonal",
+        "name": "eBay Seasonal Guide for Sellers",
+        "url": "https://export.ebay.com/en/resources/seasonal-guide-for-ebay-sellers/",
+        "source": "export.ebay.com",
+        "accessed_date": "2026-01-12"
+      },
+      {
+        "id": "ebay-spring",
+        "name": "eBay Spring Trends",
+        "url": "https://export.ebay.com/en/resources/seasonal-guide-for-ebay-sellers/spring-trends-in-sales/",
+        "source": "export.ebay.com",
+        "accessed_date": "2026-01-12"
+      },
+      {
+        "id": "ebay-summer",
+        "name": "eBay Summer Sales Trends",
+        "url": "https://export.ebay.com/en/resources/seasonal-guide-for-ebay-sellers/summer-sales-trends-weddings-parties-and-holidays/",
+        "source": "export.ebay.com",
+        "accessed_date": "2026-01-12"
+      },
+      {
+        "id": "depop-trends",
+        "name": "Depop 2025 Fashion Trends Report",
+        "url": "https://news.depop.com/company-news/depop-unveils-2025-fashion-trends-report-the-new-fundamentals/",
+        "source": "news.depop.com",
+        "article_date": "2025-01-09",
+        "accessed_date": "2026-01-12"
+      },
+      {
+        "id": "nrf-bts",
+        "name": "NRF Back-to-School Data",
+        "url": "https://nrf.com/research-insights/holiday-data-and-trends/back-to-school",
+        "source": "nrf.com",
+        "accessed_date": "2026-01-12"
+      },
+      {
+        "id": "nielseniq-mothers",
+        "name": "NielsenIQ Mother's Day Forecast",
+        "url": "https://nielseniq.com/global/en/insights/analysis/2025/mothers-day-2025-forecast-key-shopping-trends-retail-opportunities/",
+        "source": "nielseniq.com",
+        "article_date": "2025-04-15",
+        "accessed_date": "2026-01-12"
+      },
+      {
+        "id": "shipstation-holidays",
+        "name": "ShipStation Holiday Shipping Deadlines",
+        "url": "https://www.shipstation.com/blog/holiday-shipping-deadlines/",
+        "source": "shipstation.com",
+        "accessed_date": "2026-01-12"
+      },
+      {
+        "id": "realreal-report",
+        "name": "The RealReal 2025 Resale Report",
+        "url": "https://www.therealreal.com/resale-report-2025",
+        "source": "therealreal.com",
+        "article_date": "2025-01-01",
+        "accessed_date": "2026-01-12"
+      }
+    ]
   },
   "months": {
     "january": {
       "label": "January",
-      "themes": ["New Year resolutions", "Winter clearance", "Cozy weather"],
+      "themes": ["New Year resolutions", "Post-holiday gift cards", "Winter clearance"],
       "hot_categories": [
-        { "subcategories": ["athletic", "sneakers", "activewear"], "reason": "Fitness resolutions drive athletic wear demand" },
-        { "subcategories": ["coat", "sweater", "boots", "scarf", "gloves"], "materials": ["wool", "cashmere", "down"], "reason": "Peak winter weather, buyers restocking" },
-        { "subcategories": ["loungewear", "pajamas", "robe"], "reason": "Post-holiday cozy season" }
+        { "subcategories": ["athletic", "sneakers", "activewear", "leggings"], "reason": "Fitness resolutions drive athletic wear demand through mid-month" },
+        { "subcategories": ["coat", "sweater", "boots", "scarf", "gloves"], "materials": ["wool", "cashmere", "down"], "reason": "Peak winter weather; buyers using holiday gift cards" },
+        { "subcategories": ["loungewear", "pajamas", "robe", "slippers"], "reason": "Post-holiday cozy season; sweater dresses +184% YoY on Poshmark" }
       ],
       "platform_notes": {
-        "poshmark": "High buyer activity post-holiday with gift cards",
-        "ebay": "Winter clearance searches spike"
+        "poshmark": "High buyer activity as gift card recipients shop; 67% of sales happen through offers",
+        "ebay": "Winter clearance searches spike; vintage outerwear in demand"
       }
     },
     "february": {
       "label": "February",
       "themes": ["Valentine's Day", "Late winter", "Early spring preview"],
       "hot_categories": [
-        { "subcategories": ["necklace", "bracelet", "ring", "earrings"], "materials": ["gold", "silver", "diamond"], "reason": "Valentine's Day jewelry gifts" },
-        { "subcategories": ["dress", "blouse"], "colours": ["red", "pink", "black"], "reason": "Valentine's date night outfits" },
+        { "subcategories": ["necklace", "bracelet", "ring", "earrings"], "materials": ["gold", "silver", "diamond"], "reason": "Valentine's jewelry peaks 2 weeks before the 14th, not on the day" },
+        { "subcategories": ["dress", "blouse"], "colours": ["red", "pink", "black"], "reason": "Valentine's date night outfits; list by Feb 1" },
         { "subcategories": ["lingerie", "sleepwear"], "reason": "Valentine's gifting" },
-        { "subcategories": ["coat", "sweater", "boots"], "reason": "Last chance winter wear - list now for clearance" }
+        { "subcategories": ["coat", "sweater", "boots"], "reason": "Last chance winter wear clearance pricing" }
       ],
       "platform_notes": {
-        "poshmark": "Valentine's Day bundles perform well",
-        "mercari": "Gift-ready items with nice packaging sell faster"
+        "poshmark": "Valentine's bundles perform well; use 'gift ready' in titles",
+        "etsy": "Jewelry and personalized items peak; start promotions early February"
       }
     },
     "march": {
       "label": "March",
-      "themes": ["Spring transition", "Spring break", "St. Patrick's Day"],
+      "themes": ["Spring transition", "Spring break travel", "Wedding season preview"],
       "hot_categories": [
-        { "subcategories": ["jacket", "blazer", "cardigan"], "reason": "Lightweight layering for unpredictable weather" },
-        { "subcategories": ["dress", "skirt", "blouse"], "colours": ["pastel", "lavender", "mint", "cream", "blush"], "reason": "Spring wardrobe refresh" },
-        { "subcategories": ["swimwear", "sandals", "shorts"], "reason": "Spring break travel shopping" },
+        { "subcategories": ["jacket", "blazer", "cardigan", "trench"], "reason": "Lightweight layering for unpredictable weather" },
+        { "subcategories": ["dress", "skirt", "blouse"], "colours": ["pastel", "lavender", "mint", "cream", "blush"], "reason": "Spring wardrobe refresh; spring apparel peaks March-April on eBay" },
+        { "subcategories": ["swimwear", "sandals", "shorts", "sunglasses"], "reason": "Spring break travel shopping begins" },
         { "subcategories": ["sneakers", "loafers", "flats"], "reason": "Transitional footwear" }
       ],
       "platform_notes": {
-        "poshmark": "Spring cleaning means more buyers looking",
-        "ebay": "Vacation wear searches increase"
+        "poshmark": "Spring cleaning mindset means more buyers browsing",
+        "ebay": "Vacation wear searches increase; promote calendar items weeks in advance"
       }
     },
     "april": {
       "label": "April",
-      "themes": ["Easter", "Spring events", "Wedding season begins"],
+      "themes": ["Easter", "Mother's Day prep begins", "Wedding guest season"],
       "hot_categories": [
         { "subcategories": ["dress", "suit", "blazer"], "colours": ["pastel", "lavender", "blush", "cream", "yellow"], "reason": "Easter Sunday outfits" },
-        { "subcategories": ["dress", "jumpsuit", "heels"], "reason": "Wedding guest season starts" },
-        { "subcategories": ["trench", "raincoat", "umbrella"], "reason": "April showers gear" },
-        { "subcategories": ["hat", "fascinator"], "reason": "Easter and spring events" }
+        { "subcategories": ["dress", "jumpsuit", "heels", "clutch"], "reason": "Wedding guest season ramps up; searches up 200%+ on luxury platforms" },
+        { "subcategories": ["trench", "raincoat"], "reason": "April showers gear" },
+        { "subcategories": ["handbag", "jewelry", "scarf"], "reason": "Mother's Day shopping starts; jewelry sales +116% in 2 weeks before May 12" }
       ],
       "platform_notes": {
-        "poshmark": "Dress searches peak for Easter",
-        "tradesy": "Designer pieces for weddings"
+        "poshmark": "Dress searches peak for Easter; start Mother's Day keywords",
+        "ebay": "Wedding season items hot; 72% of adults active outdoors spring-summer"
       }
     },
     "may": {
       "label": "May",
-      "themes": ["Mother's Day", "Graduations", "Memorial Day", "Wedding season"],
+      "themes": ["Mother's Day (May 12)", "Victoria Day (CA)", "Graduations", "Memorial Day", "Wedding peak"],
       "hot_categories": [
-        { "subcategories": ["handbag", "wallet", "watch", "necklace", "scarf"], "reason": "Mother's Day gifts - accessories excel" },
+        { "subcategories": ["handbag", "wallet", "watch", "necklace", "scarf", "earrings"], "reason": "Mother's Day gifts peak first week; jewelry biggest category by spend" },
         { "subcategories": ["dress", "suit", "heels", "tie"], "reason": "Graduation ceremonies" },
         { "subcategories": ["dress", "jumpsuit", "clutch"], "colours": ["navy", "coral", "floral"], "reason": "Peak wedding guest season" },
-        { "subcategories": ["shorts", "tank", "sandals", "sunglasses"], "reason": "Memorial Day kickoff to summer" }
+        { "subcategories": ["shorts", "tank", "sandals", "sunglasses"], "reason": "Victoria Day (CA May 19) / Memorial Day (US May 26) kickoff to summer" }
       ],
       "platform_notes": {
-        "poshmark": "Gift-worthy items for Mother's Day",
-        "ebay": "Graduation and formal wear demand"
+        "poshmark": "Gift-worthy items with 'ships fast' for Mother's Day; 94% of sales go to active listers",
+        "etsy": "Mother's Day is third biggest retail holiday; personalized items excel"
       }
     },
     "june": {
       "label": "June",
-      "themes": ["Father's Day", "Summer begins", "Wedding peak", "Vacation season"],
+      "themes": ["Father's Day (June 16)", "Wedding peak", "Summer begins", "Vacation season"],
       "hot_categories": [
-        { "subcategories": ["watch", "wallet", "belt", "tie", "cufflinks"], "reason": "Father's Day gifts" },
-        { "subcategories": ["swimwear", "cover-up", "sandals", "sunglasses", "hat"], "reason": "Beach and pool season" },
+        { "subcategories": ["watch", "wallet", "belt", "tie", "cufflinks"], "reason": "Father's Day gifts; list by June 1 for shipping buffer" },
+        { "subcategories": ["swimwear", "cover-up", "sandals", "sunglasses", "hat"], "reason": "Beach and pool season in full swing" },
         { "subcategories": ["dress", "linen", "shorts", "tank"], "colours": ["white", "coral", "turquoise", "lime"], "materials": ["linen", "cotton"], "reason": "Summer wardrobe essentials" },
-        { "subcategories": ["dress", "suit"], "reason": "June wedding peak" }
+        { "subcategories": ["dress", "suit", "heels"], "reason": "June wedding peak; wedding costs avg $33K USD" }
       ],
       "platform_notes": {
-        "poshmark": "Vacation bundles sell well",
-        "mercari": "Quick shipping matters for last-minute vacation buys"
+        "poshmark": "Vacation bundles sell well; emphasize quick shipping",
+        "ebay": "Father's Day (June 16) key promotional date; outdoor items trending"
       }
     },
     "july": {
       "label": "July",
-      "themes": ["Peak summer", "Independence Day", "Back-to-school preview"],
+      "themes": ["Canada Day (July 1)", "Independence Day (July 4)", "Back-to-school starts", "Peak summer"],
       "hot_categories": [
-        { "subcategories": ["swimwear", "shorts", "tank", "sandals", "sunglasses"], "colours": ["red", "white", "blue", "navy"], "reason": "4th of July and peak summer" },
+        { "subcategories": ["swimwear", "shorts", "tank", "sandals", "sunglasses"], "colours": ["red", "white", "blue", "navy"], "reason": "Canada Day / 4th of July and peak summer" },
         { "subcategories": ["dress", "romper", "maxi"], "materials": ["linen", "cotton"], "reason": "Summer events and vacations" },
-        { "subcategories": ["backpack", "sneakers", "jeans", "t-shirt"], "reason": "Early back-to-school shopping begins" }
+        { "subcategories": ["backpack", "sneakers", "jeans", "t-shirt", "hoodie"], "reason": "Back-to-school: 67% of shoppers already buying by July 8 (Prime Day trigger)" }
       ],
       "platform_notes": {
-        "poshmark": "Start listing back-to-school items mid-month",
-        "ebay": "Summer clearance and BTS overlap"
+        "poshmark": "Start back-to-school listings July 1; NRF reports earliest shopping ever in 2025",
+        "ebay": "Summer and BTS overlap; list fall preview items late month"
       }
     },
     "august": {
       "label": "August",
       "themes": ["Back-to-school peak", "End of summer", "Fall preview"],
       "hot_categories": [
-        { "subcategories": ["backpack", "sneakers", "jeans", "t-shirt", "hoodie"], "reason": "Peak back-to-school demand" },
-        { "subcategories": ["blazer", "loafers", "slacks"], "reason": "College and professional prep" },
-        { "subcategories": ["sweater", "jacket", "boots"], "colours": ["burgundy", "rust", "mustard", "olive", "navy"], "reason": "Fall preview - list now for September buyers" },
-        { "subcategories": ["swimwear", "sandals", "shorts"], "reason": "Last chance summer clearance" }
+        { "subcategories": ["backpack", "sneakers", "jeans", "t-shirt", "hoodie"], "reason": "Peak back-to-school demand; mid-August through Labor Day" },
+        { "subcategories": ["blazer", "loafers", "slacks", "dress shirt"], "reason": "College and professional prep" },
+        { "subcategories": ["sweater", "jacket", "boots"], "colours": ["burgundy", "rust", "mustard", "olive", "navy"], "reason": "Fall preview listings - buyers shop ahead" },
+        { "subcategories": ["swimwear", "sandals", "shorts"], "reason": "Summer clearance pricing; flash sales to clear inventory" }
       ],
       "platform_notes": {
-        "poshmark": "Back-to-school drives major traffic",
-        "mercari": "Student budgets favor deals"
+        "poshmark": "Back-to-school drives major traffic; price competitively for student budgets",
+        "depop": "Vintage peak season Aug-Nov; 'New Fundamentals' trend favors quality basics"
       }
     },
     "september": {
       "label": "September",
-      "themes": ["Fall transition", "Labor Day", "Fashion month"],
+      "themes": ["Fall transition", "Labour Day", "Fashion month"],
       "hot_categories": [
-        { "subcategories": ["jacket", "blazer", "cardigan", "sweater"], "colours": ["burgundy", "rust", "mustard", "olive", "camel"], "reason": "Fall layering season begins" },
-        { "subcategories": ["boots", "loafers", "oxford"], "materials": ["leather", "suede"], "reason": "Fall footwear transition" },
+        { "subcategories": ["jacket", "blazer", "cardigan", "sweater"], "colours": ["burgundy", "rust", "mustard", "olive", "camel"], "reason": "Fall layering season; post-Labour Day shopping surge" },
+        { "subcategories": ["boots", "loafers", "oxford"], "materials": ["leather", "suede"], "reason": "Fall footwear transition; suede boots +196% YoY" },
         { "subcategories": ["jeans", "trousers", "skirt"], "reason": "Fall wardrobe refresh" },
         { "subcategories": ["scarf", "hat", "belt"], "reason": "Fall accessories" }
       ],
       "platform_notes": {
-        "poshmark": "Post-Labor Day shopping surge",
-        "ebay": "Fall fashion searches spike"
+        "poshmark": "Post-Labor Day shopping surge; fall searches spike",
+        "ebay": "Fall fashion searches peak; monitor seasonal demand patterns"
       }
     },
     "october": {
       "label": "October",
-      "themes": ["Halloween", "Peak fall", "Holiday prep begins"],
+      "themes": ["Thanksgiving (CA - 2nd Monday)", "Halloween", "Peak fall", "Holiday prep begins"],
       "hot_categories": [
-        { "subcategories": ["dress", "costume", "accessories"], "colours": ["black", "orange", "purple"], "reason": "Halloween costumes and party outfits" },
-        { "subcategories": ["coat", "sweater", "boots", "scarf"], "materials": ["wool", "cashmere", "leather"], "reason": "Peak fall/early winter wear" },
+        { "subcategories": ["dress", "costume", "accessories"], "colours": ["black", "orange", "purple"], "reason": "Halloween costumes and party outfits - sell fast early month" },
+        { "subcategories": ["coat", "sweater", "boots", "scarf"], "materials": ["wool", "cashmere", "leather"], "reason": "Peak fall/early winter wear; Canadian Thanksgiving drives early demand" },
         { "subcategories": ["blazer", "dress", "heels"], "reason": "Holiday party prep shopping starts" },
-        { "subcategories": ["handbag", "watch", "jewelry"], "reason": "Early holiday gift shopping" }
+        { "subcategories": ["handbag", "watch", "jewelry"], "reason": "Early holiday gift shopping begins" }
       ],
       "platform_notes": {
-        "poshmark": "Halloween items sell fast early month",
-        "ebay": "Costume and vintage pieces trend"
+        "poshmark": "Halloween items sell fast first 2 weeks; start holiday keywords mid-month",
+        "ebay": "Costume and vintage pieces trend; fall fashion continues strong"
       }
     },
     "november": {
       "label": "November",
-      "themes": ["Holiday shopping", "Black Friday", "Thanksgiving"],
+      "themes": ["Thanksgiving (US)", "Black Friday/Cyber Monday", "Holiday shopping peak"],
       "hot_categories": [
-        { "subcategories": ["coat", "sweater", "boots", "scarf", "gloves"], "materials": ["wool", "cashmere", "down", "fur"], "reason": "Winter weather arrives" },
-        { "subcategories": ["dress", "blazer", "heels", "clutch"], "colours": ["black", "gold", "silver", "red", "burgundy"], "reason": "Holiday party season" },
-        { "subcategories": ["handbag", "wallet", "watch", "jewelry", "scarf"], "reason": "Gift shopping in full swing" },
-        { "subcategories": ["loungewear", "pajamas", "robe", "slippers"], "reason": "Cozy gift items" }
+        { "subcategories": ["coat", "sweater", "boots", "scarf", "gloves"], "materials": ["wool", "cashmere", "down", "fur"], "reason": "Winter weather arrives; cozy items peak" },
+        { "subcategories": ["dress", "blazer", "heels", "clutch", "velvet"], "colours": ["black", "gold", "silver", "red", "burgundy"], "reason": "Holiday party season; velvet blazers and knit sets trending" },
+        { "subcategories": ["handbag", "wallet", "watch", "jewelry", "scarf"], "reason": "Gift shopping in full swing; use 'gift ready' keywords" },
+        { "subcategories": ["loungewear", "pajamas", "robe", "slippers"], "reason": "Cozy gift items; sweater dresses +184% YoY" }
       ],
       "platform_notes": {
-        "poshmark": "Black Friday/Cyber Monday drives huge traffic",
-        "ebay": "Gift items with fast shipping win",
-        "mercari": "Price competitively for holiday deals"
+        "poshmark": "Black Friday/Cyber Monday huge traffic; list consistently - 94% of sales to active listers",
+        "ebay": "Gift items with fast shipping win; ground shipping cutoff Dec 15-17",
+        "depop": "Nov 29 (Black Friday) biggest single day for vintage resale"
       }
     },
     "december": {
       "label": "December",
-      "themes": ["Holiday gifts", "New Year's Eve", "Winter peak"],
+      "themes": ["Holiday gifts", "Shipping deadlines", "New Year's Eve"],
       "hot_categories": [
-        { "subcategories": ["jewelry", "watch", "handbag", "wallet", "scarf"], "materials": ["gold", "silver", "cashmere", "leather"], "reason": "Last-minute luxury gifts" },
-        { "subcategories": ["dress", "jumpsuit", "heels", "clutch"], "colours": ["black", "gold", "silver", "red", "sequin"], "reason": "New Year's Eve outfits" },
+        { "subcategories": ["jewelry", "watch", "handbag", "wallet", "scarf"], "materials": ["gold", "silver", "cashmere", "leather"], "reason": "Last-minute luxury gifts; ship by Dec 15-17 for ground delivery" },
+        { "subcategories": ["dress", "jumpsuit", "heels", "clutch"], "colours": ["black", "gold", "silver", "red", "sequin"], "reason": "New Year's Eve outfits sell through Dec 30" },
         { "subcategories": ["coat", "sweater", "boots"], "reason": "Winter essentials and gifts" },
         { "subcategories": ["loungewear", "pajamas", "robe", "slippers"], "reason": "Cozy holiday gifts" }
       ],
       "platform_notes": {
-        "poshmark": "Ship fast - cutoff dates matter",
-        "ebay": "Gift cards drive post-Christmas sales",
-        "mercari": "NYE items sell through the 30th"
+        "poshmark": "Ship fast - ground cutoff Dec 17, express Dec 20-23; use 'ships today' keywords",
+        "ebay": "Post-Christmas gift card spending creates second wave; prepare January inventory",
+        "depop": "NYE items sell through Dec 30; archive unsold seasonal items Jan 1"
       }
     }
   },
@@ -181,5 +260,5 @@
     "winter": ["black", "navy", "gold", "silver", "red", "emerald", "jewel", "sequin"]
   },
   "evergreen_categories": ["handbag", "wallet", "watch", "ring", "necklace", "earrings", "bracelet", "belt", "sunglasses"],
-  "lead_time_days": 14
+  "lead_time_days": 21
 }

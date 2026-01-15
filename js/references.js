@@ -889,13 +889,14 @@ function renderTrendsRow(month, currentMonth, nextMonth) {
 function renderTrendsSources(sources) {
   if (!sources?.citations?.length) return '';
 
-  const citationsHtml = sources.citations.map(citation => `
+  const citationsHtml = sources.citations.map(citation => {
+    const articlePart = citation.article_date ? `article dated ${citation.article_date}, ` : '';
+    const meta = `(${escapeHtml(citation.source)}, ${articlePart}accessed ${citation.accessed_date})`;
+    return `
     <li class="trends-sources__item">
-      <a href="${escapeHtml(citation.url)}" target="_blank" rel="noopener">
-        ${escapeHtml(citation.name)}
-      </a>
-    </li>
-  `).join('');
+      <a href="${escapeHtml(citation.url)}" target="_blank" rel="noopener">${escapeHtml(citation.name)}</a> ${meta}
+    </li>`;
+  }).join('');
 
   return `
     <details class="trends-sources">
