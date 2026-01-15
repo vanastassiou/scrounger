@@ -20,14 +20,20 @@ import {
   TREND_WEIGHTS,
   MAX_TREND_ADJUSTMENT
 } from './config.js';
-import { calculatePlatformFees } from './fees.js';
+import { calculatePlatformFees, round } from './fees.js';
 import { getCurrentMonthKey } from './seasonal.js';
+import {
+  normalizeForLookup,
+  loadBrandsLookup,
+  loadBrandsDataFull,
+  getBrandMultiplier,
+  loadMaterialsLookup,
+  getMaterialValueTier,
+  getMaterialTierMultiplier,
+  loadSeasonalData,
+  loadPlatformsData
+} from './data-loaders.js';
 
-let brandsLookup = null;
-let materialsLookup = null;
-let seasonalData = null;
-let platformsData = null;
-let brandsDataFull = null; // Full brands data including meta pricing
 
 // =============================================================================
 // BASE RESALE PRICE RANGES
@@ -87,21 +93,6 @@ const JEWELRY_BASE_RANGES = {
 };
 
 /**
- * Load full brands data including meta pricing info.
- */
-async function loadBrandsDataFull() {
-  if (brandsDataFull) return brandsDataFull;
-  try {
-    const response = await fetch('/data/brands-clothing-shoes.json');
-    brandsDataFull = await response.json();
-    return brandsDataFull;
-  } catch (err) {
-    console.error('Failed to load brands data:', err);
-    return null;
-  }
-}
-
-/**
  * Get base resale price range for an item based on its subcategory.
  * @param {object} item - Inventory item
  * @returns {Promise<{min: number, max: number, category: string}|null>}
@@ -150,172 +141,8 @@ export async function getBasePriceRange(item) {
 }
 
 // =============================================================================
-// BRAND LOOKUP
+// MATERIAL CALCULATIONS
 // =============================================================================
-
-/**
- * Load brands data and build a lookup map.
- */
-async function loadBrandsLookup() {
-  if (brandsLookup) return brandsLookup;
-
-  try {
-    const response = await fetch('/data/brands-clothing-shoes.json');
-    const data = await response.json();
-    brandsLookup = new Map();
-
-    function extractBrands(obj, path = '') {
-      if (!obj || typeof obj !== 'object') return;
-
-      if (typeof obj.m === 'number') {
-        const brandName = path.split('.').pop();
-        if (brandName) {
-          const normalized = normalizeBrandName(brandName);
-          brandsLookup.set(normalized, { multiplier: obj.m, tips: obj.tips || null });
-
-          if (obj.alt && Array.isArray(obj.alt)) {
-            for (const alt of obj.alt) {
-              brandsLookup.set(normalizeBrandName(alt), { multiplier: obj.m, tips: obj.tips || null });
-            }
-          }
-        }
-        return;
-      }
-
-      for (const [key, value] of Object.entries(obj)) {
-        if (typeof value === 'object' && value !== null) {
-          extractBrands(value, path ? `${path}.${key}` : key);
-        }
-      }
-    }
-
-    extractBrands(data);
-    return brandsLookup;
-  } catch (err) {
-    console.error('Failed to load brands data:', err);
-    return new Map();
-  }
-}
-
-function normalizeBrandName(name) {
-  return name.toLowerCase()
-    .replace(/[_\-\s]+/g, '')
-    .replace(/[^a-z0-9]/g, '');
-}
-
-/**
- * Look up a brand and return its multiplier and tips.
- */
-export async function getBrandMultiplier(brand) {
-  if (!brand) return null;
-
-  const lookup = await loadBrandsLookup();
-  const normalized = normalizeBrandName(brand);
-
-  if (lookup.has(normalized)) {
-    return lookup.get(normalized);
-  }
-
-  for (const [key, value] of lookup) {
-    if (normalized.includes(key) || key.includes(normalized)) {
-      return value;
-    }
-  }
-
-  return null;
-}
-
-// =============================================================================
-// MATERIAL LOOKUP
-// =============================================================================
-
-/**
- * Load materials data and build a lookup map of material name → value_tier.
- */
-async function loadMaterialsLookup() {
-  if (materialsLookup) return materialsLookup;
-
-  try {
-    const response = await fetch('/data/materials.json');
-    const data = await response.json();
-    materialsLookup = new Map();
-
-    function extractMaterials(obj, path = '') {
-      if (!obj || typeof obj !== 'object') return;
-
-      // If this object has a value_tier, it's a material entry
-      if (obj.value_tier) {
-        const materialName = path.split('.').pop();
-        if (materialName) {
-          const normalized = normalizeMaterialName(materialName);
-          materialsLookup.set(normalized, obj.value_tier);
-
-          // Also index label_terms if present
-          if (obj.label_terms && Array.isArray(obj.label_terms)) {
-            for (const term of obj.label_terms) {
-              materialsLookup.set(normalizeMaterialName(term), obj.value_tier);
-            }
-          }
-        }
-        return;
-      }
-
-      for (const [key, value] of Object.entries(obj)) {
-        if (typeof value === 'object' && value !== null && key !== 'meta') {
-          extractMaterials(value, path ? `${path}.${key}` : key);
-        }
-      }
-    }
-
-    extractMaterials(data);
-    return materialsLookup;
-  } catch (err) {
-    console.error('Failed to load materials data:', err);
-    return new Map();
-  }
-}
-
-function normalizeMaterialName(name) {
-  return name.toLowerCase()
-    .replace(/[_\-\s]+/g, '')
-    .replace(/[^a-z0-9]/g, '');
-}
-
-/**
- * Look up a material's value tier.
- * @param {string} materialName - Material name
- * @returns {Promise<string|null>} Value tier or null
- */
-export async function getMaterialValueTier(materialName) {
-  if (!materialName) return null;
-
-  const lookup = await loadMaterialsLookup();
-  const normalized = normalizeMaterialName(materialName);
-
-  if (lookup.has(normalized)) {
-    return lookup.get(normalized);
-  }
-
-  // Try partial matching
-  for (const [key, tier] of lookup) {
-    if (normalized.includes(key) || key.includes(normalized)) {
-      return tier;
-    }
-  }
-
-  return null;
-}
-
-/**
- * Get numeric multiplier for a material's value tier.
- * @param {string} materialName - Material name
- * @returns {Promise<number>} Multiplier (defaults to 1.0)
- */
-export async function getMaterialTierMultiplier(materialName) {
-  const tier = await getMaterialValueTier(materialName);
-  if (!tier) return 1.0;
-  return MATERIAL_TIER_MULTIPLIERS[tier] || 1.0;
-}
 
 /**
  * Calculate weighted material multiplier from item composition.
@@ -377,7 +204,7 @@ export async function calculateMaterialMultiplier(item) {
   const primaryTier = materials[0]?.tier || 'medium';
 
   return {
-    multiplier: Math.round(weightedMultiplier * 100) / 100,
+    multiplier: round(weightedMultiplier),
     breakdown: materials,
     tier: primaryTier
   };
@@ -539,7 +366,7 @@ export function calculateFlawAdjustment(flaws) {
     details.push({
       type: flaw.flaw_type,
       severity: flaw.severity,
-      penalty: Math.round(penalty * 100) / 100
+      penalty: round(penalty)
     });
   }
 
@@ -547,7 +374,7 @@ export function calculateFlawAdjustment(flaws) {
   const finalPenalty = Math.max(totalPenalty, FLAW_IMPACT.max_penalty);
 
   return {
-    adjustment: Math.round(finalPenalty * 100) / 100,
+    adjustment: round(finalPenalty),
     details
   };
 }
@@ -599,7 +426,7 @@ export function getPlatformFitModifier(item, platformId, factors) {
     const diff = compressed - sizeDeviation;
     modifier += diff;
     if (Math.abs(diff) > 0.01) {
-      adjustments.push({ factor: 'size', adjustment: Math.round(diff * 100) / 100, reason: 'Size matters less' });
+      adjustments.push({ factor: 'size', adjustment: round(diff), reason: 'Size matters less' });
     }
   }
 
@@ -611,7 +438,7 @@ export function getPlatformFitModifier(item, platformId, factors) {
     const diff = compressed - matDeviation;
     modifier += diff;
     if (Math.abs(diff) > 0.01) {
-      adjustments.push({ factor: 'material', adjustment: Math.round(diff * 100) / 100, reason: 'Trend over material' });
+      adjustments.push({ factor: 'material', adjustment: round(diff), reason: 'Trend over material' });
     }
   }
 
@@ -626,7 +453,7 @@ export function getPlatformFitModifier(item, platformId, factors) {
   }
 
   return {
-    modifier: Math.round(modifier * 100) / 100,
+    modifier: round(modifier),
     adjustments
   };
 }
@@ -634,36 +461,6 @@ export function getPlatformFitModifier(item, platformId, factors) {
 // =============================================================================
 // TREND MATCHING
 // =============================================================================
-
-/**
- * Load seasonal trend data.
- */
-async function loadSeasonalData() {
-  if (seasonalData) return seasonalData;
-  try {
-    const response = await fetch('/data/seasonal-selling.json');
-    seasonalData = await response.json();
-    return seasonalData;
-  } catch (err) {
-    console.error('Failed to load seasonal data:', err);
-    return null;
-  }
-}
-
-/**
- * Load platform preferences data.
- */
-async function loadPlatformsData() {
-  if (platformsData) return platformsData;
-  try {
-    const response = await fetch('/data/platforms.json');
-    platformsData = await response.json();
-    return platformsData;
-  } catch (err) {
-    console.error('Failed to load platforms data:', err);
-    return null;
-  }
-}
 
 /**
  * Normalize color name for comparison.
@@ -1000,7 +797,7 @@ export async function calculateTrendMultiplier(item, platformId) {
   const summary = summaries.length > 0 ? summaries[0] : 'Standard';
 
   return {
-    totalMultiplier: Math.round(cappedMultiplier * 100) / 100,
+    totalMultiplier: round(cappedMultiplier),
     color: colorResult,
     cut: cutResult,
     style: styleResult,
@@ -1140,21 +937,21 @@ export async function calculateEnhancedResaleValue(item, compPrice = null) {
   let suggestedValue;
   if (baseSource === 'comp_price') {
     // Comp price is already market-based, just adjust for condition
-    suggestedValue = Math.round(basePrice * conditionFactor * eraBonus * 100) / 100;
+    suggestedValue = round(basePrice * conditionFactor * eraBonus);
   } else {
     // Category range needs full brand multiplier
-    suggestedValue = Math.round(basePrice * brandMultiplier * conditionFactor * eraBonus * 100) / 100;
+    suggestedValue = round(basePrice * brandMultiplier * conditionFactor * eraBonus);
   }
 
   // Calculate the full range (min/max with all multipliers applied)
   let rangeMin, rangeMax;
   if (baseRange) {
-    rangeMin = Math.round(baseRange.min * brandMultiplier * conditionFactor * eraBonus * 100) / 100;
-    rangeMax = Math.round(baseRange.max * brandMultiplier * conditionFactor * eraBonus * 100) / 100;
+    rangeMin = round(baseRange.min * brandMultiplier * conditionFactor * eraBonus);
+    rangeMax = round(baseRange.max * brandMultiplier * conditionFactor * eraBonus);
   } else {
     // If using comp price with no range, estimate ±20%
-    rangeMin = Math.round(suggestedValue * 0.8 * 100) / 100;
-    rangeMax = Math.round(suggestedValue * 1.2 * 100) / 100;
+    rangeMin = round(suggestedValue * 0.8);
+    rangeMax = round(suggestedValue * 1.2);
   }
 
   return {
@@ -1352,8 +1149,8 @@ export async function generateSellingRecommendations(item, compPrice = null) {
     return {
       ...p,
       fees,
-      netPayout: Math.round(netPayout * 100) / 100,
-      profit: Math.round(profit * 100) / 100,
+      netPayout: round(netPayout),
+      profit: round(profit),
       feePercent
     };
   });

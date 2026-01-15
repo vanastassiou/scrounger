@@ -350,45 +350,6 @@ export function initStoreDropdown(config, createFn) {
 }
 
 // =============================================================================
-// TABLE CLICK HANDLER
-// =============================================================================
-
-/**
- * Create a delegated click handler for tables.
- * Replaces the repeated pattern of:
- *   table.addEventListener('click', (e) => {
- *     if (sortHandler(e)) return;
- *     const link = e.target.closest('.table-link');
- *     if (link) { ... }
- *     const editBtn = e.target.closest('.edit-item-btn');
- *     if (editBtn) { ... }
- *   });
- *
- * @param {Object} config
- * @param {Function} [config.sortHandler] - Sort handler function
- * @param {Object<string, Function>} config.handlers - Map of selector to handler
- * @returns {Function} Click event handler
- */
-export function createTableClickHandler(config) {
-  const { sortHandler, handlers } = config;
-
-  return function handleClick(e) {
-    // Try sort handler first
-    if (sortHandler && sortHandler(e)) return;
-
-    // Try each handler in order
-    for (const [selector, handler] of Object.entries(handlers)) {
-      const target = e.target.closest(selector);
-      if (target) {
-        e.preventDefault();
-        handler(target, e);
-        return;
-      }
-    }
-  };
-}
-
-// =============================================================================
 // DETAIL SECTION RENDERING
 // =============================================================================
 

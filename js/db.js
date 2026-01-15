@@ -1046,32 +1046,3 @@ export async function exportArchive() {
     throw err;
   }
 }
-
-/**
- * Bulk update all inventory items to a new status.
- * @param {string} newStatus - The status to set on all items
- * @returns {Promise<number>} - Number of items updated
- */
-export async function bulkUpdateStatus(newStatus) {
-  const db = await openDB();
-  const tx = db.transaction('inventory', 'readwrite');
-  const store = tx.objectStore('inventory');
-  const items = await promisify(store.getAll());
-
-  let count = 0;
-  for (const item of items) {
-    item.status = newStatus;
-    item.updatedAt = nowISO();
-    item.dirty = true;
-    store.put(item);
-    count++;
-  }
-
-  await new Promise((resolve, reject) => {
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-
-  console.log(`Updated ${count} items to status: ${newStatus}`);
-  return count;
-}
