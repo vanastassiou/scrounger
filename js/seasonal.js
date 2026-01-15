@@ -224,13 +224,15 @@ function normalizeColours(colours) {
 
 /**
  * Get seasonal opportunities for dashboard action items.
- * Filters to only unlisted/photographed items ready to list.
+ * Includes collection items (intent != personal_keep) and early pipeline items.
  * @param {Array} items - All inventory items
  * @returns {Array<{item: Object, score: number, reasons: string[]}>}
  */
 export function getSeasonalOpportunities(items) {
-  // Only consider items that are in early pipeline stages
-  const listableStatuses = ['unlisted', 'photographed'];
+  // Consider items that could be listed:
+  // - Collection items not marked for personal keep
+  // - Early pipeline items (unlisted, photographed)
+  const listableStatuses = ['in_collection', 'unlisted', 'photographed'];
   const listable = items.filter(i =>
     listableStatuses.includes(i.status) && i.intent !== 'personal_keep'
   );
