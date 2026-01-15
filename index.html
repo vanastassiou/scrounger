@@ -52,9 +52,8 @@
     #inv-collection-view, #inv-selling-view { display: none; }
     html[data-inv-sub="collection"] #inv-collection-view { display: block; }
     html[data-inv-sub="selling"] #inv-selling-view { display: block; }
-    #ref-stores-view, #ref-visits-view, #ref-brands-view, #ref-platforms-view, #ref-trends-view { display: none; }
+    #ref-stores-view, #ref-brands-view, #ref-platforms-view, #ref-trends-view { display: none; }
     html[data-ref-sub="stores"] #ref-stores-view { display: block; }
-    html[data-ref-sub="visits"] #ref-visits-view { display: block; }
     html[data-ref-sub="brands"] #ref-brands-view { display: block; }
     html[data-ref-sub="platforms"] #ref-platforms-view { display: block; }
     html[data-ref-sub="trends"] #ref-trends-view { display: block; }
@@ -63,7 +62,6 @@
     html[data-inv-sub="collection"] .sub-tab[data-inv-view="collection"],
     html[data-inv-sub="selling"] .sub-tab[data-inv-view="selling"],
     html[data-ref-sub="stores"] .sub-tab[data-ref-view="stores"],
-    html[data-ref-sub="visits"] .sub-tab[data-ref-view="visits"],
     html[data-ref-sub="brands"] .sub-tab[data-ref-view="brands"],
     html[data-ref-sub="platforms"] .sub-tab[data-ref-view="platforms"],
     html[data-ref-sub="trends"] .sub-tab[data-ref-view="trends"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
@@ -295,15 +293,16 @@
       <!-- Sub-navigation for References -->
       <div class="sub-tabs">
         <button class="sub-tab" data-ref-view="stores">Stores</button>
-        <button class="sub-tab" data-ref-view="visits">Visits</button>
         <button class="sub-tab" data-ref-view="brands">Brands</button>
         <button class="sub-tab" data-ref-view="platforms">Platforms</button>
         <button class="sub-tab" data-ref-view="trends">Trends</button>
+        <button class="sub-tab" data-ref-view="pricing">Pricing</button>
       </div>
 
       <!-- Stores View -->
       <div id="ref-stores-view" class="ref-view">
-        <div class="view-header">
+        <div class="search-row">
+          <input type="text" class="form-input" id="store-search" placeholder="Search stores...">
           <button class="btn btn--primary" id="add-store-btn">Add store</button>
         </div>
 
@@ -316,13 +315,13 @@
         </div>
 
         <div class="table-container">
-          <table class="table table-responsive" id="stores-table">
+          <table class="table table-responsive table--compact" id="stores-table">
             <thead>
               <tr>
                 <th data-sort="name">Name</th>
                 <th data-sort="tier">Tier</th>
                 <th data-sort="visits">Visits</th>
-                <th data-sort="hit_rate">Hit Rate</th>
+                <th data-sort="hit_rate">Hit rate</th>
               </tr>
             </thead>
             <tbody id="stores-tbody">
@@ -331,15 +330,23 @@
           </table>
         </div>
         <div id="store-count" class="text-muted"></div>
-      </div>
 
-      <!-- Visits View -->
-      <div id="ref-visits-view" class="ref-view hidden">
-        <div id="visits-list" class="card-list"></div>
+        <!-- Visits History (collapsible) -->
+        <details class="visits-collapsible" open>
+          <summary>Visit History</summary>
+          <div class="visits-content">
+            <div id="visits-list"></div>
+          </div>
+        </details>
       </div>
 
       <!-- Brands View -->
       <div id="ref-brands-view" class="ref-view hidden">
+        <div class="search-row">
+          <input type="text" class="form-input" id="brand-search" placeholder="Search brands...">
+          <button class="btn btn--primary" id="add-brand-btn">Add brand</button>
+        </div>
+
         <div class="filter-row">
           <button class="filter-btn active" data-tier="all">All Tiers</button>
           <button class="filter-btn" data-tier="S">S</button>
@@ -347,8 +354,6 @@
           <button class="filter-btn" data-tier="B">B</button>
           <button class="filter-btn" data-tier="vintage">Vintage</button>
         </div>
-
-        <input type="text" class="form-input" id="brand-search" placeholder="Search brands...">
 
         <div class="table-container">
           <table class="table table-responsive table--compact" id="references-table">
@@ -371,7 +376,10 @@
 
       <!-- Platforms View -->
       <div id="ref-platforms-view" class="ref-view hidden">
-        <input type="text" class="form-input" id="platform-search" placeholder="Search platforms...">
+        <div class="search-row">
+          <input type="text" class="form-input" id="platform-search" placeholder="Search platforms...">
+          <button class="btn btn--primary" id="add-platform-btn">Add platform</button>
+        </div>
 
         <div class="table-container">
           <table class="table table-responsive table--compact" id="platforms-table">
@@ -379,7 +387,7 @@
               <tr>
                 <th data-sort="name">Name</th>
                 <th data-sort="demographic">Demographic</th>
-                <th>Best For</th>
+                <th>Best for</th>
                 <th data-sort="fees">Fees</th>
                 <th>Shipping</th>
                 <th>Pros</th>
@@ -397,8 +405,7 @@
       <!-- Trends View -->
       <div id="ref-trends-view" class="ref-view hidden">
         <div class="trends-header">
-          <h3>Seasonal Selling Calendar</h3>
-          <p class="text-muted">What sells best each month</p>
+          <h3>Seasonal trends</h3>
         </div>
         <div class="table-container">
           <table class="table table-responsive table--compact" id="trends-table">
@@ -406,7 +413,7 @@
               <tr>
                 <th>Month</th>
                 <th>Themes</th>
-                <th>Hot Items</th>
+                <th>Hot items</th>
                 <th>Why</th>
                 <th>Platform notes</th>
               </tr>
@@ -417,6 +424,53 @@
           </table>
         </div>
         <div id="trends-sources"></div>
+      </div>
+
+      <!-- Pricing View -->
+      <div id="ref-pricing-view" class="ref-view hidden">
+        <div class="pricing-intro">
+          <p class="text-muted">Adjust base comp price based on item attributes and platform demographics</p>
+        </div>
+
+        <!-- Material Tiers -->
+        <div class="pricing-section">
+          <h3>Material Value Tiers</h3>
+          <div class="table-container">
+            <table class="table table--compact" id="material-tiers-table">
+              <thead>
+                <tr>
+                  <th data-sort="tier">Tier</th>
+                  <th data-sort="mult" class="col-numeric">Mult</th>
+                  <th>Materials</th>
+                </tr>
+              </thead>
+              <tbody id="material-tiers-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Size Multipliers -->
+        <div class="pricing-section">
+          <h3>Size Multipliers</h3>
+          <div class="size-tables-grid" id="size-tables-grid"></div>
+        </div>
+
+        <!-- Platform Fit -->
+        <div class="pricing-section">
+          <h3>Platform Fit Adjustments</h3>
+          <div class="table-container">
+            <table class="table table--compact" id="platform-fit-table">
+              <thead>
+                <tr>
+                  <th data-sort="platform">Platform</th>
+                  <th>Size adjustment</th>
+                  <th>Material adjustment</th>
+                </tr>
+              </thead>
+              <tbody id="platform-fit-tbody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -913,6 +967,117 @@
         </div>
 
         <button type="submit" class="btn btn--primary btn--block">Save store</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Add Brand Dialog -->
+  <dialog id="add-brand-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add brand</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <form id="brand-form">
+        <div class="form-group">
+          <label class="form-label" for="brand-name">Brand name *</label>
+          <input type="text" class="form-input" id="brand-name" name="name" required placeholder="e.g., Burberry">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="brand-alt-names">Alternative names</label>
+          <input type="text" class="form-input" id="brand-alt-names" name="alt_names" placeholder="e.g., Burberrys, Burberry's">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="brand-tier">Tier *</label>
+            <select class="form-select" id="brand-tier" name="tier" required>
+              <option value="">Select...</option>
+              <option value="S">S - Luxury/Designer</option>
+              <option value="A">A - Premium</option>
+              <option value="B">B - Mid-tier</option>
+              <option value="vintage">Vintage</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="brand-category">Category *</label>
+            <select class="form-select" id="brand-category" name="category" required>
+              <option value="">Select...</option>
+              <option value="clothing">Clothing</option>
+              <option value="shoes">Shoes</option>
+              <option value="jewelry">Jewelry</option>
+              <option value="accessories">Accessories</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="brand-multiplier">Price multiplier</label>
+          <input type="number" class="form-input" id="brand-multiplier" name="multiplier" step="0.1" min="0.1" value="1.0" placeholder="1.0">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="brand-notes">Notes</label>
+          <textarea class="form-textarea" id="brand-notes" name="notes" rows="2" placeholder="Authentication tips, best items to look for..."></textarea>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block">Save brand</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Add Platform Dialog -->
+  <dialog id="add-platform-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add platform</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <form id="platform-form">
+        <div class="form-group">
+          <label class="form-label" for="platform-name">Platform name *</label>
+          <input type="text" class="form-input" id="platform-name" name="name" required placeholder="e.g., Mercari">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="platform-demographic">Target demographic</label>
+          <input type="text" class="form-input" id="platform-demographic" name="demographic" placeholder="e.g., Budget-conscious buyers">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="platform-fee-percent">Fee %</label>
+            <input type="number" class="form-input" id="platform-fee-percent" name="fee_percent" step="0.1" min="0" max="100" placeholder="10">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="platform-flat-fee">Flat fee ($)</label>
+            <input type="number" class="form-input" id="platform-flat-fee" name="flat_fee" step="0.01" min="0" placeholder="0.00">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="platform-best-for">Best for (comma separated)</label>
+          <input type="text" class="form-input" id="platform-best-for" name="best_for" placeholder="e.g., Vintage, Designer, Streetwear">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="platform-shipping">Shipping notes</label>
+          <input type="text" class="form-input" id="platform-shipping" name="shipping" placeholder="e.g., Prepaid labels available">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="platform-pros">Pros</label>
+            <textarea class="form-textarea" id="platform-pros" name="pros" rows="2" placeholder="One per line"></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="platform-cons">Cons</label>
+            <textarea class="form-textarea" id="platform-cons" name="cons" rows="2" placeholder="One per line"></textarea>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block">Save platform</button>
       </form>
     </div>
   </dialog>

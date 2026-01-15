@@ -17,6 +17,7 @@ let statsMap = new Map();
 let filterTier = null;
 let sortColumn = 'name';
 let sortDirection = 'asc';
+let searchQuery = '';
 let viewStoreModal = null;
 
 // =============================================================================
@@ -41,6 +42,15 @@ export async function loadStores() {
 }
 
 function setupEventHandlers() {
+  // Search handler
+  const searchInput = $('#store-search');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e) => {
+      searchQuery = e.target.value.toLowerCase();
+      renderStoresTable();
+    });
+  }
+
   // Tier filter buttons
   createFilterButtons({
     selector: '.filter-btn[data-tier]',
@@ -99,8 +109,17 @@ function renderStoresTable() {
   const tbody = $('#stores-tbody');
   if (!tbody) return;
 
-  // Filter by tier
+  // Filter by search query
   let filtered = storesData;
+  if (searchQuery) {
+    filtered = filtered.filter(s => {
+      const name = s.name?.toLowerCase() || '';
+      const address = s.address?.toLowerCase() || '';
+      return name.includes(searchQuery) || address.includes(searchQuery);
+    });
+  }
+
+  // Filter by tier
   if (filterTier) {
     filtered = filtered.filter(s => s.tier === filterTier);
   }

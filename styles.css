@@ -368,6 +368,23 @@
     border-color: var(--color-primary);
   }
 
+  /* Search Row - consistent search bar + button layout */
+  .search-row {
+    display: flex;
+    gap: var(--space-sm);
+    padding: var(--space-md) 0;
+    margin-bottom: var(--space-sm);
+    align-items: center;
+  }
+
+  .search-row .form-input {
+    flex: 1;
+  }
+
+  .search-row .btn {
+    flex-shrink: 0;
+  }
+
   /* Forms */
   .form-group {
     margin-bottom: var(--space-md);
@@ -1160,15 +1177,45 @@
     color: var(--color-text-muted);
   }
 
-  /* Visits Summary */
-  .visits-summary {
+  /* Visits Collapsible Section */
+  .visits-collapsible {
+    margin-top: var(--space-lg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+  }
+
+  .visits-collapsible summary {
     display: flex;
+    align-items: center;
     justify-content: space-between;
     padding: var(--space-md);
-    background: var(--color-surface);
-    border-radius: var(--radius-md);
-    margin-bottom: var(--space-md);
-    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+  }
+
+  .visits-collapsible summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .visits-collapsible summary::after {
+    content: '+';
+    font-size: 1.25rem;
+    color: var(--color-text-muted);
+  }
+
+  .visits-collapsible[open] summary::after {
+    content: '−';
+  }
+
+  .visits-collapsible[open] summary {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .visits-collapsible .visits-content {
+    padding: var(--space-md);
   }
 }
 
@@ -2189,6 +2236,48 @@
 
 .trends-sources__item a:hover {
   text-decoration: underline;
+}
+
+/* =============================================================================
+   PRICING REFERENCE TAB
+   ============================================================================= */
+
+.pricing-intro {
+  margin-bottom: var(--space-lg);
+}
+
+.pricing-section {
+  margin-bottom: var(--space-xl);
+}
+
+.pricing-section h3 {
+  margin: 0 0 var(--space-sm) 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.size-tables-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-md);
+}
+
+.size-table-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+}
+
+.size-table-card h4 {
+  margin: 0 0 var(--space-sm) 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.size-table-card .table {
+  margin: 0;
 }
 
 /* Seasonal reason text in action items modal */
