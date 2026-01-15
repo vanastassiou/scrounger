@@ -462,6 +462,19 @@
     flex-shrink: 0;
   }
 
+  .form-group--compact {
+    margin-bottom: var(--space-sm);
+    background: var(--color-surface);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-sm);
+  }
+
+  .form-label-hint {
+    font-weight: normal;
+    color: var(--color-text-muted);
+    font-size: 0.85em;
+  }
+
   /* Materials List */
   .materials-list {
     display: flex;
@@ -2236,6 +2249,89 @@
 
 .trends-sources__item a:hover {
   text-decoration: underline;
+}
+
+/* Trend Pills - for displaying colors, cuts, styles in trends table */
+.trend-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+
+.trend-pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.trend-pill--color {
+  background: var(--color-primary);
+  color: white;
+}
+
+.trend-pill--emerging {
+  background: var(--color-warning);
+  color: black;
+}
+
+.trend-pill--cut {
+  background: var(--color-success);
+  color: white;
+}
+
+.trend-pill--style {
+  background: #8b5cf6;
+  color: white;
+}
+
+.trend-pills--hot .trend-pill {
+  background: var(--color-primary);
+  color: white;
+}
+
+.trend-pills--emerging .trend-pill--emerging {
+  background: var(--color-warning);
+  color: black;
+  opacity: 0.9;
+}
+
+/* Platform comparison full table */
+.platform-comparison-full {
+  margin-top: var(--space-sm);
+}
+
+.platform-comparison-full th,
+.platform-comparison-full td {
+  padding: var(--space-xs) var(--space-sm);
+}
+
+.platform-row--recommended {
+  background: var(--color-surface-elevated);
+}
+
+.platform-row--recommended td:first-child {
+  font-weight: 600;
+}
+
+.badge--small {
+  font-size: 0.6rem;
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary);
+  color: white;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.trend-fit-badge {
+  font-size: 0.65rem;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-elevated);
+  color: var(--color-text-muted);
 }
 
 /* =============================================================================

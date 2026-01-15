@@ -413,8 +413,8 @@
               <tr>
                 <th>Month</th>
                 <th>Themes</th>
-                <th>Hot items</th>
-                <th>Why</th>
+                <th>Colors</th>
+                <th>Cuts &amp; Styles</th>
                 <th>Platform notes</th>
               </tr>
             </thead>
@@ -1218,19 +1218,28 @@
 
         <!-- Recommendations Section -->
         <div id="selling-recommendations" class="recommendations-section" style="display: none;">
-          <h4 class="recommendations-title">Recommendations</h4>
+          <h4 class="recommendations-title">Pricing Recommendation</h4>
+
+          <div class="recommendation-row">
+            <span class="recommendation-label">Suggested range</span>
+            <span id="suggested-price-range" class="recommendation-value"></span>
+          </div>
+          <div id="price-breakdown" class="recommendation-breakdown text-muted"></div>
+
+          <div class="form-group form-group--compact">
+            <label class="form-label" for="start-selling-comp-price">
+              Override with comp price
+              <span class="form-label-hint">(optional)</span>
+            </label>
+            <input type="number" class="form-input" id="start-selling-comp-price" step="0.01" min="0" placeholder="Enter comparable listing price...">
+            <small class="form-hint">Enter a price from a similar sold listing to override the suggested range</small>
+          </div>
 
           <div class="recommendation-row">
             <span class="recommendation-label">Best platform</span>
             <span id="recommended-platform" class="recommendation-value"></span>
           </div>
           <div id="platform-reasons" class="recommendation-reasons text-muted"></div>
-
-          <div class="recommendation-row">
-            <span class="recommendation-label">Suggested price</span>
-            <span id="suggested-price" class="recommendation-value"></span>
-          </div>
-          <div id="price-breakdown" class="recommendation-breakdown text-muted"></div>
 
           <div class="recommendation-row">
             <span class="recommendation-label">Est. profit</span>

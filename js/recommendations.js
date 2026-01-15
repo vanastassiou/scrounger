@@ -11,12 +11,143 @@ import {
   SHOE_SIZE_TIERS,
   JEWELRY_SIZE_RULES,
   PLATFORM_FIT_ADJUSTMENTS,
-  FLAW_IMPACT
+  FLAW_IMPACT,
+  COLOR_TREND_MULTIPLIERS,
+  CUT_TREND_MULTIPLIERS,
+  STYLE_TREND_MULTIPLIERS,
+  CUT_KEYWORDS,
+  STYLE_KEYWORDS,
+  TREND_WEIGHTS,
+  MAX_TREND_ADJUSTMENT
 } from './config.js';
 import { calculatePlatformFees } from './fees.js';
+import { getCurrentMonthKey } from './seasonal.js';
 
 let brandsLookup = null;
 let materialsLookup = null;
+let seasonalData = null;
+let platformsData = null;
+let brandsDataFull = null; // Full brands data including meta pricing
+
+// =============================================================================
+// BASE RESALE PRICE RANGES
+// =============================================================================
+
+// Subcategory to base range category mapping
+const SUBCATEGORY_TO_BASE_CATEGORY = {
+  // Clothing - blouse
+  blouse: 'blouse',
+  shirt: 'blouse',
+  tank: 'blouse',
+  // Clothing - dress
+  dress: 'dress',
+  gown: 'dress',
+  jumpsuit: 'dress',
+  romper: 'dress',
+  // Clothing - coat
+  coat: 'coat',
+  jacket: 'jacket',
+  blazer: 'jacket',
+  vest: 'jacket',
+  // Clothing - pants
+  pants: 'pants',
+  jeans: 'pants',
+  trousers: 'pants',
+  shorts: 'pants',
+  // Clothing - skirt
+  skirt: 'skirt',
+  // Clothing - sweater
+  sweater: 'sweater',
+  cardigan: 'sweater',
+  hoodie: 'sweater',
+  // Shoes
+  heels: 'shoes',
+  flats: 'shoes',
+  boots: 'shoes',
+  sandals: 'shoes',
+  sneakers: 'shoes',
+  loafers: 'shoes',
+  oxfords: 'shoes',
+  mules: 'shoes',
+  // Jewelry - use own ranges
+  necklace: 'jewelry',
+  bracelet: 'jewelry',
+  earrings: 'jewelry',
+  ring: 'jewelry',
+  brooch: 'jewelry',
+  pendant: 'jewelry'
+};
+
+// Jewelry-specific base ranges (not in the brands file)
+const JEWELRY_BASE_RANGES = {
+  costume: [10, 35],
+  silver: [25, 75],
+  gold: [50, 200],
+  fine: [100, 500]
+};
+
+/**
+ * Load full brands data including meta pricing info.
+ */
+async function loadBrandsDataFull() {
+  if (brandsDataFull) return brandsDataFull;
+  try {
+    const response = await fetch('/data/brands-clothing-shoes.json');
+    brandsDataFull = await response.json();
+    return brandsDataFull;
+  } catch (err) {
+    console.error('Failed to load brands data:', err);
+    return null;
+  }
+}
+
+/**
+ * Get base resale price range for an item based on its subcategory.
+ * @param {object} item - Inventory item
+ * @returns {Promise<{min: number, max: number, category: string}|null>}
+ */
+export async function getBasePriceRange(item) {
+  const data = await loadBrandsDataFull();
+  const baseRanges = data?.meta?.pricing_notes?.base_resale_ranges_cad;
+
+  if (!baseRanges && item.category !== 'jewelry') {
+    return null;
+  }
+
+  // Map subcategory to base category
+  const subcategory = item.subcategory?.toLowerCase();
+  let baseCategory = SUBCATEGORY_TO_BASE_CATEGORY[subcategory];
+
+  // Fallback to category-based defaults
+  if (!baseCategory) {
+    if (item.category === 'clothing') baseCategory = 'dress'; // Default
+    else if (item.category === 'shoes') baseCategory = 'shoes';
+    else if (item.category === 'jewelry') baseCategory = 'jewelry';
+    else return null;
+  }
+
+  // Handle jewelry separately
+  if (baseCategory === 'jewelry') {
+    const metalType = item.metal_type || 'costume';
+    let jewelryTier = 'costume';
+    if (metalType.includes('gold') && !metalType.includes('plated') && !metalType.includes('filled')) {
+      jewelryTier = 'gold';
+    } else if (metalType.includes('silver') || metalType === 'sterling_silver') {
+      jewelryTier = 'silver';
+    } else if (metalType === 'platinum' || metalType === 'palladium') {
+      jewelryTier = 'fine';
+    }
+
+    const range = JEWELRY_BASE_RANGES[jewelryTier];
+    return { min: range[0], max: range[1], category: `jewelry_${jewelryTier}` };
+  }
+
+  // Get range from brands data
+  const range = baseRanges[baseCategory];
+  if (!range) return null;
+
+  return { min: range[0], max: range[1], category: baseCategory };
+}
 
 // =============================================================================
 // BRAND LOOKUP
@@ -501,6 +632,383 @@ export function getPlatformFitModifier(item, platformId, factors) {
 }
 
 // =============================================================================
+// TREND MATCHING
+// =============================================================================
+
+/**
+ * Load seasonal trend data.
+ */
+async function loadSeasonalData() {
+  if (seasonalData) return seasonalData;
+  try {
+    const response = await fetch('/data/seasonal-selling.json');
+    seasonalData = await response.json();
+    return seasonalData;
+  } catch (err) {
+    console.error('Failed to load seasonal data:', err);
+    return null;
+  }
+}
+
+/**
+ * Load platform preferences data.
+ */
+async function loadPlatformsData() {
+  if (platformsData) return platformsData;
+  try {
+    const response = await fetch('/data/platforms.json');
+    platformsData = await response.json();
+    return platformsData;
+  } catch (err) {
+    console.error('Failed to load platforms data:', err);
+    return null;
+  }
+}
+
+/**
+ * Normalize color name for comparison.
+ */
+function normalizeColor(color) {
+  if (!color) return null;
+  return color.toLowerCase().replace(/[_-]/g, '').trim();
+}
+
+/**
+ * Check if a color is a neutral (always safe).
+ */
+function isNeutralColor(color) {
+  const neutrals = ['black', 'white', 'grey', 'gray', 'navy', 'cream', 'beige', 'tan', 'camel', 'brown', 'charcoal', 'ivory', 'khaki', 'nude', 'taupe'];
+  const normalized = normalizeColor(color);
+  return neutrals.some(n => normalized?.includes(n));
+}
+
+/**
+ * Match item colors to seasonal trends.
+ * @param {object} item - Inventory item
+ * @param {string} monthKey - Current month key (e.g., 'january')
+ * @returns {{multiplier: number, tier: string, matchedColors: string[], summary: string}}
+ */
+async function matchItemToColorTrends(item, monthKey) {
+  const data = await loadSeasonalData();
+  if (!data?.months?.[monthKey]) {
+    return { multiplier: 1.0, tier: 'neutral', matchedColors: [], summary: 'No data' };
+  }
+
+  const monthData = data.months[monthKey];
+  const itemColors = [item.primary_colour, item.secondary_colour]
+    .filter(Boolean)
+    .map(c => normalizeColor(c));
+
+  if (itemColors.length === 0) {
+    return { multiplier: 1.0, tier: 'neutral', matchedColors: [], summary: 'No color' };
+  }
+
+  // Get color trends for the month
+  const hotColors = (monthData.colour_trends?.hot || []).map(normalizeColor);
+  const emergingColors = (monthData.colour_trends?.emerging || []).map(normalizeColor);
+  const decliningColors = (monthData.colour_trends?.declining || []).map(normalizeColor);
+
+  // Also get colors from hot_categories for this month
+  const categoryColors = (monthData.hot_categories || [])
+    .flatMap(cat => cat.colours || [])
+    .map(normalizeColor);
+
+  const allHotColors = [...new Set([...hotColors, ...categoryColors])];
+
+  // Check for matches
+  const hotMatches = itemColors.filter(c => allHotColors.some(h => c?.includes(h) || h?.includes(c)));
+  const emergingMatches = itemColors.filter(c => emergingColors.some(e => c?.includes(e) || e?.includes(c)));
+  const decliningMatches = itemColors.filter(c => decliningColors.some(d => c?.includes(d) || d?.includes(c)));
+
+  if (hotMatches.length > 0) {
+    return {
+      multiplier: COLOR_TREND_MULTIPLIERS.hot,
+      tier: 'hot',
+      matchedColors: hotMatches,
+      summary: `Hot color: ${hotMatches[0]}`
+    };
+  }
+
+  if (emergingMatches.length > 0) {
+    return {
+      multiplier: COLOR_TREND_MULTIPLIERS.emerging,
+      tier: 'emerging',
+      matchedColors: emergingMatches,
+      summary: `Trending: ${emergingMatches[0]}`
+    };
+  }
+
+  if (decliningMatches.length > 0) {
+    return {
+      multiplier: COLOR_TREND_MULTIPLIERS.declining,
+      tier: 'declining',
+      matchedColors: decliningMatches,
+      summary: `Off-trend color`
+    };
+  }
+
+  // Check if it's a neutral (always safe)
+  if (itemColors.some(c => isNeutralColor(c))) {
+    return {
+      multiplier: COLOR_TREND_MULTIPLIERS.neutral,
+      tier: 'neutral',
+      matchedColors: [],
+      summary: 'Neutral color'
+    };
+  }
+
+  // Not matching any trend = slight penalty
+  return {
+    multiplier: 0.95,
+    tier: 'off_season',
+    matchedColors: [],
+    summary: 'Off-season'
+  };
+}
+
+/**
+ * Infer cut/silhouette from item description and subcategory.
+ * @param {object} item - Inventory item
+ * @returns {string[]} Array of detected cuts
+ */
+function inferCutsFromItem(item) {
+  const text = `${item.description || ''} ${item.title || ''} ${item.subcategory || ''}`.toLowerCase();
+  const detectedCuts = [];
+
+  for (const [cut, keywords] of Object.entries(CUT_KEYWORDS)) {
+    if (keywords.some(kw => text.includes(kw))) {
+      detectedCuts.push(cut);
+    }
+  }
+
+  return detectedCuts.length > 0 ? detectedCuts : ['classic'];
+}
+
+/**
+ * Match item cuts to seasonal trends and platform preferences.
+ * @param {object} item - Inventory item
+ * @param {string} monthKey - Current month key
+ * @param {string} platformId - Target platform
+ * @returns {{multiplier: number, tier: string, matchedCuts: string[], summary: string}}
+ */
+async function matchItemToCutTrends(item, monthKey, platformId) {
+  const [seasonal, platforms] = await Promise.all([loadSeasonalData(), loadPlatformsData()]);
+  const itemCuts = inferCutsFromItem(item);
+
+  // Get trending cuts for the month
+  const monthData = seasonal?.months?.[monthKey];
+  const trendingCuts = (monthData?.hot_categories || [])
+    .flatMap(cat => cat.cuts || [])
+    .map(c => c.toLowerCase().replace(/[_-]/g, ''));
+
+  // Get platform preferred cuts
+  const platformPrefs = platforms?.platforms?.[platformId]?.style_preferences;
+  const platformCuts = (platformPrefs?.preferred_cuts || [])
+    .map(c => c.toLowerCase().replace(/[_-]/g, ''));
+
+  // Check for matches
+  const normalizedItemCuts = itemCuts.map(c => c.toLowerCase().replace(/[_-]/g, ''));
+
+  const trendingMatches = normalizedItemCuts.filter(c => trendingCuts.includes(c));
+  const platformMatches = normalizedItemCuts.filter(c => platformCuts.includes(c));
+
+  if (trendingMatches.length > 0 && platformMatches.length > 0) {
+    return {
+      multiplier: CUT_TREND_MULTIPLIERS.trending,
+      tier: 'trending',
+      matchedCuts: trendingMatches,
+      summary: `Trending cut: ${trendingMatches[0]}`
+    };
+  }
+
+  if (platformMatches.length > 0) {
+    return {
+      multiplier: CUT_TREND_MULTIPLIERS.platform_match,
+      tier: 'platform_match',
+      matchedCuts: platformMatches,
+      summary: `Good fit: ${platformMatches[0]}`
+    };
+  }
+
+  if (trendingMatches.length > 0) {
+    return {
+      multiplier: 1.05,
+      tier: 'seasonal',
+      matchedCuts: trendingMatches,
+      summary: `Seasonal: ${trendingMatches[0]}`
+    };
+  }
+
+  // Check if classic (no penalty)
+  const classicCuts = ['classic', 'tailored', 'structured', 'aline', 'straight', 'fitted'];
+  if (normalizedItemCuts.some(c => classicCuts.includes(c))) {
+    return {
+      multiplier: CUT_TREND_MULTIPLIERS.classic,
+      tier: 'classic',
+      matchedCuts: [],
+      summary: 'Classic cut'
+    };
+  }
+
+  return {
+    multiplier: 1.0,
+    tier: 'neutral',
+    matchedCuts: [],
+    summary: 'Standard'
+  };
+}
+
+/**
+ * Infer style/aesthetic from item attributes.
+ * @param {object} item - Inventory item
+ * @returns {string[]} Array of detected styles
+ */
+function inferStylesFromItem(item) {
+  const text = `${item.description || ''} ${item.title || ''} ${item.brand || ''}`.toLowerCase();
+  const detectedStyles = [];
+
+  // Check keywords
+  for (const [style, keywords] of Object.entries(STYLE_KEYWORDS)) {
+    if (keywords.some(kw => text.includes(kw))) {
+      detectedStyles.push(style);
+    }
+  }
+
+  // Infer from era
+  const era = item.era;
+  if (era === '1990s' || era === '2000s') {
+    detectedStyles.push('y2k');
+  } else if (era === '1970s') {
+    detectedStyles.push('boho');
+  } else if (era === '1980s') {
+    detectedStyles.push('vintage_authentic');
+  } else if (['pre_1920s', '1920s', '1930s', '1940s', '1950s', '1960s'].includes(era)) {
+    detectedStyles.push('vintage_authentic');
+  }
+
+  return [...new Set(detectedStyles)];
+}
+
+/**
+ * Match item styles to platform preferences and seasonal aesthetics.
+ * @param {object} item - Inventory item
+ * @param {string} monthKey - Current month key
+ * @param {string} platformId - Target platform
+ * @returns {{multiplier: number, tier: string, matchedStyles: string[], summary: string}}
+ */
+async function matchItemToStyleTrends(item, monthKey, platformId) {
+  const [seasonal, platforms] = await Promise.all([loadSeasonalData(), loadPlatformsData()]);
+  const itemStyles = inferStylesFromItem(item);
+
+  // Get trending aesthetics for the month
+  const monthData = seasonal?.months?.[monthKey];
+  const trendingAesthetics = (monthData?.trending_aesthetics || [])
+    .map(s => s.toLowerCase().replace(/[_-]/g, ''));
+
+  // Get platform preferred styles
+  const platformPrefs = platforms?.platforms?.[platformId]?.style_preferences;
+  const platformStyles = (platformPrefs?.preferred_styles || [])
+    .map(s => s.toLowerCase().replace(/[_-]/g, ''));
+  const avoidStyles = (platformPrefs?.avoid || [])
+    .map(s => s.toLowerCase().replace(/[_-]/g, ''));
+
+  // Normalize item styles
+  const normalizedItemStyles = itemStyles.map(s => s.toLowerCase().replace(/[_-]/g, ''));
+
+  // Check for mismatches (avoid styles)
+  const avoidMatches = normalizedItemStyles.filter(s => avoidStyles.some(a => s.includes(a) || a.includes(s)));
+  if (avoidMatches.length > 0) {
+    return {
+      multiplier: STYLE_TREND_MULTIPLIERS.platform_mismatch,
+      tier: 'platform_mismatch',
+      matchedStyles: avoidMatches,
+      summary: `Not ideal for ${platformId}`
+    };
+  }
+
+  // Check for platform match
+  const platformMatches = normalizedItemStyles.filter(s => platformStyles.some(p => s.includes(p) || p.includes(s)));
+  if (platformMatches.length > 0) {
+    // Also check if it's a hot aesthetic
+    const hotMatches = platformMatches.filter(s => trendingAesthetics.some(t => s.includes(t) || t.includes(s)));
+    if (hotMatches.length > 0) {
+      return {
+        multiplier: STYLE_TREND_MULTIPLIERS.hot_aesthetic,
+        tier: 'hot_aesthetic',
+        matchedStyles: hotMatches,
+        summary: `Hot: ${hotMatches[0]}`
+      };
+    }
+    return {
+      multiplier: STYLE_TREND_MULTIPLIERS.platform_match,
+      tier: 'platform_match',
+      matchedStyles: platformMatches,
+      summary: `Good fit: ${platformMatches[0]}`
+    };
+  }
+
+  // Check for seasonal match only
+  const seasonalMatches = normalizedItemStyles.filter(s => trendingAesthetics.some(t => s.includes(t) || t.includes(s)));
+  if (seasonalMatches.length > 0) {
+    return {
+      multiplier: STYLE_TREND_MULTIPLIERS.seasonal_match,
+      tier: 'seasonal_match',
+      matchedStyles: seasonalMatches,
+      summary: `Trending: ${seasonalMatches[0]}`
+    };
+  }
+
+  return {
+    multiplier: STYLE_TREND_MULTIPLIERS.neutral,
+    tier: 'neutral',
+    matchedStyles: [],
+    summary: 'Standard'
+  };
+}
+
+/**
+ * Calculate combined trend multiplier for an item.
+ * @param {object} item - Inventory item
+ * @param {string} platformId - Target platform
+ * @returns {Promise<{totalMultiplier: number, color: object, cut: object, style: object, summary: string}>}
+ */
+export async function calculateTrendMultiplier(item, platformId) {
+  const monthKey = getCurrentMonthKey();
+
+  const [colorResult, cutResult, styleResult] = await Promise.all([
+    matchItemToColorTrends(item, monthKey),
+    matchItemToCutTrends(item, monthKey, platformId),
+    matchItemToStyleTrends(item, monthKey, platformId)
+  ]);
+
+  // Weighted combination
+  const combined = (
+    (colorResult.multiplier * TREND_WEIGHTS.color) +
+    (cutResult.multiplier * TREND_WEIGHTS.cut) +
+    (styleResult.multiplier * TREND_WEIGHTS.style)
+  );
+
+  // Cap the adjustment
+  const cappedMultiplier = Math.max(
+    1 - MAX_TREND_ADJUSTMENT,
+    Math.min(1 + MAX_TREND_ADJUSTMENT, combined)
+  );
+
+  // Generate summary
+  const summaries = [colorResult.summary, cutResult.summary, styleResult.summary]
+    .filter(s => s && s !== 'Standard' && s !== 'No data' && s !== 'No color');
+  const summary = summaries.length > 0 ? summaries[0] : 'Standard';
+
+  return {
+    totalMultiplier: Math.round(cappedMultiplier * 100) / 100,
+    color: colorResult,
+    cut: cutResult,
+    style: styleResult,
+    summary
+  };
+}
+
+// =============================================================================
 // ADJUSTED PRICE CALCULATION
 // =============================================================================
 
@@ -531,6 +1039,9 @@ export async function calculateAdjustedPrice(baseListingPrice, item, platformId)
     size: sizeResult
   });
 
+  // 6. Trend multiplier (color, cut, style)
+  const trendResult = await calculateTrendMultiplier(item, platformId);
+
   // Calculate final adjusted price
   const adjustedPrice = Math.round(
     baseListingPrice *
@@ -539,6 +1050,7 @@ export async function calculateAdjustedPrice(baseListingPrice, item, platformId)
     conditionMultiplier *
     flawMultiplier *
     platformFit.modifier *
+    trendResult.totalMultiplier *
     100
   ) / 100;
 
@@ -569,6 +1081,13 @@ export async function calculateAdjustedPrice(baseListingPrice, item, platformId)
         modifier: platformFit.modifier,
         platformId,
         adjustments: platformFit.adjustments
+      },
+      trends: {
+        multiplier: trendResult.totalMultiplier,
+        color: trendResult.color,
+        cut: trendResult.cut,
+        style: trendResult.style,
+        summary: trendResult.summary
       }
     }
   };
@@ -579,26 +1098,75 @@ export async function calculateAdjustedPrice(baseListingPrice, item, platformId)
 // =============================================================================
 
 /**
- * Calculate enhanced resale value factoring in condition and era.
+ * Calculate enhanced resale value using brand-tier category ranges.
+ * Uses base resale price ranges by subcategory, adjusted by brand tier.
  * @param {object} item - Inventory item
- * @returns {Promise<{value: number, breakdown: object}|null>}
+ * @param {number} compPrice - Optional user-provided comparable price to use as base
+ * @returns {Promise<{value: number, breakdown: object, range: {min: number, max: number}}|null>}
  */
-export async function calculateEnhancedResaleValue(item) {
-  const purchaseCost = (item.purchase_price || 0) + (item.tax_paid || 0);
-  if (!purchaseCost) return null;
-
+export async function calculateEnhancedResaleValue(item, compPrice = null) {
+  // Get brand multiplier
   const brandInfo = await getBrandMultiplier(item.brand);
   const brandMultiplier = brandInfo?.multiplier || 1.5; // Default fallback
 
+  // Get base price range for this item type
+  const baseRange = await getBasePriceRange(item);
+  if (!baseRange && !compPrice) return null;
+
+  // Condition and era factors
   const conditionFactor = CONDITION_MULTIPLIERS[item.overall_condition] || 0.85;
   const eraBonus = ERA_BONUSES[item.era] || 1.0;
 
-  const suggestedValue = Math.round(purchaseCost * brandMultiplier * conditionFactor * eraBonus * 100) / 100;
+  // Calculate base price:
+  // If user provided comp price, use that
+  // Otherwise, use midpoint of the category range
+  let basePrice;
+  let baseSource;
+
+  if (compPrice && compPrice > 0) {
+    basePrice = compPrice;
+    baseSource = 'comp_price';
+  } else if (baseRange) {
+    // Use midpoint of range as base, then apply brand multiplier
+    basePrice = (baseRange.min + baseRange.max) / 2;
+    baseSource = 'category_range';
+  } else {
+    return null;
+  }
+
+  // Calculate suggested value
+  // For category range: base × brand multiplier × condition × era
+  // For comp price: comp × condition × era (brand already factored into comp)
+  let suggestedValue;
+  if (baseSource === 'comp_price') {
+    // Comp price is already market-based, just adjust for condition
+    suggestedValue = Math.round(basePrice * conditionFactor * eraBonus * 100) / 100;
+  } else {
+    // Category range needs full brand multiplier
+    suggestedValue = Math.round(basePrice * brandMultiplier * conditionFactor * eraBonus * 100) / 100;
+  }
+
+  // Calculate the full range (min/max with all multipliers applied)
+  let rangeMin, rangeMax;
+  if (baseRange) {
+    rangeMin = Math.round(baseRange.min * brandMultiplier * conditionFactor * eraBonus * 100) / 100;
+    rangeMax = Math.round(baseRange.max * brandMultiplier * conditionFactor * eraBonus * 100) / 100;
+  } else {
+    // If using comp price with no range, estimate ±20%
+    rangeMin = Math.round(suggestedValue * 0.8 * 100) / 100;
+    rangeMax = Math.round(suggestedValue * 1.2 * 100) / 100;
+  }
 
   return {
     value: suggestedValue,
+    range: {
+      min: rangeMin,
+      max: rangeMax
+    },
     breakdown: {
-      base: purchaseCost,
+      base: basePrice,
+      baseSource,
+      baseCategory: baseRange?.category || 'comp',
       brandMultiplier,
       conditionFactor,
       eraBonus,
@@ -759,9 +1327,9 @@ export function rankPlatformsForItem(item, suggestedPrice, brandMultiplier) {
  *   profitEstimate: object
  * }|null>}
  */
-export async function generateSellingRecommendations(item) {
-  // Calculate enhanced resale value
-  const priceResult = await calculateEnhancedResaleValue(item);
+export async function generateSellingRecommendations(item, compPrice = null) {
+  // Calculate enhanced resale value using brand-tier ranges (or comp price if provided)
+  const priceResult = await calculateEnhancedResaleValue(item, compPrice);
   if (!priceResult) return null;
 
   const suggestedPrice = priceResult.value;
@@ -802,6 +1370,7 @@ export async function generateSellingRecommendations(item) {
 
   return {
     suggestedPrice,
+    priceRange: priceResult.range,
     priceBreakdown: priceResult.breakdown,
     recommendedPlatforms: platformsWithFees,
     profitEstimate

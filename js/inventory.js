@@ -15,10 +15,11 @@ import {
   CATEGORIES, SUBCATEGORIES, STATUS_OPTIONS, CONDITION_OPTIONS, ERA_OPTIONS,
   METAL_TYPES, CLOSURE_TYPES, JEWELRY_TESTS,
   FLAW_TYPES, FLAW_SEVERITY, WIDTH_OPTIONS, MEASUREMENT_FIELDS,
-  COLOUR_OPTIONS, MATERIAL_OPTIONS, PIPELINE_STATUSES
+  COLOUR_OPTIONS, MATERIAL_OPTIONS, PIPELINE_STATUSES, RESALE_PLATFORMS
 } from './config.js';
 import { queueSync } from './sync.js';
-import { generateSellingRecommendations, formatPlatformName } from './recommendations.js';
+import { generateSellingRecommendations, formatPlatformName, calculateTrendMultiplier } from './recommendations.js';
+import { calculatePlatformFees } from './fees.js';
 
 let inventoryData = [];
 let sortColumn = 'created_at';
@@ -37,6 +38,7 @@ const PHOTO_TYPES = ['front', 'back', 'detail', 'label', 'flaw', 'hallmark', 'cl
 
 // Start Selling modal state
 let startSellingModal = null;
+let currentSellingItem = null; // Item being listed for sale
 
 // Brands data cache for resale value suggestions
 let brandsLookup = null;
@@ -1709,6 +1711,12 @@ export async function openStartSellingModal(itemId) {
     if (form) {
       form.addEventListener('submit', handleStartSellingSubmit);
     }
+
+    // Setup comp price change handler
+    const compPriceInput = $('#start-selling-comp-price');
+    if (compPriceInput) {
+      compPriceInput.addEventListener('input', handleCompPriceChange);
+    }
   }
 
   const item = await getInventoryItem(itemId);
@@ -1717,17 +1725,24 @@ export async function openStartSellingModal(itemId) {
     return;
   }
 
+  // Store current item for recalculation
+  currentSellingItem = item;
+
   // Populate form
   $('#start-selling-item-id').value = itemId;
   $('#start-selling-item-title').textContent = item.title || 'Untitled';
   $('#start-selling-status').value = 'unlisted';
   $('#start-selling-min-price').value = item.minimum_acceptable_price || '';
 
+  // Reset comp price input
+  const compPriceInput = $('#start-selling-comp-price');
+  if (compPriceInput) compPriceInput.value = '';
+
   const suggestionEl = $('#start-selling-suggestion');
   const estValueInput = $('#start-selling-est-value');
   const recommendationsSection = $('#selling-recommendations');
 
-  // Generate recommendations
+  // Generate recommendations using brand-tier ranges (no comp price initially)
   const recommendations = await generateSellingRecommendations(item);
 
   if (recommendations) {
@@ -1751,7 +1766,7 @@ export async function openStartSellingModal(itemId) {
       if (suggestion) {
         estValueInput.value = suggestion.value;
         if (suggestionEl) {
-          let hint = `Suggested: ${formatCurrency(suggestion.value)} (${suggestion.multiplier}× cost)`;
+          let hint = `Suggested: ${formatCurrency(suggestion.value)} (${suggestion.multiplier}× brand tier)`;
           if (suggestion.tips) hint += ` — ${suggestion.tips}`;
           suggestionEl.textContent = hint;
         }
@@ -1771,10 +1786,57 @@ export async function openStartSellingModal(itemId) {
 }
 
 /**
+ * Handle comp price input change - recalculate recommendations.
+ */
+async function handleCompPriceChange(e) {
+  if (!currentSellingItem) return;
+
+  const compPrice = parseFloat(e.target.value) || null;
+  const recommendations = await generateSellingRecommendations(currentSellingItem, compPrice);
+
+  if (recommendations) {
+    renderRecommendations(recommendations, currentSellingItem);
+
+    // Update estimated value input
+    const estValueInput = $('#start-selling-est-value');
+    if (estValueInput && !currentSellingItem.estimated_resale_value) {
+      estValueInput.value = recommendations.suggestedPrice;
+    }
+  }
+}
+
+/**
  * Render recommendations in the Start Selling modal.
  */
 function renderRecommendations(rec, item) {
   const costBasis = (item.purchase_price || 0) + (item.tax_paid || 0);
+
+  // Suggested price range
+  const priceRangeEl = $('#suggested-price-range');
+  const breakdownEl = $('#price-breakdown');
+
+  if (priceRangeEl && rec.priceRange) {
+    priceRangeEl.textContent = `${formatCurrency(rec.priceRange.min)} – ${formatCurrency(rec.priceRange.max)}`;
+  }
+
+  if (breakdownEl) {
+    const b = rec.priceBreakdown;
+    let breakdown = '';
+
+    if (b.baseSource === 'comp_price') {
+      // Using user-provided comp price
+      breakdown = `Based on comp: ${formatCurrency(b.base)}`;
+      if (b.conditionFactor !== 1.0) breakdown += ` × ${b.conditionFactor} condition`;
+      if (b.eraBonus !== 1.0) breakdown += ` × ${b.eraBonus} vintage`;
+    } else {
+      // Using category-based range
+      const categoryName = formatBaseCategory(b.baseCategory);
+      breakdown = `${categoryName} base × ${b.brandMultiplier}× brand`;
+      if (b.conditionFactor !== 1.0) breakdown += ` × ${b.conditionFactor} condition`;
+      if (b.eraBonus !== 1.0) breakdown += ` × ${b.eraBonus} vintage`;
+    }
+    breakdownEl.textContent = breakdown;
+  }
 
   // Recommended platform
   const platformEl = $('#recommended-platform');
@@ -1783,18 +1845,6 @@ function renderRecommendations(rec, item) {
     const top = rec.recommendedPlatforms[0];
     if (platformEl) platformEl.textContent = formatPlatformName(top.platformId);
     if (reasonsEl) reasonsEl.textContent = top.reasons.slice(0, 2).join(' · ');
-  }
-
-  // Suggested price with breakdown
-  const priceEl = $('#suggested-price');
-  const breakdownEl = $('#price-breakdown');
-  if (priceEl) priceEl.textContent = formatCurrency(rec.suggestedPrice);
-
-  if (breakdownEl) {
-    const b = rec.priceBreakdown;
-    let breakdown = `${formatCurrency(b.base)} × ${b.brandMultiplier}× brand × ${b.conditionFactor} condition`;
-    if (b.eraBonus !== 1.0) breakdown += ` × ${b.eraBonus} vintage`;
-    breakdownEl.textContent = breakdown;
   }
 
   // Profit estimate for top platform
@@ -1810,27 +1860,117 @@ function renderRecommendations(rec, item) {
     }
   }
 
-  // Platform comparison table
-  renderPlatformComparison(rec.recommendedPlatforms, costBasis);
+  // Platform comparison table - show all platforms
+  renderPlatformComparison(rec.recommendedPlatforms, costBasis, rec.suggestedPrice, item);
 }
 
 /**
- * Render the platform comparison table in the details section.
+ * Format base category name for display.
  */
-function renderPlatformComparison(platforms, costBasis) {
-  const container = $('#platform-comparison');
-  if (!container || platforms.length < 2) return;
+function formatBaseCategory(category) {
+  const map = {
+    blouse: 'Blouse',
+    dress: 'Dress',
+    coat: 'Coat',
+    jacket: 'Jacket',
+    pants: 'Pants',
+    skirt: 'Skirt',
+    sweater: 'Sweater',
+    shoes: 'Shoes',
+    jewelry_costume: 'Costume jewelry',
+    jewelry_silver: 'Silver jewelry',
+    jewelry_gold: 'Gold jewelry',
+    jewelry_fine: 'Fine jewelry',
+    comp: 'Comp price'
+  };
+  return map[category] || capitalize(category);
+}
 
-  container.innerHTML = platforms.map(p => {
-    const profitClass = p.profit >= 0 ? 'text-success' : 'text-danger';
-    return `
-      <div class="platform-comparison-row">
-        <span>${formatPlatformName(p.platformId)}</span>
-        <span class="text-muted">~${p.feePercent}% fee</span>
-        <span class="${profitClass}">${formatCurrency(p.profit)}</span>
-      </div>
-    `;
-  }).join('');
+/**
+ * Render the platform comparison table showing ALL platforms.
+ */
+async function renderPlatformComparison(recommendedPlatforms, costBasis, suggestedPrice, item) {
+  const container = $('#platform-comparison');
+  if (!container) return;
+
+  // All platforms except 'other'
+  const ALL_PLATFORMS = RESALE_PLATFORMS.filter(p => p !== 'other');
+
+  // Build data for all platforms
+  const allPlatformsData = await Promise.all(ALL_PLATFORMS.map(async (platformId) => {
+    // Check if this platform is in the recommended list
+    const existing = recommendedPlatforms.find(p => p.platformId === platformId);
+    if (existing) {
+      return { ...existing, isRecommended: true };
+    }
+
+    // Calculate for non-recommended platforms
+    const fees = calculatePlatformFees(platformId, suggestedPrice);
+    const netPayout = fees?.netPayout || suggestedPrice * 0.85;
+    const profit = netPayout - costBasis;
+    const feePercent = fees ? Math.round((fees.totalFees / suggestedPrice) * 100) : 15;
+
+    // Get trend fit info
+    let trendSummary = null;
+    try {
+      const trendResult = await calculateTrendMultiplier(item, platformId);
+      if (trendResult.summary !== 'Standard') {
+        trendSummary = trendResult.summary;
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+
+    return {
+      platformId,
+      score: 0,
+      reasons: [],
+      fees,
+      netPayout: Math.round(netPayout * 100) / 100,
+      profit: Math.round(profit * 100) / 100,
+      feePercent,
+      isRecommended: false,
+      trendSummary
+    };
+  }));
+
+  // Sort: recommended first, then by profit descending
+  allPlatformsData.sort((a, b) => {
+    if (a.isRecommended && !b.isRecommended) return -1;
+    if (!a.isRecommended && b.isRecommended) return 1;
+    return b.profit - a.profit;
+  });
+
+  // Render table
+  container.innerHTML = `
+    <table class="table table--compact platform-comparison-full">
+      <thead>
+        <tr>
+          <th>Platform</th>
+          <th class="col-numeric">Fee</th>
+          <th class="col-numeric">Profit</th>
+          <th>Fit</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${allPlatformsData.map(p => {
+          const profitClass = p.profit >= 0 ? 'text-success' : 'text-danger';
+          const rowClass = p.isRecommended ? 'platform-row--recommended' : '';
+          const recBadge = p.isRecommended ? '<span class="badge--small">Rec</span>' : '';
+          const fitBadge = p.trendSummary ? `<span class="trend-fit-badge">${escapeHtml(p.trendSummary)}</span>` : '<span class="text-muted">—</span>';
+
+          return `
+            <tr class="${rowClass}">
+              <td>${formatPlatformName(p.platformId)}${recBadge}</td>
+              <td class="col-numeric text-muted">~${p.feePercent}%</td>
+              <td class="col-numeric ${profitClass}">${formatCurrency(p.profit)}</td>
+              <td>${fitBadge}</td>
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
 }
 
 async function handleStartSellingSubmit(e) {
