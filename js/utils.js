@@ -178,6 +178,69 @@ export function formatProfitDisplay(profit) {
 }
 
 /**
+ * Render a profit waterfall breakdown.
+ * Shows: Sale → Fees → Payout → Cost → Profit
+ * @param {Object} data
+ * @param {number} data.salePrice - Sale price
+ * @param {number} data.fees - Total platform fees
+ * @param {number} data.payout - Net payout (salePrice - fees)
+ * @param {number} data.costBasis - Total cost (purchase + tax + repairs)
+ * @param {number} data.profit - Final profit (payout - costBasis)
+ * @param {string} [data.feeDetails] - Optional fee breakdown text
+ * @param {string} [data.costDetails] - Optional cost breakdown text
+ * @param {Object} [options]
+ * @param {boolean} [options.showDetails=false] - Show fee/cost details
+ * @param {boolean} [options.compact=false] - Use compact styling
+ * @returns {string} HTML string
+ */
+export function renderProfitWaterfall(data, options = {}) {
+  const { salePrice, fees, payout, costBasis, profit, feeDetails, costDetails } = data;
+  const { showDetails = false, compact = false } = options;
+
+  const compactClass = compact ? ' profit-waterfall--compact' : '';
+  let html = `<div class="profit-waterfall${compactClass}">`;
+
+  // Sale
+  html += `<div class="profit-waterfall__line">
+    <span class="profit-waterfall__label">Sale</span>
+    <span class="profit-waterfall__value">${formatCurrency(salePrice)}</span>
+  </div>`;
+
+  // Fees (with optional inline details)
+  const feesLabel = showDetails && feeDetails ? `Fees (${escapeHtml(feeDetails)})` : 'Fees';
+  html += `<div class="profit-waterfall__line">
+    <span class="profit-waterfall__label">${feesLabel}</span>
+    <span class="profit-waterfall__value profit-waterfall__value--negative">${formatCurrency(-fees)}</span>
+  </div>`;
+
+  // Payout subtotal
+  html += `<div class="profit-waterfall__line profit-waterfall__line--subtotal">
+    <span class="profit-waterfall__label">Payout</span>
+    <span class="profit-waterfall__value">${formatCurrency(payout)}</span>
+  </div>`;
+
+  // Cost
+  html += `<div class="profit-waterfall__line">
+    <span class="profit-waterfall__label">Cost</span>
+    <span class="profit-waterfall__value profit-waterfall__value--negative">${formatCurrency(-costBasis)}</span>
+  </div>`;
+
+  if (showDetails && costDetails) {
+    html += `<div class="profit-waterfall__details">${escapeHtml(costDetails)}</div>`;
+  }
+
+  // Profit total
+  const profitClass = profit >= 0 ? 'profit--positive' : 'profit--negative';
+  html += `<div class="profit-waterfall__line profit-waterfall__line--total">
+    <span class="profit-waterfall__label">Profit</span>
+    <span class="profit-waterfall__value ${profitClass}">${formatCurrency(profit)}</span>
+  </div>`;
+
+  html += '</div>';
+  return html;
+}
+
+/**
  * Escape HTML special characters to prevent XSS.
  */
 export function escapeHtml(str) {

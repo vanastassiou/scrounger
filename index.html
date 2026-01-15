@@ -143,15 +143,11 @@
           </button>
           <button class="action-tile hidden" data-action="shipping">
             <span class="action-tile__count" id="tile-count-shipping">0</span>
-            <span class="action-tile__label">Needs shipping</span>
+            <span class="action-tile__label">Needs packaging</span>
           </button>
           <button class="action-tile hidden" data-action="awaiting">
             <span class="action-tile__count" id="tile-count-awaiting">0</span>
-            <span class="action-tile__label">Awaiting confirmation</span>
-          </button>
-          <button class="action-tile hidden" data-action="confirm">
-            <span class="action-tile__count" id="tile-count-confirm">0</span>
-            <span class="action-tile__label">Confirm sale</span>
+            <span class="action-tile__label">Ready to ship</span>
           </button>
         </div>
         <p class="text-muted text-center action-tiles-empty" id="action-tiles-empty">All clear!</p>
@@ -195,13 +191,12 @@
             <thead>
               <tr>
                 <th data-sort="title">Title</th>
-                <th data-sort="purchase_price">Cost</th>
-                <th data-sort="status">Status</th>
+                <th data-sort="estimated_resale_value" class="col-numeric">Est. profit</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody id="inventory-tbody">
-              <tr><td colspan="4" class="empty-state"><div class="empty-icon">I</div><p>Loading...</p></td></tr>
+              <tr><td colspan="3" class="empty-state"><div class="empty-icon">I</div><p>Loading...</p></td></tr>
             </tbody>
           </table>
         </div>
@@ -213,14 +208,12 @@
         <div class="table-toolbar">
           <select class="filter-select" id="status-filter" aria-label="Filter by status">
             <option value="all">All pipeline</option>
+            <option value="needs_photo">Needs photo</option>
             <option value="unlisted">Unlisted</option>
-            <option value="photographed">Photographed</option>
             <option value="listed">Listed</option>
-            <option value="pending_sale">Pending</option>
+            <option value="sold">Sold</option>
             <option value="packaged">Packaged</option>
             <option value="shipped">Shipped</option>
-            <option value="confirmed_received">Confirmed</option>
-            <option value="sold">Sold</option>
           </select>
           <select class="filter-select" id="platform-filter" aria-label="Filter by platform">
             <option value="all">All platforms</option>
@@ -1134,32 +1127,41 @@
           </div>
         </div>
 
-        <div id="fee-breakdown" class="fee-breakdown hidden"></div>
-
         <div class="form-group">
-          <label class="form-label">Profit summary</label>
-          <div class="profit-summary" id="profit-summary">
-            <div class="profit-row">
-              <span>Sale price:</span>
-              <span id="summary-price">$0.00</span>
-            </div>
-            <div class="profit-row">
-              <span>Cost basis:</span>
-              <span id="summary-cost">$0.00</span>
-            </div>
-            <div class="profit-row">
-              <span>Expenses:</span>
-              <span id="summary-expenses">$0.00</span>
-            </div>
-            <div class="profit-row profit-row--total">
-              <span>Net profit:</span>
-              <span id="summary-profit" class="profit--neutral">$0.00</span>
-            </div>
-          </div>
+          <label class="form-label">Profit breakdown</label>
+          <div id="profit-waterfall"></div>
         </div>
 
         <button type="submit" class="btn btn--primary btn--block">Confirm sale</button>
       </form>
+    </div>
+  </dialog>
+
+  <!-- Profit Breakdown Modal -->
+  <dialog id="profit-breakdown-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Estimated profit breakdown</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div id="profit-breakdown-content">
+        <div class="form-group">
+          <label class="form-label">Item</label>
+          <div id="breakdown-item-title" class="text-muted"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Best estimate</label>
+          <div id="breakdown-best-waterfall"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Platform comparison</label>
+          <div id="breakdown-platform-comparison" class="platform-comparison"></div>
+        </div>
+
+        <p class="text-muted text-sm">Note: Estimates based on typical platform fees. Actual fees may vary.</p>
+      </div>
     </div>
   </dialog>
 
@@ -1201,37 +1203,23 @@
 
         <!-- Recommendations Section -->
         <div id="selling-recommendations" class="recommendations-section" style="display: none;">
-          <h4 class="recommendations-title">Pricing Recommendation</h4>
-
-          <div class="recommendation-row">
-            <span class="recommendation-label">Suggested range</span>
-            <span id="suggested-price-range" class="recommendation-value"></span>
-          </div>
-          <div id="price-breakdown" class="recommendation-breakdown text-muted"></div>
-
-          <div class="form-group form-group--compact">
-            <label class="form-label" for="start-selling-comp-price">
-              Override with comp price
-              <span class="form-label-hint">(optional)</span>
-            </label>
-            <input type="number" class="form-input" id="start-selling-comp-price" step="0.01" min="0" placeholder="Enter comparable listing price...">
-            <small class="form-hint">Enter a price from a similar sold listing to override the suggested range</small>
+          <div class="form-group">
+            <label class="form-label" for="start-selling-base-price">Base price</label>
+            <input type="number" class="form-input" id="start-selling-base-price" name="base_price" step="0.01" min="0" placeholder="Enter your listing price...">
+            <small class="form-hint">The price you plan to list the item at</small>
           </div>
 
           <div class="recommendation-row">
             <span class="recommendation-label">Best platform</span>
             <span id="recommended-platform" class="recommendation-value"></span>
           </div>
-          <div id="platform-reasons" class="recommendation-reasons text-muted"></div>
+          <div id="platform-explanation" class="recommendation-explanation text-muted"></div>
 
-          <div class="recommendation-row">
-            <span class="recommendation-label">Est. profit</span>
-            <span id="profit-estimate" class="recommendation-value"></span>
-          </div>
-          <div id="fee-breakdown" class="recommendation-breakdown text-muted"></div>
+          <div id="selling-profit-waterfall" class="recommendation-waterfall"></div>
 
           <details class="alternatives-details">
             <summary>Compare platforms</summary>
+            <p class="comparison-hint text-muted">Fit indicates how well the item matches the platform's audience based on trends, style, and demographics.</p>
             <div id="platform-comparison" class="platform-comparison-table"></div>
           </details>
         </div>
@@ -1239,8 +1227,8 @@
         <div class="form-group">
           <label class="form-label" for="start-selling-status">Starting status *</label>
           <select class="form-select" id="start-selling-status" name="status" required>
-            <option value="unlisted">Unlisted (needs photos)</option>
-            <option value="photographed">Photographed (ready to list)</option>
+            <option value="needs_photo">Needs photo</option>
+            <option value="unlisted">Unlisted (ready to list)</option>
             <option value="listed">Listed (already posted)</option>
           </select>
         </div>
