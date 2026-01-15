@@ -3,11 +3,12 @@
 // =============================================================================
 
 import { state } from './state.js';
-import { getAllInventory, getInventoryStats, getInventoryItem, createInventoryItem, updateInventoryItem, deleteInventoryItem, createAttachment, getAttachmentsByItem } from './db.js';
+import { getAllInventory, getInventoryStats, getSellingAnalytics, getInventoryItem, createInventoryItem, updateInventoryItem, deleteInventoryItem, createAttachment, getAttachmentsByItem } from './db.js';
 import { showToast, createModalController } from './ui.js';
 import {
   $, $$, formatCurrency, formatDate, capitalize, formatStatus, formatPackaging, escapeHtml,
-  sortData, createChainStoreDropdown, formatChainName, getLocationName, compressImage
+  sortData, createChainStoreDropdown, formatChainName, getLocationName, compressImage,
+  formatProfitDisplay
 } from './utils.js';
 import { createSubTabController, initStoreDropdown, setVisible, createLazyModal, createTableController, renderDetailSections } from './components.js';
 import {
@@ -221,7 +222,7 @@ function setupTableController() {
     countSelector: '#inventory-count',
     countTemplate: '{count} item{s}',
     defaultSort: { column: 'created_at', direction: 'desc' },
-    filterButtons: [{ selector: '.filter-btn[data-category]', dataAttr: 'category', key: 'category' }],
+    filterSelects: [{ selector: '#category-filter', key: 'category' }],
     clickHandlers: {
       '.table-link': (el) => openViewItemModal(el.dataset.id),
       '.edit-item-btn': (el) => openEditItemModal(el.dataset.id, {
@@ -857,14 +858,27 @@ function clearPendingPhotos() {
 
 export async function renderInventoryStats() {
   const stats = await getInventoryStats();
+  const analytics = await getSellingAnalytics();
 
+  // Inventory stats
   const totalEl = $('#stat-total-items');
   const investedEl = $('#stat-total-invested');
-  const soldEl = $('#stat-total-sold');
 
   if (totalEl) totalEl.textContent = stats.total;
   if (investedEl) investedEl.textContent = formatCurrency(stats.totalInvested);
-  if (soldEl) soldEl.textContent = formatCurrency(stats.totalSold);
+
+  // Selling stats
+  const revenueEl = $('#stat-revenue');
+  const profitEl = $('#stat-profit');
+  const marginEl = $('#stat-margin');
+
+  if (revenueEl) revenueEl.textContent = formatCurrency(analytics.totalRevenue);
+  if (profitEl) {
+    const { formatted, className } = formatProfitDisplay(analytics.totalProfit);
+    profitEl.textContent = formatted;
+    profitEl.className = `stat-value ${className}`;
+  }
+  if (marginEl) marginEl.textContent = `${analytics.profitMargin.toFixed(1)}%`;
 }
 
 // =============================================================================

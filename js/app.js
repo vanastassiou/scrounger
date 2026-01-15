@@ -27,7 +27,7 @@ import { escapeHtml } from './utils.js';
 // =============================================================================
 
 async function init() {
-  console.log('Thrift Inventory starting...');
+  console.log('Bargain Huntress starting...');
 
   // Initialize sync module first (needed to check setup status)
   await initSync();
@@ -87,7 +87,7 @@ async function init() {
     }
   });
 
-  console.log('Thrift Inventory ready');
+  console.log('Bargain Huntress ready');
 }
 
 async function renderDashboardStats() {

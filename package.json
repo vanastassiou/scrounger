@@ -4,7 +4,7 @@
   "private": true,
   "description": "Thrift store inventory tracker",
   "scripts": {
-    "start": "python3 -m http.server 8080",
+    "start": "npx serve -l 8080",
     "test": "echo \"No tests configured\" && exit 0"
   },
   "devDependencies": {}

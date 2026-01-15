@@ -4,7 +4,7 @@
 
 import {
   $, $$, escapeHtml,
-  createSortableTable, createFilterButtons, emptyStateRow, updateSortIndicators
+  createSortableTable, createFilterButtons, emptyStateRow, updateSortIndicators, createMobileSortDropdown
 } from './utils.js';
 import { createSubTabController } from './components.js';
 import { showToast, createModalController } from './ui.js';
@@ -320,11 +320,13 @@ function setupEventHandlers() {
   // Table sorting
   const table = $('#references-table');
   if (table) {
-    const sortHandler = createSortableTable({
+    const sortConfig = {
       getState: () => ({ sortColumn, sortDirection }),
       setState: (s) => { sortColumn = s.sortColumn; sortDirection = s.sortDirection; },
       onSort: renderTable
-    });
+    };
+    const sortHandler = createSortableTable(sortConfig);
+    createMobileSortDropdown(table, sortConfig);
 
     table.addEventListener('click', (e) => {
       sortHandler(e);
@@ -334,11 +336,13 @@ function setupEventHandlers() {
   // Platforms table sorting
   const platformsTable = $('#platforms-table');
   if (platformsTable) {
-    const platformSortHandler = createSortableTable({
+    const platformSortConfig = {
       getState: () => ({ sortColumn: platformSortColumn, sortDirection: platformSortDirection }),
       setState: (s) => { platformSortColumn = s.sortColumn; platformSortDirection = s.sortDirection; },
       onSort: renderPlatforms
-    });
+    };
+    const platformSortHandler = createSortableTable(platformSortConfig);
+    createMobileSortDropdown(platformsTable, platformSortConfig);
 
     platformsTable.addEventListener('click', (e) => {
       platformSortHandler(e);
@@ -936,15 +940,15 @@ function renderTrendsRow(month, currentMonth, nextMonth) {
   const allColors = [...new Set([...hotColors, ...categoryColors])];
 
   let colorsHtml = '-';
-  if (allColors.length > 0 || emergingColors.length > 0) {
-    const parts = [];
-    if (allColors.length > 0) {
-      parts.push(`<div class="trend-pills trend-pills--hot">${allColors.slice(0, 6).map(c => `<span class="trend-pill trend-pill--color">${escapeHtml(formatTagName(c))}</span>`).join('')}</div>`);
-    }
-    if (emergingColors.length > 0) {
-      parts.push(`<div class="trend-pills trend-pills--emerging"><span class="text-muted small">Emerging:</span> ${emergingColors.slice(0, 3).map(c => `<span class="trend-pill trend-pill--emerging">${escapeHtml(formatTagName(c))}</span>`).join('')}</div>`);
-    }
-    colorsHtml = parts.join('');
+  const colorParts = [];
+  if (allColors.length > 0) {
+    colorParts.push(...allColors.slice(0, 6).map(c => `<li>${escapeHtml(formatTagName(c))}</li>`));
+  }
+  if (emergingColors.length > 0) {
+    colorParts.push(...emergingColors.slice(0, 3).map(c => `<li><em>${escapeHtml(formatTagName(c))}</em> (emerging)</li>`));
+  }
+  if (colorParts.length > 0) {
+    colorsHtml = `<ul class="compact-list">${colorParts.join('')}</ul>`;
   }
 
   // Cuts & Styles: collect from hot_categories and trending_aesthetics
@@ -961,15 +965,15 @@ function renderTrendsRow(month, currentMonth, nextMonth) {
   let cutsStylesHtml = '-';
   const cutsStylesParts = [];
   if (uniqueCuts.length > 0) {
-    cutsStylesParts.push(`<div><span class="text-muted small">Cuts:</span> ${uniqueCuts.map(c => `<span class="trend-pill trend-pill--cut">${escapeHtml(formatTagName(c))}</span>`).join('')}</div>`);
+    cutsStylesParts.push(`<li><strong>Cuts:</strong> ${uniqueCuts.map(c => escapeHtml(formatTagName(c))).join(', ')}</li>`);
   }
   if (trendingAesthetics.length > 0) {
-    cutsStylesParts.push(`<div><span class="text-muted small">Aesthetics:</span> ${trendingAesthetics.map(s => `<span class="trend-pill trend-pill--style">${escapeHtml(formatTagName(s))}</span>`).join('')}</div>`);
+    cutsStylesParts.push(`<li><strong>Aesthetics:</strong> ${trendingAesthetics.map(s => escapeHtml(formatTagName(s))).join(', ')}</li>`);
   } else if (uniqueStyles.length > 0) {
-    cutsStylesParts.push(`<div><span class="text-muted small">Styles:</span> ${uniqueStyles.map(s => `<span class="trend-pill trend-pill--style">${escapeHtml(formatTagName(s))}</span>`).join('')}</div>`);
+    cutsStylesParts.push(`<li><strong>Styles:</strong> ${uniqueStyles.map(s => escapeHtml(formatTagName(s))).join(', ')}</li>`);
   }
   if (cutsStylesParts.length > 0) {
-    cutsStylesHtml = cutsStylesParts.join('');
+    cutsStylesHtml = `<ul class="compact-list">${cutsStylesParts.join('')}</ul>`;
   }
 
   // Platform tips (bullet list)
@@ -1242,16 +1246,18 @@ function renderSizeCategoryTable(title, tiers, sizesKey) {
   return `
     <div class="size-table-card">
       <h4>${escapeHtml(title)}</h4>
-      <table class="table table--compact">
-        <thead>
-          <tr>
-            <th>Tier</th>
-            <th class="col-numeric">Adj.</th>
-            <th>Sizes</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
+      <div class="table-container">
+        <table class="table table--compact">
+          <thead>
+            <tr>
+              <th>Tier</th>
+              <th class="col-numeric">Adj.</th>
+              <th>Sizes</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
     </div>
   `;
 }
@@ -1280,16 +1286,18 @@ function renderShoeSizeTable() {
   return `
     <div class="size-table-card">
       <h4>Shoes</h4>
-      <table class="table table--compact">
-        <thead>
-          <tr>
-            <th>Tier</th>
-            <th class="col-numeric">Adj.</th>
-            <th>Criteria</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
+      <div class="table-container">
+        <table class="table table--compact">
+          <thead>
+            <tr>
+              <th>Tier</th>
+              <th class="col-numeric">Adj.</th>
+              <th>Criteria</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
     </div>
   `;
 }
@@ -1321,16 +1329,18 @@ function renderJewelrySizeTable() {
   return `
     <div class="size-table-card">
       <h4>Jewelry</h4>
-      <table class="table table--compact">
-        <thead>
-          <tr>
-            <th>Tier</th>
-            <th class="col-numeric">Adj.</th>
-            <th>Criteria</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
+      <div class="table-container">
+        <table class="table table--compact">
+          <thead>
+            <tr>
+              <th>Tier</th>
+              <th class="col-numeric">Adj.</th>
+              <th>Criteria</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
     </div>
   `;
 }

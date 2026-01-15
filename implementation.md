@@ -1,4 +1,4 @@
-# Thrift Inventory Tracker — Requirements Brief
+# Bargain Huntress Tracker — Requirements Brief
 
 ## Overview
 

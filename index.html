@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#1a1a2e">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Thrift Inventory</title>
+  <title>Bargain Huntress</title>
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css">
   <!-- Preload JS modules -->
@@ -26,6 +26,13 @@
   <link rel="modulepreload" href="js/sync.js">
   <link rel="modulepreload" href="js/settings.js">
   <link rel="modulepreload" href="js/references.js">
+  <link rel="modulepreload" href="js/recommendations.js">
+  <link rel="modulepreload" href="js/fees.js">
+  <link rel="modulepreload" href="js/sync-engine.js">
+  <link rel="modulepreload" href="js/google-drive.js">
+  <link rel="modulepreload" href="js/google-config.js">
+  <link rel="modulepreload" href="js/google-picker.js">
+  <link rel="modulepreload" href="js/oauth.js">
   <!-- Prevent flash of wrong tab -->
   <script>
     (function() {
@@ -69,7 +76,7 @@
 </head>
 <body>
   <header class="app-header">
-    <h1 class="app-title">Thrift Inventory</h1>
+    <h1 class="app-title">Bargain Huntress</h1>
     <span id="sync-status" class="sync-status">Not synced</span>
   </header>
 
@@ -93,8 +100,16 @@
           <div class="stat-label">Invested</div>
         </article>
         <article class="stat-card">
-          <div class="stat-value" id="stat-total-sold">$0</div>
-          <div class="stat-label">Sold</div>
+          <div class="stat-value" id="stat-revenue">$0</div>
+          <div class="stat-label">Revenue</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-value" id="stat-profit">$0</div>
+          <div class="stat-label">Profit</div>
+        </article>
+        <article class="stat-card">
+          <div class="stat-value" id="stat-margin">0%</div>
+          <div class="stat-label">Margin</div>
         </article>
         <article class="stat-card">
           <div class="stat-value" id="stat-stores-visited">0</div>
@@ -164,15 +179,14 @@
 
       <!-- Collection View -->
       <div id="inv-collection-view" class="inv-view">
-        <div class="filter-row">
-          <button class="filter-btn active" data-category="all">All</button>
-          <button class="filter-btn" data-category="clothing">Clothing</button>
-          <button class="filter-btn" data-category="shoes">Shoes</button>
-          <button class="filter-btn" data-category="jewelry">Jewelry</button>
-          <button class="filter-btn" data-category="accessories">Accessories</button>
-        </div>
-
-        <div class="search-row">
+        <div class="table-toolbar">
+          <select class="filter-select" id="category-filter" aria-label="Filter by category">
+            <option value="all">All categories</option>
+            <option value="clothing">Clothing</option>
+            <option value="shoes">Shoes</option>
+            <option value="jewelry">Jewelry</option>
+            <option value="accessories">Accessories</option>
+          </select>
           <input type="text" class="form-input" id="inventory-search" placeholder="Search items...">
         </div>
 
@@ -196,43 +210,19 @@
 
       <!-- Selling View -->
       <div id="inv-selling-view" class="inv-view hidden">
-        <!-- Analytics Dashboard -->
-        <div class="selling-stats-grid">
-          <article class="stat-card">
-            <div class="stat-value" id="selling-stat-revenue">$0</div>
-            <div class="stat-label">Revenue</div>
-          </article>
-          <article class="stat-card">
-            <div class="stat-value" id="selling-stat-profit">$0</div>
-            <div class="stat-label">Profit</div>
-          </article>
-          <article class="stat-card">
-            <div class="stat-value" id="selling-stat-margin">0%</div>
-            <div class="stat-label">Margin</div>
-          </article>
-          <article class="stat-card">
-            <div class="stat-value" id="selling-stat-sold">0</div>
-            <div class="stat-label">Items sold</div>
-          </article>
-        </div>
-
-        <!-- Pipeline Status Filters -->
-        <div class="filter-row">
-          <button class="filter-btn active" data-status="all">All pipeline</button>
-          <button class="filter-btn" data-status="unlisted">Unlisted</button>
-          <button class="filter-btn" data-status="photographed">Photographed</button>
-          <button class="filter-btn" data-status="listed">Listed</button>
-          <button class="filter-btn" data-status="pending_sale">Pending</button>
-          <button class="filter-btn" data-status="packaged">Packaged</button>
-          <button class="filter-btn" data-status="shipped">Shipped</button>
-          <button class="filter-btn" data-status="confirmed_received">Confirmed</button>
-          <button class="filter-btn" data-status="sold">Sold</button>
-        </div>
-
-        <!-- Additional Filters -->
-        <div class="filter-row">
-          <label class="filter-label">Platform:</label>
-          <select class="filter-select" id="platform-filter">
+        <div class="table-toolbar">
+          <select class="filter-select" id="status-filter" aria-label="Filter by status">
+            <option value="all">All pipeline</option>
+            <option value="unlisted">Unlisted</option>
+            <option value="photographed">Photographed</option>
+            <option value="listed">Listed</option>
+            <option value="pending_sale">Pending</option>
+            <option value="packaged">Packaged</option>
+            <option value="shipped">Shipped</option>
+            <option value="confirmed_received">Confirmed</option>
+            <option value="sold">Sold</option>
+          </select>
+          <select class="filter-select" id="platform-filter" aria-label="Filter by platform">
             <option value="all">All platforms</option>
             <option value="poshmark">Poshmark</option>
             <option value="ebay">eBay</option>
@@ -243,19 +233,8 @@
             <option value="grailed">Grailed</option>
             <option value="other">Other</option>
           </select>
-
-          <label class="filter-label">Date:</label>
-          <select class="filter-select" id="date-range-filter">
-            <option value="all">All time</option>
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
-            <option value="ytd">Year to date</option>
-          </select>
+          <input type="text" class="form-input" id="selling-search" placeholder="Search items...">
         </div>
-
-        <!-- Search -->
-        <input type="text" class="form-input" id="selling-search" placeholder="Search items...">
 
         <!-- Pipeline Table -->
         <div class="table-container">
@@ -309,6 +288,7 @@
         </div>
 
         <div class="filter-row">
+          <label class="filter-label">Tier:</label>
           <button class="filter-btn active" data-tier="all">All</button>
           <button class="filter-btn" data-tier="S">S</button>
           <button class="filter-btn" data-tier="A">A</button>
@@ -350,6 +330,7 @@
         </div>
 
         <div class="filter-row">
+          <label class="filter-label">Tier:</label>
           <button class="filter-btn active" data-tier="all">All Tiers</button>
           <button class="filter-btn" data-tier="S">S</button>
           <button class="filter-btn" data-tier="A">A</button>
@@ -406,26 +387,26 @@
 
       <!-- Trends View -->
       <div id="ref-trends-view" class="ref-view hidden">
-        <div class="trends-header">
+        <div class="pricing-section">
           <h3>Seasonal trends</h3>
+          <div class="table-container">
+            <table class="table table-responsive table--compact" id="trends-table">
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Themes</th>
+                  <th>Colors</th>
+                  <th>Cuts &amp; Styles</th>
+                  <th>Platform notes</th>
+                </tr>
+              </thead>
+              <tbody id="trends-tbody">
+                <tr><td colspan="5" class="empty-state"><div class="empty-icon">T</div><p>Loading...</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="trends-sources"></div>
         </div>
-        <div class="table-container">
-          <table class="table table-responsive table--compact" id="trends-table">
-            <thead>
-              <tr>
-                <th>Month</th>
-                <th>Themes</th>
-                <th>Colors</th>
-                <th>Cuts &amp; Styles</th>
-                <th>Platform notes</th>
-              </tr>
-            </thead>
-            <tbody id="trends-tbody">
-              <tr><td colspan="5" class="empty-state"><div class="empty-icon">T</div><p>Loading...</p></td></tr>
-            </tbody>
-          </table>
-        </div>
-        <div id="trends-sources"></div>
       </div>
 
       <!-- Pricing View -->
@@ -1452,7 +1433,7 @@
   <dialog id="setup-wizard-dialog" class="modal">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Welcome to Thrift Inventory</h2>
+        <h2>Welcome to Bargain Huntress</h2>
       </div>
       <div class="modal-body">
         <p>This app stores your data in Google Drive. Please connect your Google account to get started.</p>
