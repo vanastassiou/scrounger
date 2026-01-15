@@ -355,13 +355,6 @@
       <!-- Brands View -->
       <div id="ref-brands-view" class="ref-view" style="display: none;">
         <div class="filter-row">
-          <button class="filter-btn active" data-category="all">All</button>
-          <button class="filter-btn" data-category="clothing">Clothing</button>
-          <button class="filter-btn" data-category="shoes">Shoes</button>
-          <button class="filter-btn" data-category="jewelry">Jewelry</button>
-        </div>
-
-        <div class="filter-row">
           <button class="filter-btn active" data-tier="all">All Tiers</button>
           <button class="filter-btn" data-tier="S">S</button>
           <button class="filter-btn" data-tier="A">A</button>
@@ -376,13 +369,14 @@
             <thead>
               <tr>
                 <th data-sort="name">Brand</th>
+                <th data-sort="category">Type</th>
                 <th data-sort="tier">Tier</th>
                 <th data-sort="multiplier">Mult</th>
                 <th>Notes</th>
               </tr>
             </thead>
             <tbody id="references-table-body">
-              <tr><td colspan="4" class="empty-state"><div class="empty-icon">R</div><p>Loading...</p></td></tr>
+              <tr><td colspan="5" class="empty-state"><div class="empty-icon">R</div><p>Loading...</p></td></tr>
             </tbody>
           </table>
         </div>

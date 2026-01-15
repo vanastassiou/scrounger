@@ -9,7 +9,6 @@ import {
 
 let brandsData = [];
 let platformsData = null;
-let filterCategory = null;
 let filterTier = null;
 let searchQuery = '';
 let platformSearchQuery = '';
@@ -281,17 +280,6 @@ function formatBrandName(key) {
 }
 
 function setupEventHandlers() {
-  // Category filter buttons
-  const categoryBtns = $$('.filter-btn[data-category]');
-  categoryBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      categoryBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      filterCategory = btn.dataset.category === 'all' ? null : btn.dataset.category;
-      renderTable();
-    });
-  });
-
   // Tier filter buttons
   const tierBtns = $$('.filter-btn[data-tier]');
   tierBtns.forEach(btn => {
@@ -351,7 +339,6 @@ function renderTable() {
 
   // Filter
   let filtered = brandsData.filter(brand => {
-    if (filterCategory && brand.category !== filterCategory) return false;
     if (filterTier && brand.tier.toLowerCase() !== filterTier.toLowerCase()) return false;
     if (searchQuery) {
       const searchable = `${brand.name} ${brand.notes} ${brand.tips} ${(brand.alt || []).join(' ')}`.toLowerCase();
@@ -365,6 +352,8 @@ function renderTable() {
     let cmp = 0;
     if (sortColumn === 'name') {
       cmp = a.name.localeCompare(b.name);
+    } else if (sortColumn === 'category') {
+      cmp = a.category.localeCompare(b.category);
     } else if (sortColumn === 'tier') {
       const tierOrder = { S: 1, A: 2, B: 3, vintage: 4 };
       cmp = (tierOrder[a.tier] || 5) - (tierOrder[b.tier] || 5);
@@ -376,7 +365,7 @@ function renderTable() {
 
   // Render
   if (filtered.length === 0) {
-    tbody.innerHTML = emptyStateRow(4, 'No matching brands found');
+    tbody.innerHTML = emptyStateRow(5, 'No matching brands found');
     updateCount(0, brandsData.length);
     return;
   }
@@ -384,6 +373,7 @@ function renderTable() {
   tbody.innerHTML = filtered.map(brand => {
     const tierClass = `tier-badge tier-badge--${brand.tier.toLowerCase()}`;
     const notesHtml = [brand.notes, brand.tips].filter(Boolean).join(' ');
+    const categoryLabel = brand.category.charAt(0).toUpperCase() + brand.category.slice(1);
 
     return `
       <tr data-brand-key="${escapeHtml(brand.key)}">
@@ -391,6 +381,7 @@ function renderTable() {
           ${escapeHtml(brand.name)}
           ${brand.alt?.length ? `<span class="brand-alt">(${escapeHtml(brand.alt.join(', '))})</span>` : ''}
         </td>
+        <td>${escapeHtml(categoryLabel)}</td>
         <td><span class="${tierClass}">${escapeHtml(brand.tier)}</span></td>
         <td class="text-right">${brand.multiplier != null ? brand.multiplier + 'x' : '-'}</td>
         <td class="brand-notes">${escapeHtml(notesHtml)}</td>

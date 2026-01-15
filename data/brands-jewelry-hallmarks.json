@@ -387,90 +387,103 @@
       "types": {
         "bakelite": {
           "era": "1907-1940s",
-          "m": 6.0,
+          "multiplier": 6.0,
           "notes": "Carved, laminated, reverse-carved painted most valuable.",
           "tests": [
             "Simichrome test (yellow residue)",
             "Hot water smell (formaldehyde)",
             "409 test"
-          ]
+          ],
+          "authenticity_notes": "Test with Simichrome polish (yellow residue = real). Hot water releases formaldehyde smell. Heavy weight. Carved and laminated pieces highest value."
         },
         "catalin": {
           "era": "1930s-1940s",
-          "m": 5.0,
-          "notes": "Cast phenolic, often marbled colors. Tests same as Bakelite."
+          "multiplier": 5.0,
+          "notes": "Cast phenolic, often marbled colors. Tests same as Bakelite.",
+          "authenticity_notes": "Same tests as Bakelite. Marbled/swirled colors common. Check for color oxidation (confirms age). Heavy weight."
         },
         "celluloid": {
           "era": "1870s-1940s",
-          "m": 3.0,
-          "notes": "Early plastic. Flammable. Often imitated ivory/tortoise."
+          "multiplier": 3.0,
+          "notes": "Early plastic. Flammable. Often imitated ivory/tortoise.",
+          "authenticity_notes": "CAUTION: Flammable - don't hot needle test. Lighter than Bakelite. Grain pattern (tortoise/ivory imitation). Age cracking common."
         },
         "lucite": {
           "era": "1940s-1960s",
-          "m": 2.5,
-          "notes": "Clear or colored acrylic. Carved, embedded objects."
+          "multiplier": 2.5,
+          "notes": "Clear or colored acrylic. Carved, embedded objects.",
+          "authenticity_notes": "Clear acrylic. Embedded objects (flowers, shells) common. Check for UV yellowing on vintage. Scratches easily vs glass."
         }
       }
     },
     "designer_fashion_jewelry": {
       "brands": {
         "balenciaga": {
-          "m": 2.5
+          "multiplier": 2.5,
+          "authenticity_notes": "Check BALENCIAGA stamp. Made in Italy. Hardware quality. Limited faking on jewelry."
         },
         "celine": {
-          "m": 3.0,
+          "multiplier": 3.0,
           "marks": [
             "CELINE",
-            "C\u00c9LINE"
-          ]
+            "CÉLINE"
+          ],
+          "authenticity_notes": "CÉLINE (with accent) vs CELINE varies by era. Made in Italy. Check hardware weight and stamping quality."
         },
         "chanel": {
-          "m": 4.0,
+          "multiplier": 4.0,
           "marks": [
             "CHANEL",
             "CC logo"
           ],
-          "notes": "Costume and fine both valuable"
+          "notes": "Costume and fine both valuable",
+          "authenticity_notes": "Check CC logo alignment and stamp quality. Made in France. Season date codes on some pieces. Very heavy faking."
         },
         "dior": {
-          "m": 3.5,
+          "multiplier": 3.5,
           "marks": [
             "CHR.DIOR",
             "CHRISTIAN DIOR",
             "Dior"
-          ]
+          ],
+          "authenticity_notes": "Vintage uses CHR.DIOR or CHRISTIAN DIOR. Check stamp clarity. Made in Germany on vintage. Heavy faking."
         },
         "givenchy": {
-          "m": 2.5,
+          "multiplier": 2.5,
           "marks": [
             "GIVENCHY",
             "G logo"
-          ]
+          ],
+          "authenticity_notes": "Check GIVENCHY stamp. G logo on clasps. Made in France. Moderate faking."
         },
         "gucci": {
-          "m": 3.0,
+          "multiplier": 3.0,
           "marks": [
             "GUCCI",
             "GG"
-          ]
+          ],
+          "authenticity_notes": "Check GUCCI stamp and GG logo precision. Made in Italy. Serial numbers on fine pieces. Heavy faking."
         },
         "hermes": {
-          "m": 5.0,
+          "multiplier": 5.0,
           "marks": [
             "HERMES",
-            "HERM\u00c8S PARIS"
+            "HERMÈS PARIS"
           ],
-          "notes": "Enamel bracelets, silver"
+          "notes": "Enamel bracelets, silver",
+          "authenticity_notes": "HERMÈS PARIS stamp. Made in France. Enamel clic-clac bracelets, silver chains collectible. Heavy faking."
         },
         "lanvin": {
-          "m": 2.5
+          "multiplier": 2.5,
+          "authenticity_notes": "Check LANVIN stamp. Made in France. Vintage pieces higher value. Limited faking."
         },
         "ysl": {
-          "m": 3.0,
+          "multiplier": 3.0,
           "marks": [
             "YSL",
             "YVES SAINT LAURENT"
-          ]
+          ],
+          "authenticity_notes": "Check YSL logo precision. Made in France. Arty ring collectible. Moderate faking."
         }
       },
       "description": "Fashion house jewelry \u2014 both precious and costume",
@@ -482,78 +495,91 @@
     "fine_jewelry_houses": {
       "brands": {
         "boucheron": {
-          "m": 8.0
+          "multiplier": 8.0,
+          "authenticity_notes": "Check BOUCHERON stamp. Made in France. Serial numbers. Expert authentication recommended."
         },
         "bulgari": {
-          "m": 10.0,
+          "multiplier": 10.0,
           "marks": [
             "BVLGARI",
             "BULGARI"
-          ]
+          ],
+          "authenticity_notes": "BVLGARI (Roman spelling) stamp. Made in Italy. Serial numbers. B.Zero1, Serpenti lines popular. Heavy faking."
         },
         "cartier": {
-          "m": 15.0,
+          "multiplier": 15.0,
           "marks": [
             "CARTIER",
             "Cartier",
             "serial numbers"
-          ]
+          ],
+          "authenticity_notes": "Serial numbers should match records. Made in France. Love, Juste un Clou, Tank iconic. Very heavy faking - expert auth required."
         },
         "chopard": {
-          "m": 8.0
+          "multiplier": 8.0,
+          "authenticity_notes": "Check CHOPARD stamp. Made in Switzerland. Serial numbers. Happy Diamonds line popular. Expert auth recommended."
         },
         "david_yurman": {
-          "m": 4.0,
+          "multiplier": 4.0,
           "marks": [
             "DY",
             "D.Y.",
             "David Yurman"
-          ]
+          ],
+          "authenticity_notes": "DY hallmark. Made in USA. Cable bracelet signature. Check sterling/gold stamps. Moderate faking."
         },
         "harry_winston": {
-          "m": 15.0
+          "multiplier": 15.0,
+          "authenticity_notes": "HW hallmark. Made in USA. Serial numbers. Very rare on secondary market. Expert auth required."
         },
         "ippolita": {
-          "m": 3.0
+          "multiplier": 3.0,
+          "authenticity_notes": "IPPOLITA stamp. Made in Italy. 18K gold and sterling pieces. Rock Candy line popular. Limited faking."
         },
         "john_hardy": {
-          "m": 3.0,
+          "multiplier": 3.0,
           "marks": [
             "JH",
             "John Hardy"
-          ]
+          ],
+          "authenticity_notes": "JH hallmark. Made in Bali. Hand-woven chain. Check for Bali origin stamp. Limited faking."
         },
         "lagos": {
-          "m": 3.0,
+          "multiplier": 3.0,
           "marks": [
             "LAGOS",
             "Caviar (line name)"
-          ]
+          ],
+          "authenticity_notes": "LAGOS stamp. Made in USA. Caviar beading signature. Check sterling stamps. Limited faking."
         },
         "marco_bicego": {
-          "m": 4.0
+          "multiplier": 4.0,
+          "authenticity_notes": "MARCO BICEGO stamp. Made in Italy. Hand-twisted gold coil signature. 18K hallmarks. Limited faking."
         },
         "roberto_coin": {
-          "m": 3.5,
+          "multiplier": 3.5,
           "marks": [
             "RC",
             "tiny ruby set inside"
-          ]
+          ],
+          "authenticity_notes": "Tiny ruby hidden inside every piece - signature mark. RC stamp. Made in Italy. Limited faking."
         },
         "tiffany": {
-          "m": 8.0,
+          "multiplier": 8.0,
           "marks": [
             "TIFFANY & CO",
             "T&CO",
             "Tiffany Studios"
-          ]
+          ],
+          "authenticity_notes": "© TIFFANY & CO stamp required. 925 or 750 with metal type. Made in USA. Very heavy faking - check stamps carefully."
         },
         "van_cleef_arpels": {
-          "m": 15.0,
+          "multiplier": 15.0,
           "marks": [
             "VCA",
             "Van Cleef & Arpels"
-          ]
+          ],
+          "authenticity_notes": "VCA hallmark. Made in France. Serial numbers. Alhambra motif iconic. Expert auth required. Heavy faking."
         }
       },
       "description": "Major jewelry houses \u2014 precious metal pieces",
@@ -566,228 +592,253 @@
       "brands": {
         "alice_caviness": {
           "era": "1945-1990s",
-          "m": 2.5,
+          "multiplier": 2.5,
           "marks": [
             "Alice Caviness",
             "Alice"
           ],
-          "notes": "Nature-inspired designs."
+          "notes": "Nature-inspired designs.",
+          "authenticity_notes": "Check for Alice Caviness or Alice stamp. NYC maker. Nature motifs (leaves, flowers). Early pieces unsigned."
         },
         "boucher": {
           "era": "1937-1970s",
-          "m": 4.0,
+          "multiplier": 4.0,
           "marks": [
             "MB with phrygian cap",
             "BOUCHER"
           ],
-          "notes": "Marcel Boucher. High quality, detailed work."
+          "notes": "Marcel Boucher. High quality, detailed work.",
+          "authenticity_notes": "MB with Phrygian cap hallmark. BOUCHER stamp. NYC maker. High quality metalwork. Cartier-trained designer."
         },
         "christian_lacroix": {
           "era": "1987-present",
-          "m": 3.5,
+          "multiplier": 3.5,
           "marks": [
             "Christian Lacroix",
             "CL"
           ],
-          "notes": "Baroque, colorful, oversized."
+          "notes": "Baroque, colorful, oversized.",
+          "authenticity_notes": "Christian Lacroix or CL stamp. Made in France. Oversized baroque style. Check for solid construction."
         },
         "coro": {
           "era": "1901-1979",
-          "m": 2.0,
+          "multiplier": 2.0,
           "marks": [
             "CORO",
             "Corocraft",
             "Vendome",
             "Francois"
           ],
-          "notes": "Vendome and Francois lines higher value."
+          "notes": "Vendome and Francois lines higher value.",
+          "authenticity_notes": "CORO, Corocraft, Vendome, or Francois stamps. Vendome/Francois lines higher quality. Duette mechanism on vintage clips."
         },
         "demario": {
           "era": "1945-1965",
-          "m": 3.5,
+          "multiplier": 3.5,
           "marks": [
             "DeMario",
             "DeMario NY"
           ],
-          "notes": "Baroque pearls, antiqued finish."
+          "notes": "Baroque pearls, antiqued finish.",
+          "authenticity_notes": "DeMario or DeMario NY stamp. NYC maker. Baroque pearls, antiqued gold finish. Intricate beadwork."
         },
         "eisenberg": {
           "era": "1930s-present",
-          "m": 4.0,
+          "multiplier": 4.0,
           "marks": [
             "Eisenberg Original",
             "Eisenberg Ice",
             "E"
           ],
-          "notes": "Original line most valuable. Ice line = rhinestones."
+          "notes": "Original line most valuable. Ice line = rhinestones.",
+          "authenticity_notes": "Eisenberg Original (highest value), Eisenberg Ice, or script E stamp. Large Swarovski crystals. Heavy metal."
         },
         "har": {
           "era": "1950s-1960s",
-          "m": 4.0,
+          "multiplier": 4.0,
           "marks": [
             "HAR"
           ],
-          "notes": "Figural pieces, dragon series highly collectible."
+          "notes": "Figural pieces, dragon series highly collectible.",
+          "authenticity_notes": "HAR stamp. Figural pieces - dragon, genie, Asian themes highly collectible. Enamel and stone work."
         },
         "hattie_carnegie": {
           "era": "1918-1976",
-          "m": 3.5,
+          "multiplier": 3.5,
           "marks": [
             "Hattie Carnegie",
             "HC"
           ],
-          "notes": "Fashion designer's jewelry line."
+          "notes": "Fashion designer's jewelry line.",
+          "authenticity_notes": "Hattie Carnegie or HC stamp. NYC fashion house. Early pieces higher value. Quality varies by era."
         },
         "hobe": {
           "era": "1920s-present",
-          "m": 3.0,
+          "multiplier": 3.0,
           "marks": [
-            "HOB\u00c9",
+            "HOBÉ",
             "Hobe"
           ],
-          "notes": "Venetian glass, quality metalwork."
+          "notes": "Venetian glass, quality metalwork.",
+          "authenticity_notes": "HOBÉ (with accent) stamp. NYC/France maker. Venetian glass beads. Sterling silver findings on early pieces."
         },
         "hollycraft": {
           "era": "1948-late 1970s",
-          "m": 3.0,
+          "multiplier": 3.0,
           "marks": [
             "HOLLYCRAFT",
             "dated pieces"
           ],
-          "notes": "Pastel rhinestones, often dated on back."
+          "notes": "Pastel rhinestones, often dated on back.",
+          "authenticity_notes": "HOLLYCRAFT stamp, often with date (e.g., 1954). Pastel aurora borealis stones. Dated pieces easier to authenticate."
         },
         "jomaz": {
           "era": "1946-1981",
-          "m": 3.0,
+          "multiplier": 3.0,
           "marks": [
             "JOMAZ",
             "Mazer Bros"
           ],
-          "notes": "Mazer family company."
+          "notes": "Mazer family company.",
+          "authenticity_notes": "JOMAZ stamp. Mazer family NYC jewelers. High quality rhinestones. Related to Mazer Bros earlier pieces."
         },
         "joseff_hollywood": {
           "era": "1930s-present",
-          "m": 5.0,
+          "multiplier": 5.0,
           "marks": [
             "Joseff",
             "Joseff Hollywood"
           ],
-          "notes": "Made for films. Russian gold finish signature."
+          "notes": "Made for films. Russian gold finish signature.",
+          "authenticity_notes": "Joseff or Joseff Hollywood stamp. Russian gold finish (matte antique gold). Made for film productions. Highly collectible."
         },
         "kenneth_jay_lane": {
           "era": "1963-present",
-          "m": 3.0,
+          "multiplier": 3.0,
           "marks": [
             "KJL",
             "Kenneth Jay Lane",
             "Kenneth Lane"
           ],
-          "notes": "Celebrity favorite. Quality costume reproductions."
+          "notes": "Celebrity favorite. Quality costume reproductions.",
+          "authenticity_notes": "KJL or Kenneth Jay Lane stamp. NYC designer. Celebrity reproductions. Quality varies by era. Check for solid construction."
         },
         "kramer": {
           "era": "1943-1980s",
-          "m": 2.5,
+          "multiplier": 2.5,
           "marks": [
             "KRAMER",
             "Kramer of New York"
           ],
-          "notes": "Made pieces for Dior."
+          "notes": "Made pieces for Dior.",
+          "authenticity_notes": "KRAMER or Kramer of New York stamp. NYC maker. Made pieces for Dior. Quality rhinestone work."
         },
         "lisner": {
           "era": "1930s-1979",
-          "m": 2.5,
+          "multiplier": 2.5,
           "marks": [
             "LISNER"
           ],
-          "notes": "Leaf designs, quality rhinestones."
+          "notes": "Leaf designs, quality rhinestones.",
+          "authenticity_notes": "LISNER stamp. NYC maker. Leaf and nature designs. Quality rhinestones. Mass-produced but collectible."
         },
         "miriam_haskell": {
           "era": "1920s-present",
-          "m": 6.0,
+          "multiplier": 6.0,
           "marks": [
             "Miriam Haskell",
             "horseshoe mark"
           ],
-          "notes": "Baroque pearls, intricate beadwork. Early pieces unsigned."
+          "notes": "Baroque pearls, intricate beadwork. Early pieces unsigned.",
+          "authenticity_notes": "Miriam Haskell or horseshoe stamp. Early pieces unsigned. Wired baroque pearls. Filigree backing. NYC maker. Highly collectible."
         },
         "monet": {
           "era": "1937-present",
-          "m": 1.8,
+          "multiplier": 1.8,
           "marks": [
             "MONET"
           ],
-          "notes": "Quality basics. Vintage more valuable."
+          "notes": "Quality basics. Vintage more valuable.",
+          "authenticity_notes": "MONET stamp. Quality basics. Vintage (pre-1980) more valuable. Check for solid construction."
         },
         "napier": {
           "era": "1922-1999",
-          "m": 2.0,
+          "multiplier": 2.0,
           "marks": [
             "NAPIER"
           ],
-          "notes": "Consistent quality. Gold-tone pieces."
+          "notes": "Consistent quality. Gold-tone pieces.",
+          "authenticity_notes": "NAPIER stamp. Connecticut maker. Consistent quality. Book pieces and figural designs higher value."
         },
         "regency": {
           "era": "1950s-1970s",
-          "m": 3.0,
+          "multiplier": 3.0,
           "marks": [
             "REGENCY"
           ],
-          "notes": "High quality rhinestones."
+          "notes": "High quality rhinestones.",
+          "authenticity_notes": "REGENCY stamp. High quality rhinestones. Often aurora borealis finish. Check stone prong settings."
         },
         "robert_original": {
           "era": "1942-1979",
-          "m": 2.5,
+          "multiplier": 2.5,
           "marks": [
             "Original by Robert",
             "Robert"
           ],
-          "notes": "Beadwork, glass pieces."
+          "notes": "Beadwork, glass pieces.",
+          "authenticity_notes": "Original by Robert stamp. NYC maker. Glass beadwork and art glass pieces. Check for wired beads."
         },
         "schreiner": {
           "era": "1940s-1970s",
-          "m": 5.0,
+          "multiplier": 5.0,
           "marks": [
             "SCHREINER NEW YORK",
             "often unsigned"
           ],
-          "notes": "Made for Dior, Givenchy. Inverted stones signature."
+          "notes": "Made for Dior, Givenchy. Inverted stones signature.",
+          "authenticity_notes": "SCHREINER NEW YORK stamp (often unsigned). Inverted rhinestones signature. Made for Dior, Givenchy runway. Highly collectible."
         },
         "sherman": {
           "era": "1947-1981",
-          "m": 4.0,
+          "multiplier": 4.0,
           "marks": [
             "SHERMAN",
             "Gustave Sherman"
           ],
-          "notes": "Canadian! Swarovski crystals, never glued."
+          "notes": "Canadian! Swarovski crystals, never glued.",
+          "authenticity_notes": "SHERMAN stamp. Canadian maker (Montreal). Swarovski crystals in prong settings, never glued. Aurora borealis specialty."
         },
         "stanley_hagler": {
           "era": "1950s-1990s",
-          "m": 5.0,
+          "multiplier": 5.0,
           "marks": [
             "Stanley Hagler NYC",
             "Ian St. Gielar"
           ],
-          "notes": "Elaborate beadwork, shells, flowers."
+          "notes": "Elaborate beadwork, shells, flowers.",
+          "authenticity_notes": "Stanley Hagler NYC stamp. Later pieces by Ian St. Gielar. Elaborate hand-wired beadwork, shells, seed pearls. Heavy pieces."
         },
         "trifari": {
           "era": "1930s-present",
-          "m": 3.0,
+          "multiplier": 3.0,
           "marks": [
             "Trifari",
             "TKF",
             "crown mark"
           ],
-          "notes": "Crown Trifari most collectible. Alfred Philippe designs."
+          "notes": "Crown Trifari most collectible. Alfred Philippe designs.",
+          "authenticity_notes": "Crown Trifari mark (crown over T) most collectible. TKF = Trifari Krussman Fishel. Alfred Philippe jelly bellies highly valuable."
         },
         "weiss": {
           "era": "1942-1971",
-          "m": 3.5,
+          "multiplier": 3.5,
           "marks": [
             "WEISS",
             "Albert Weiss"
           ],
-          "notes": "High quality rhinestones, Austrian crystals."
+          "notes": "High quality rhinestones, Austrian crystals.",
+          "authenticity_notes": "WEISS stamp. NYC maker. High quality Austrian rhinestones. Black japanned settings popular. Check stone quality."
         }
       },
       "description": "Signed vintage costume with high collector value",
