@@ -179,6 +179,7 @@ function setupInventorySubTabs() {
     if (collectionView) collectionView.style.display = view === 'collection' ? '' : 'none';
     if (sellingView) sellingView.style.display = view === 'selling' ? '' : 'none';
     localStorage.setItem('inventorySubTab', view);
+    document.documentElement.dataset.invSub = view;
   }
 
   subTabs.forEach(tab => {

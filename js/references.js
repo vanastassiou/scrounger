@@ -15,6 +15,8 @@ let searchQuery = '';
 let platformSearchQuery = '';
 let sortColumn = 'name';
 let sortDirection = 'asc';
+let platformSortColumn = 'name';
+let platformSortDirection = 'asc';
 let currentView = 'stores';
 
 // =============================================================================
@@ -323,6 +325,20 @@ function setupEventHandlers() {
       sortHandler(e);
     });
   }
+
+  // Platforms table sorting
+  const platformsTable = $('#platforms-table');
+  if (platformsTable) {
+    const platformSortHandler = createSortableTable({
+      getState: () => ({ sortColumn: platformSortColumn, sortDirection: platformSortDirection }),
+      setState: (s) => { platformSortColumn = s.sortColumn; platformSortDirection = s.sortDirection; },
+      onSort: renderPlatforms
+    });
+
+    platformsTable.addEventListener('click', (e) => {
+      platformSortHandler(e);
+    });
+  }
 }
 
 // =============================================================================
@@ -353,7 +369,7 @@ function renderTable() {
       const tierOrder = { S: 1, A: 2, B: 3, vintage: 4 };
       cmp = (tierOrder[a.tier] || 5) - (tierOrder[b.tier] || 5);
     } else if (sortColumn === 'multiplier') {
-      cmp = a.multiplier - b.multiplier;
+      cmp = (a.multiplier || 0) - (b.multiplier || 0);
     }
     return sortDirection === 'asc' ? cmp : -cmp;
   });
@@ -376,7 +392,7 @@ function renderTable() {
           ${brand.alt?.length ? `<span class="brand-alt">(${escapeHtml(brand.alt.join(', '))})</span>` : ''}
         </td>
         <td><span class="${tierClass}">${escapeHtml(brand.tier)}</span></td>
-        <td class="text-right">${brand.multiplier}x</td>
+        <td class="text-right">${brand.multiplier != null ? brand.multiplier + 'x' : '-'}</td>
         <td class="brand-notes">${escapeHtml(notesHtml)}</td>
       </tr>
     `;
@@ -425,6 +441,7 @@ function setupSubTabs() {
       if (el) el.style.display = key === view ? '' : 'none';
     });
     localStorage.setItem('referencesSubTab', view);
+    document.documentElement.dataset.refSub = view;
   }
 
   subTabs.forEach(tab => {
@@ -463,6 +480,19 @@ function renderPlatforms() {
     });
   }
 
+  // Sort platforms
+  platformEntries.sort(([keyA, a], [keyB, b]) => {
+    let cmp = 0;
+    if (platformSortColumn === 'name') {
+      cmp = a.name.localeCompare(b.name);
+    } else if (platformSortColumn === 'demographic') {
+      cmp = (a.audience || '').localeCompare(b.audience || '');
+    } else if (platformSortColumn === 'fees') {
+      cmp = getFeesNumeric(a.fees) - getFeesNumeric(b.fees);
+    }
+    return platformSortDirection === 'asc' ? cmp : -cmp;
+  });
+
   if (platformEntries.length === 0) {
     tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><div class="empty-icon">P</div><p>No matching platforms</p></td></tr>';
     if (countEl) countEl.textContent = '';
@@ -478,15 +508,13 @@ function renderPlatforms() {
 }
 
 function renderPlatformRow(key, p) {
-  const feesSummary = formatFeesSummary(p.fees);
-
   const formatList = (items) => {
     if (!items || items.length === 0) return '';
     return `<ul class="compact-list">${items.map(item => `<li>${escapeHtml(item)}</li>`).join('')}</ul>`;
   };
 
   // Truncate lists for conciseness
-  const itemTypes = (p.best_for || []).slice(0, 3).map(t => formatTagName(t));
+  const bestFor = (p.best_for || []).slice(0, 3).map(t => formatTagName(t));
   const demographics = p.audience ? p.audience.split(',').slice(0, 2).map(s => s.trim()) : [];
   const pros = (p.pros || []).slice(0, 2);
   const cons = (p.cons || []).slice(0, 2);
@@ -495,20 +523,126 @@ function renderPlatformRow(key, p) {
     ? `<a href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.name)}</a>`
     : escapeHtml(p.name);
 
-  // First sentence only for notes
-  const notesList = p.notes ? [p.notes.split(/\.\s+/)[0]] : [];
+  // Detailed fees breakdown
+  const feesHtml = formatFeesDetailed(p.fees);
+  const shippingHtml = formatShipping(p.fees?.shipping);
 
   return `
-    <tr data-platform="${escapeHtml(key)}">
+    <tr data-platform="${escapeHtml(key)}" data-fees="${getFeesNumeric(p.fees)}">
       <td>${nameHtml}</td>
       <td>${formatList(demographics)}</td>
-      <td>${formatList(itemTypes)}</td>
-      <td>${feesSummary.main}</td>
+      <td>${feesHtml}</td>
+      <td>${shippingHtml}</td>
+      <td>${formatList(bestFor)}</td>
       <td>${formatList(pros)}</td>
       <td>${formatList(cons)}</td>
-      <td>${formatList(notesList)}</td>
     </tr>
   `;
+}
+
+function formatFeesDetailed(fees) {
+  if (!fees) return 'Unknown';
+
+  const parts = [];
+
+  // Commission + payment processing combined
+  let commissionText = '';
+  let paymentText = '';
+
+  if (fees.commission_tiers) {
+    const tiers = fees.commission_tiers;
+    if (tiers[0]?.seller_payout_percentage !== undefined) {
+      // TheRealReal-style: show what you keep at each tier
+      const tierDetails = tiers.map(t => {
+        const rangeStart = t.range_usd[0];
+        const rangeEnd = t.range_usd[1];
+        const range = rangeEnd ? `$${rangeStart}-${rangeEnd}` : `$${rangeStart}+`;
+        return `${t.seller_payout_percentage}% if ${range}`;
+      }).join(', ');
+      commissionText = `You keep: ${tierDetails} (USD)`;
+    } else if (tiers[0]?.range_cad) {
+      // Vestiaire-style: tiered by price range
+      const mainTier = tiers.find(t => t.fee_type === 'percentage');
+      commissionText = mainTier ? `${mainTier.amount}%` : 'Tiered';
+    } else if (tiers[0]?.fee_type === 'flat' && tiers[1]?.fee_type === 'percentage' && tiers[0]?.threshold_cad) {
+      // Poshmark/Starluv-style: flat under threshold, % above
+      commissionText = `$${tiers[0].amount_cad} under $${tiers[0].threshold_cad}, ${tiers[1].amount}% above`;
+    }
+  } else if (fees.commission !== undefined) {
+    commissionText = fees.commission === 0 ? 'No commission' : `${fees.commission}%`;
+  }
+
+  // Payment processing (combine with commission if both exist)
+  if (fees.payment_processing && typeof fees.payment_processing === 'object') {
+    const pp = fees.payment_processing;
+    if (pp.percentage) {
+      paymentText = pp.flat_fee_cad ? `${pp.percentage}% + $${pp.flat_fee_cad}` : `${pp.percentage}%`;
+    }
+  }
+
+  if (commissionText && paymentText) {
+    parts.push(`~${estimateTotalFee(fees)}% total (${commissionText} sale + ${paymentText} payment)`);
+  } else if (commissionText) {
+    parts.push(commissionText + (fees.commission !== undefined && fees.commission !== 0 ? ' of sale' : ''));
+  }
+
+  // Listing fee
+  if (fees.listing_fee) {
+    if (fees.listing_fee.per_listing_cad) {
+      const duration = fees.listing_fee.duration_months ? ` every ${fees.listing_fee.duration_months} mo` : '';
+      parts.push(`$${fees.listing_fee.per_listing_cad} to list${duration}`);
+    } else if (fees.listing_fee.free_listings_per_month) {
+      parts.push(`${fees.listing_fee.free_listings_per_month} free listings/mo`);
+    }
+  }
+
+  if (parts.length === 0) return 'See details';
+  return `<ul class="compact-list">${parts.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>`;
+}
+
+function formatShipping(shipping) {
+  if (!shipping) return '—';
+
+  if (shipping.type === 'prepaid_label' && shipping.cost_cad) {
+    const weightNote = shipping.weight_limit_lbs ? `Up to ${shipping.weight_limit_lbs} lbs` : '';
+    return `<ul class="compact-list"><li>$${shipping.cost_cad} flat label</li><li>Buyer pays</li>${weightNote ? `<li>${weightNote}</li>` : ''}</ul>`;
+  } else if (shipping.type === 'prepaid_label_variable') {
+    return `<ul class="compact-list"><li>Label provided</li><li>Buyer pays actual cost</li></ul>`;
+  } else if (shipping.type === 'consignment') {
+    return 'Free kit provided';
+  } else if (shipping.type === 'seller_arranged') {
+    return 'You handle it';
+  } else if (shipping.type === 'seller_ships_to_authentication') {
+    return 'Ship to auth center';
+  }
+  return '—';
+}
+
+function getFeesNumeric(fees) {
+  // Return a numeric value for sorting
+  if (!fees) return 999;
+  if (fees.commission !== undefined) return fees.commission;
+  if (fees.commission_tiers) {
+    const tier = fees.commission_tiers.find(t => t.fee_type === 'percentage');
+    if (tier) return tier.amount;
+    const payout = fees.commission_tiers.find(t => t.seller_payout_percentage !== undefined);
+    if (payout) return 100 - payout.seller_payout_percentage;
+  }
+  return 50;
+}
+
+function estimateTotalFee(fees) {
+  let total = 0;
+  if (fees.commission !== undefined) {
+    total += fees.commission;
+  } else if (fees.commission_tiers) {
+    const tier = fees.commission_tiers.find(t => t.fee_type === 'percentage');
+    if (tier) total += tier.amount;
+  }
+  if (fees.payment_processing && typeof fees.payment_processing === 'object') {
+    total += fees.payment_processing.percentage || 0;
+  }
+  return Math.round(total * 10) / 10;
 }
 
 function renderPlatformCard(key, p) {
