@@ -21,9 +21,8 @@ const TILE_CONFIG = {
   seasonal: { label: 'Perfect time to list', countId: 'tile-count-seasonal' },
   photo: { label: 'Needs photo', countId: 'tile-count-photo' },
   ready: { label: 'Ready to list', countId: 'tile-count-ready' },
-  shipping: { label: 'Needs shipping', countId: 'tile-count-shipping' },
-  awaiting: { label: 'Awaiting confirmation', countId: 'tile-count-awaiting' },
-  confirm: { label: 'Confirm sale', countId: 'tile-count-confirm' }
+  shipping: { label: 'Needs packaging', countId: 'tile-count-shipping' },
+  awaiting: { label: 'Ready to ship', countId: 'tile-count-awaiting' }
 };
 
 // =============================================================================
@@ -47,11 +46,10 @@ export async function loadActionItems() {
   // Store data for modal use
   currentActionData = {
     seasonal: seasonalMatches, // Array of {item, score, reasons}
-    photo: pipelineItems.filter(i => i.status === 'unlisted'),
-    ready: pipelineItems.filter(i => i.status === 'photographed'),
-    shipping: pipelineItems.filter(i => i.status === 'packaged'),
-    awaiting: pipelineItems.filter(i => i.status === 'shipped'),
-    confirm: pipelineItems.filter(i => i.status === 'confirmed_received')
+    photo: pipelineItems.filter(i => i.status === 'needs_photo'),
+    ready: pipelineItems.filter(i => i.status === 'unlisted'),
+    shipping: pipelineItems.filter(i => i.status === 'sold'),
+    awaiting: pipelineItems.filter(i => i.status === 'packaged')
   };
 
   updateTileCounts();

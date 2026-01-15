@@ -409,8 +409,7 @@ export async function getInventoryInPipeline() {
   try {
     const items = await getAllFromStore('inventory');
     const pipelineStatuses = [
-      'unlisted', 'photographed', 'listed', 'pending_sale',
-      'packaged', 'shipped', 'confirmed_received', 'sold'
+      'needs_photo', 'unlisted', 'listed', 'sold', 'packaged', 'shipped'
     ];
 
     return items.filter(item => pipelineStatuses.includes(item.status))
@@ -424,8 +423,7 @@ export async function getItemsNotInPipeline() {
   try {
     const items = await getAllFromStore('inventory');
     const pipelineStatuses = [
-      'unlisted', 'photographed', 'listed', 'pending_sale',
-      'packaged', 'shipped', 'confirmed_received', 'sold'
+      'needs_photo', 'unlisted', 'listed', 'sold', 'packaged', 'shipped'
     ];
 
     return items.filter(item => !pipelineStatuses.includes(item.status))
