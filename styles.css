@@ -1219,6 +1219,190 @@
   }
 
   /* ==========================================================================
+     Compact row layout - Stores & Brands (mobile only)
+     ========================================================================== */
+
+  /* Desktop: hide mobile layout, show desktop layout */
+  .store-row__mobile,
+  .brand-row__mobile {
+    display: none;
+  }
+
+  @media (max-width: 639px) {
+    /* Mobile: show mobile layout, hide desktop layout */
+    .store-row__mobile,
+    .brand-row__mobile {
+      display: block;
+    }
+
+    .store-row__desktop,
+    .brand-row__desktop {
+      display: none;
+    }
+
+    /* Stores table - compact list */
+    #stores-table tbody {
+      gap: 0;
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    #stores-table tbody tr.store-row {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+      padding: var(--space-sm) var(--space-md);
+      background: transparent;
+      box-shadow: none;
+      border-radius: 0;
+      cursor: pointer;
+    }
+
+    #stores-table tbody tr.store-row + tr.store-row {
+      border-top: 1px solid var(--color-border);
+    }
+
+    #stores-table tbody tr.store-row:hover {
+      background: var(--color-surface-elevated);
+    }
+
+    #stores-table tbody tr.store-row td:first-child {
+      display: block;
+      padding: 0;
+      border: none;
+    }
+
+    #stores-table tbody tr.store-row td:not(:first-child) {
+      display: none;
+    }
+
+    #stores-table tbody tr.store-row td::before {
+      display: none;
+    }
+
+    .store-row__title {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: var(--space-sm);
+    }
+
+    .store-row__name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .store-row__meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      flex-shrink: 0;
+    }
+
+    .store-row__stats {
+      display: flex;
+      gap: var(--space-md);
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+    }
+
+    .store-row__stat {
+      display: flex;
+      align-items: center;
+      gap: var(--space-xs);
+    }
+
+    .store-row__stat-value {
+      font-weight: 500;
+      color: var(--color-text);
+    }
+
+    /* Brands table - compact list */
+    #references-table tbody {
+      gap: 0;
+      background: var(--color-surface);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+
+    #references-table tbody tr.brand-row {
+      display: block;
+      padding: var(--space-sm) var(--space-md);
+      background: transparent;
+      box-shadow: none;
+      border-radius: 0;
+    }
+
+    #references-table tbody tr.brand-row + tr.brand-row {
+      border-top: 1px solid var(--color-border);
+    }
+
+    #references-table tbody tr.brand-row:hover {
+      background: var(--color-surface-elevated);
+    }
+
+    #references-table tbody tr.brand-row td:first-child {
+      display: block;
+      padding: 0;
+      border: none;
+    }
+
+    #references-table tbody tr.brand-row td:not(:first-child) {
+      display: none;
+    }
+
+    #references-table tbody tr.brand-row td::before {
+      display: none;
+    }
+
+    .brand-row__mobile {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+    }
+
+    .brand-row__name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .brand-row__alt {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      font-weight: normal;
+    }
+
+    .brand-row__meta {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      flex-shrink: 0;
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+    }
+
+    .brand-row__type {
+      font-weight: normal;
+      color: var(--color-text-muted);
+      font-size: 0.75rem;
+    }
+
+    .brand-row__mult {
+      font-weight: 500;
+      color: var(--color-text);
+    }
+  }
+
+  /* ==========================================================================
      Responsive table - Desktop (restore standard table layout)
      ========================================================================== */
   @media (min-width: 640px) {
