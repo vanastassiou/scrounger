@@ -4,20 +4,26 @@
 
 import { getInventoryInPipeline } from './db.js';
 import { $, $$ } from './utils.js';
-import { setVisible } from './components.js';
+import { setVisible, show, hide } from './components.js';
+import { loadSeasonalData, getSeasonalOpportunities } from './seasonal.js';
 
 // =============================================================================
 // INITIALIZATION
 // =============================================================================
 
 export async function initDashboardActions() {
+  await loadSeasonalData();
   await loadActionItems();
 }
 
 export async function loadActionItems() {
   const items = await getInventoryInPipeline();
 
+  // Get seasonal opportunities from listable items
+  const seasonalMatches = getSeasonalOpportunities(items);
+
   const actionGroups = {
+    seasonal: seasonalMatches,
     needsPhoto: items.filter(i => i.status === 'unlisted'),
     readyToList: items.filter(i => i.status === 'photographed'),
     needsShipping: items.filter(i => i.status === 'packaged'),
@@ -29,6 +35,9 @@ export async function loadActionItems() {
 }
 
 function renderActionItems(groups) {
+  // Render seasonal opportunities (shows/hides group based on count)
+  renderSeasonalList(groups.seasonal);
+
   // Update badges
   updateBadge('photo', groups.needsPhoto.length);
   updateBadge('list', groups.readyToList.length);
@@ -52,6 +61,47 @@ function updateBadge(type, count) {
   if (badge) {
     badge.textContent = count;
     setVisible(badge, count > 0);
+  }
+}
+
+function renderSeasonalList(matches) {
+  const groupEl = $('#action-group-seasonal');
+  const listEl = $('#action-list-seasonal');
+  const badgeEl = $('#action-badge-seasonal');
+
+  if (!groupEl || !listEl) return;
+
+  const count = matches?.length || 0;
+
+  // Show/hide the entire group
+  if (count === 0) {
+    hide(groupEl);
+    return;
+  }
+
+  show(groupEl);
+
+  // Update badge
+  if (badgeEl) {
+    badgeEl.textContent = count;
+  }
+
+  // Show first 3 items with reasons
+  const displayItems = matches.slice(0, 3);
+  const remaining = count - 3;
+
+  listEl.innerHTML = displayItems.map(({ item, reasons }) => {
+    const reason = reasons[0] || '';
+    return `
+      <li data-item-id="${item.id}" data-status="${item.status}">
+        <a href="#" class="table-link">${item.title || 'Untitled'}</a>
+        ${reason ? `<span class="seasonal-reason">${reason}</span>` : ''}
+      </li>
+    `;
+  }).join('');
+
+  if (remaining > 0) {
+    listEl.innerHTML += `<li class="action-item-more"><a href="#" class="table-link">+ ${remaining} more</a></li>`;
   }
 }
 

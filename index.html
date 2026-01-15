@@ -22,6 +22,7 @@
   <link rel="modulepreload" href="js/visits.js">
   <link rel="modulepreload" href="js/selling.js">
   <link rel="modulepreload" href="js/dashboard-actions.js">
+  <link rel="modulepreload" href="js/seasonal.js">
   <link rel="modulepreload" href="js/sync.js">
   <link rel="modulepreload" href="js/settings.js">
   <link rel="modulepreload" href="js/references.js">
@@ -51,11 +52,12 @@
     #inv-collection-view, #inv-selling-view { display: none; }
     html[data-inv-sub="collection"] #inv-collection-view { display: block; }
     html[data-inv-sub="selling"] #inv-selling-view { display: block; }
-    #ref-stores-view, #ref-visits-view, #ref-brands-view, #ref-platforms-view { display: none; }
+    #ref-stores-view, #ref-visits-view, #ref-brands-view, #ref-platforms-view, #ref-trends-view { display: none; }
     html[data-ref-sub="stores"] #ref-stores-view { display: block; }
     html[data-ref-sub="visits"] #ref-visits-view { display: block; }
     html[data-ref-sub="brands"] #ref-brands-view { display: block; }
     html[data-ref-sub="platforms"] #ref-platforms-view { display: block; }
+    html[data-ref-sub="trends"] #ref-trends-view { display: block; }
     /* Sub-tab button active state */
     .sub-tab { color: var(--color-text-muted); border-bottom-color: transparent; }
     html[data-inv-sub="collection"] .sub-tab[data-inv-view="collection"],
@@ -63,7 +65,8 @@
     html[data-ref-sub="stores"] .sub-tab[data-ref-view="stores"],
     html[data-ref-sub="visits"] .sub-tab[data-ref-view="visits"],
     html[data-ref-sub="brands"] .sub-tab[data-ref-view="brands"],
-    html[data-ref-sub="platforms"] .sub-tab[data-ref-view="platforms"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+    html[data-ref-sub="platforms"] .sub-tab[data-ref-view="platforms"],
+    html[data-ref-sub="trends"] .sub-tab[data-ref-view="trends"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
   </style>
 </head>
 <body>
@@ -113,6 +116,15 @@
       <div class="card">
         <h3 class="card-title">Action items</h3>
         <div id="action-items-container">
+          <div class="action-item-group action-item-group--seasonal hidden" id="action-group-seasonal">
+            <div class="action-item-header">
+              <span class="action-icon">📅</span>
+              <span class="action-label">Perfect time to list</span>
+              <span class="action-badge" id="action-badge-seasonal">0</span>
+            </div>
+            <ul class="action-item-list" id="action-list-seasonal"></ul>
+          </div>
+
           <div class="action-item-group">
             <div class="action-item-header">
               <span class="action-icon">📷</span>
@@ -314,6 +326,7 @@
         <button class="sub-tab" data-ref-view="visits">Visits</button>
         <button class="sub-tab" data-ref-view="brands">Brands</button>
         <button class="sub-tab" data-ref-view="platforms">Platforms</button>
+        <button class="sub-tab" data-ref-view="trends">Trends</button>
       </div>
 
       <!-- Stores View -->
@@ -407,6 +420,15 @@
           </table>
         </div>
         <div id="platforms-count" class="text-muted"></div>
+      </div>
+
+      <!-- Trends View -->
+      <div id="ref-trends-view" class="ref-view hidden">
+        <div class="trends-header">
+          <h3>Seasonal Selling Calendar</h3>
+          <p class="text-muted">What sells best each month</p>
+        </div>
+        <div id="trends-calendar" class="trends-calendar"></div>
       </div>
     </section>
 
