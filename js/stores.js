@@ -7,7 +7,7 @@ import { getAllStoreStats, getAllUserStores, createUserStore, getInventoryByStor
 import { showToast, createModalController } from './ui.js';
 import {
   $, $$, formatCurrency, formatDate, escapeHtml,
-  createSortableTable, createFilterButtons, emptyStateRow
+  createSortableTable, createFilterButtons, emptyStateRow, formatChainName
 } from './utils.js';
 import { getTierSortOrder } from './config.js';
 import { openViewItemModal } from './inventory.js';
@@ -302,20 +302,6 @@ function renderStoreDetails(store, stats, items) {
   }
 
   return sections.join('');
-}
-
-function formatChainName(chain) {
-  if (!chain) return '';
-  const names = {
-    value_village: 'Value Village',
-    salvation_army: 'Salvation Army',
-    hospital_auxiliary: 'Hospital Auxiliary',
-    mcc: 'MCC (Mennonite)',
-    animal_charity: 'Animal Charity',
-    church: 'Church',
-    community: 'Community'
-  };
-  return names[chain] || chain.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
 // =============================================================================
