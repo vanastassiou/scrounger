@@ -93,6 +93,15 @@ export function calculatePlatformFees(platformId, salePrice) {
   if (fees.listing_fee?.per_listing_cad) {
     listingFee = fees.listing_fee.per_listing_cad;
     breakdown.listingFee = `$${listingFee.toFixed(2)}`;
+  } else if (fees.listing_fee?.per_listing_after) {
+    // Tiered listing fee (e.g., eBay: 250 free, then $0.30)
+    // Include in estimate since most active sellers exceed free tier
+    listingFee = fees.listing_fee.per_listing_after;
+    const freeCount = fees.listing_fee.free_listings_per_month || 0;
+    breakdown.listingFee = `$${listingFee.toFixed(2)}`;
+    if (freeCount > 0) {
+      notes.push(`${freeCount} free listings/month, then $${listingFee.toFixed(2)} each`);
+    }
   }
 
   // Platform-specific notes

@@ -107,11 +107,9 @@
 
     /* Status colors */
     --color-status-collection: #6366f1;
-    --color-status-photographed: #8b5cf6;
-    --color-status-pending-sale: #f59e0b;
+    --color-status-needs-photo: #f59e0b;
     --color-status-packaged: #10b981;
     --color-status-shipped: #06b6d4;
-    --color-status-confirmed: #84cc16;
     --color-status-returned: #ef4444;
     --color-status-donated: #a855f7;
 
@@ -1118,6 +1116,64 @@
   }
 
   /* ==========================================================================
+     Collection row - Compact mobile layout (cost + actions in one row)
+     ========================================================================== */
+  .table-responsive tbody tr.collection-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0;
+  }
+
+  /* Title spans full width on first row */
+  .table-responsive tbody tr.collection-row td:first-child {
+    flex: 0 0 100%;
+    order: 1;
+  }
+
+  /* Est. profit - show label in mobile */
+  .table-responsive tbody tr.collection-row td:nth-child(2) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    width: auto;
+    flex: 0 0 auto;
+    padding: var(--space-xs) 0;
+    order: 2;
+    text-align: center;
+  }
+
+  .table-responsive tbody tr.collection-row td:nth-child(2)::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  /* Actions: Edit and Sell buttons */
+  .table-responsive tbody tr.collection-row td.table-actions {
+    order: 3;
+    flex: 1 1 auto;
+    width: auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-xs);
+    padding: var(--space-xs) 0;
+    margin-top: 0;
+    margin-left: var(--space-sm);
+  }
+
+  .table-responsive tbody tr.collection-row .table-actions .btn {
+    width: auto;
+    min-height: 36px;
+    padding: var(--space-xs) var(--space-sm);
+    font-size: 0.8125rem;
+  }
+
+  /* ==========================================================================
      Responsive table - Desktop (restore standard table layout)
      ========================================================================== */
   @media (min-width: 640px) {
@@ -1183,6 +1239,39 @@
     .table-responsive .table-actions .btn {
       width: auto;
       min-height: auto;
+    }
+
+    /* Reset collection row to standard table layout */
+    .table-responsive tbody tr.collection-row {
+      display: table-row;
+      flex-direction: unset;
+      flex-wrap: unset;
+    }
+
+    .table-responsive tbody tr.collection-row td,
+    .table-responsive tbody tr.collection-row td:nth-child(2) {
+      display: table-cell;
+      flex: none;
+      order: unset;
+      width: auto;
+      margin-left: 0;
+    }
+
+    .table-responsive tbody tr.collection-row td:nth-child(2) {
+      text-align: center;
+    }
+
+    .table-responsive tbody tr.collection-row td:nth-child(2)::before {
+      display: none;
+    }
+
+    #inventory-table th.col-numeric {
+      text-align: center;
+    }
+
+    .table-responsive tbody tr.collection-row td.table-actions {
+      justify-content: flex-start;
+      margin-left: 0;
     }
 
     .table-responsive tbody tr[data-store-id] {
@@ -1378,14 +1467,12 @@
   }
 
   .status--in_collection { background: var(--color-status-collection); color: white; }
+  .status--needs_photo { background: var(--color-status-needs-photo); color: white; }
   .status--unlisted { background: var(--color-surface-elevated); }
-  .status--photographed { background: var(--color-status-photographed); color: white; }
   .status--listed { background: var(--color-primary); color: white; }
-  .status--pending_sale { background: var(--color-status-pending-sale); color: white; }
+  .status--sold { background: var(--color-success); color: white; }
   .status--packaged { background: var(--color-status-packaged); color: white; }
   .status--shipped { background: var(--color-status-shipped); color: white; }
-  .status--confirmed_received { background: var(--color-status-confirmed); color: white; }
-  .status--sold { background: var(--color-success); color: white; }
   .status--kept { background: var(--color-warning); color: black; }
   .status--returned { background: var(--color-status-returned); color: white; }
   .status--donated { background: var(--color-status-donated); color: white; }
@@ -1662,6 +1749,78 @@
   font-style: italic;
 }
 
+/* Profit Waterfall - unified profit breakdown display */
+.profit-waterfall {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  padding: var(--space-md);
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+}
+
+.profit-waterfall__line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: var(--space-2xs) 0;
+}
+
+.profit-waterfall__label {
+  color: var(--color-text-muted);
+  font-size: 0.9rem;
+}
+
+.profit-waterfall__value {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+}
+
+.profit-waterfall__value--negative {
+  color: var(--color-text-muted);
+}
+
+.profit-waterfall__line--subtotal {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-xs);
+  margin-top: var(--space-2xs);
+}
+
+.profit-waterfall__line--total {
+  border-top: 2px solid var(--color-border);
+  padding-top: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.profit-waterfall__line--total .profit-waterfall__label,
+.profit-waterfall__line--total .profit-waterfall__value {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.profit-waterfall__details {
+  padding-left: var(--space-md);
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.profit-waterfall--compact {
+  padding: var(--space-sm);
+  gap: 0;
+}
+
+.profit-waterfall--compact .profit-waterfall__label,
+.profit-waterfall--compact .profit-waterfall__value {
+  font-size: 0.85rem;
+}
+
+.profit-waterfall--compact .profit-waterfall__line--total .profit-waterfall__label,
+.profit-waterfall--compact .profit-waterfall__line--total .profit-waterfall__value {
+  font-size: 0.9rem;
+}
+
 /* Estimated Return in Pipeline Table */
 .est-return {
   display: flex;
@@ -1674,6 +1833,85 @@
   font-size: 0.7rem;
   color: var(--color-text-muted);
   text-transform: capitalize;
+}
+
+/* Platform Comparison Grid */
+.platform-comparison {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.platform-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-xs) var(--space-md);
+  padding: var(--space-sm);
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+.platform-card--best {
+  border-color: var(--color-success);
+  background: color-mix(in srgb, var(--color-success) 5%, var(--color-surface-elevated));
+}
+
+.platform-card__name {
+  font-weight: 600;
+  color: var(--color-text);
+  grid-column: 1 / -1;
+}
+
+.platform-card__detail {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  grid-column: 1 / -1;
+}
+
+.platform-card__fees {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.platform-card__fee-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+}
+
+.platform-card__fee-total {
+  margin-top: var(--space-2xs);
+  padding-top: var(--space-2xs);
+  border-top: 1px dashed var(--color-border);
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.platform-card__profit {
+  font-weight: 600;
+  font-size: 1rem;
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-xs);
+}
+
+/* Profit link styling */
+.profit-link {
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+
+.profit-link:hover {
+  border-bottom-style: solid;
 }
 
 /* Reset Fees Button */
@@ -2669,6 +2907,10 @@
   color: var(--color-text-muted);
   margin-bottom: var(--space-sm);
   padding-left: var(--space-xs);
+}
+
+.recommendation-waterfall {
+  margin: var(--space-sm) 0;
 }
 
 .alternatives-details {

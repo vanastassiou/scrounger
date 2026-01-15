@@ -21,6 +21,7 @@ import {
   formatStatus,
   calculateProfit,
   formatProfitDisplay,
+  renderProfitWaterfall,
   escapeHtml,
   createSortableTable,
   emptyStateRow,
@@ -47,6 +48,7 @@ let searchTerm = '';
 let currentSoldItem = null;
 let currentShipItem = null;
 let feesManuallyEdited = false;
+let currentFeeResult = null; // Track fee calculation result for waterfall display
 
 // =============================================================================
 // INITIALIZATION
@@ -381,7 +383,9 @@ function renderPipelineRow(item) {
     if (estimates.length > 0) {
       const best = estimates[0];
       const profitClass = best.profit >= 0 ? 'profit--positive' : 'profit--negative';
-      estReturnHtml = `<span class="est-return">
+      const platformName = capitalize(best.platformId.replace('_', ' '));
+      const tooltipText = `${formatCurrency(best.netPayout)} payout on ${platformName}`;
+      estReturnHtml = `<span class="est-return" title="${escapeHtml(tooltipText)}">
         <span class="${profitClass}">${formatCurrency(best.profit)}</span>
         <span class="est-platform">${best.platformId}</span>
       </span>`;
@@ -395,9 +399,9 @@ function renderPipelineRow(item) {
   if (!isInPipeline) {
     // Non-pipeline item - show "List for sale" button
     actionButton = `<button class="btn btn--sm btn--primary list-for-sale-btn" data-id="${item.id}">List for sale</button>`;
-  } else if (item.status === 'confirmed_received') {
+  } else if (item.status === 'listed') {
     actionButton = `<button class="btn btn--sm btn--primary mark-sold-btn" data-id="${item.id}">Mark sold</button>`;
-  } else if (item.status !== 'sold') {
+  } else if (item.status !== 'shipped') {
     const nextStatus = getNextStatus(item.status);
     if (nextStatus) {
       actionButton = `<button class="btn btn--sm status-next-btn" data-id="${item.id}" data-next-status="${nextStatus}">${capitalize(nextStatus.replace('_', ' '))}</button>`;
@@ -423,13 +427,12 @@ function renderPipelineRow(item) {
 
 function getNextStatus(currentStatus) {
   const statusOrder = [
+    'needs_photo',
     'unlisted',
-    'photographed',
     'listed',
-    'pending_sale',
+    'sold',
     'packaged',
-    'shipped',
-    'confirmed_received'
+    'shipped'
   ];
 
   const currentIndex = statusOrder.indexOf(currentStatus);
@@ -437,7 +440,13 @@ function getNextStatus(currentStatus) {
     return null;
   }
 
-  return statusOrder[currentIndex + 1];
+  // Skip 'sold' - that's handled by the Mark Sold modal
+  const nextStatus = statusOrder[currentIndex + 1];
+  if (nextStatus === 'sold') {
+    return null; // Mark sold button is shown instead
+  }
+
+  return nextStatus;
 }
 
 // =============================================================================
@@ -466,9 +475,9 @@ const markSoldModal = createLazyModal('#mark-sold-dialog', {
     if (shippingInput) shippingInput.value = '';
     if (feesInput) feesInput.value = '';
 
-    // Reset fee display
+    // Reset fee state
     hide('#reset-fees-btn');
-    clearFeeBreakdown();
+    currentFeeResult = null;
 
     updateProfitPreview();
   }
@@ -485,27 +494,54 @@ export async function openMarkAsSoldModal(itemId) {
 }
 
 function updateProfitPreview() {
-  if (!currentSoldItem) return;
+  const container = $('#profit-waterfall');
+  if (!container || !currentSoldItem) return;
 
   const soldPrice = parseFloat($('#sold-price').value) || 0;
   const shippingCost = parseFloat($('#shipping-cost').value) || 0;
   const platformFees = parseFloat($('#platform-fees').value) || 0;
 
-  const purchaseCost = (currentSoldItem.purchase_price || 0) + (currentSoldItem.tax_paid || 0);
+  const purchasePrice = currentSoldItem.purchase_price || 0;
+  const taxPaid = currentSoldItem.tax_paid || 0;
   const repairCosts = currentSoldItem.repairs_completed?.reduce((sum, r) => sum + (r.repair_cost || 0), 0) || 0;
-  const expenses = shippingCost + platformFees;
-  const totalCost = purchaseCost + repairCosts;
-  const profit = soldPrice - totalCost - expenses;
 
-  // Update summary
-  $('#summary-price').textContent = formatCurrency(soldPrice);
-  $('#summary-cost').textContent = formatCurrency(totalCost);
-  $('#summary-expenses').textContent = formatCurrency(expenses);
+  // Cost includes everything you spent: purchase + tax + repairs + shipping
+  const costBasis = purchasePrice + taxPaid + repairCosts + shippingCost;
+  // Payout is what you receive after platform fees
+  const payout = soldPrice - platformFees;
+  // Profit is payout minus your costs
+  const profit = payout - costBasis;
 
-  const profitEl = $('#summary-profit');
-  const { formatted, className } = formatProfitDisplay(profit);
-  profitEl.textContent = formatted;
-  profitEl.className = `${className}`;
+  // Build fee details text
+  let feeDetails = '';
+  if (currentFeeResult) {
+    const parts = [];
+    if (currentFeeResult.breakdown?.commission) {
+      parts.push(currentFeeResult.breakdown.commission);
+    }
+    if (currentFeeResult.breakdown?.paymentProcessing && currentFeeResult.breakdown.paymentProcessing !== 'Included') {
+      parts.push(`+ ${currentFeeResult.breakdown.paymentProcessing} processing`);
+    }
+    feeDetails = parts.join(' ');
+  }
+
+  // Build cost details text
+  const costParts = [];
+  costParts.push(`${formatCurrency(purchasePrice)} purchase`);
+  if (taxPaid > 0) costParts.push(`+ ${formatCurrency(taxPaid)} tax`);
+  if (repairCosts > 0) costParts.push(`+ ${formatCurrency(repairCosts)} repairs`);
+  if (shippingCost > 0) costParts.push(`+ ${formatCurrency(shippingCost)} shipping`);
+  const costDetails = costParts.length > 1 ? costParts.join(' ') : '';
+
+  container.innerHTML = renderProfitWaterfall({
+    salePrice: soldPrice,
+    fees: platformFees,
+    payout,
+    costBasis,
+    profit,
+    feeDetails,
+    costDetails
+  }, { showDetails: true });
 }
 
 function updateFeeCalculation() {
@@ -513,78 +549,19 @@ function updateFeeCalculation() {
   const salePrice = parseFloat($('#sold-price').value) || 0;
 
   if (!platform || !salePrice) {
-    clearFeeBreakdown();
+    currentFeeResult = null;
+    updateProfitPreview();
     return;
   }
 
   const result = calculatePlatformFees(platform, salePrice);
   if (result) {
     $('#platform-fees').value = result.totalFees.toFixed(2);
-    renderFeeBreakdown(result);
-    updateProfitPreview();
+    currentFeeResult = result;
   } else {
-    clearFeeBreakdown();
+    currentFeeResult = null;
   }
-}
-
-function renderFeeBreakdown(result) {
-  const container = $('#fee-breakdown');
-  if (!container) return;
-
-  const { breakdown, notes, isConsignment, platformName } = result;
-  let html = '';
-
-  // Commission
-  if (breakdown.commission) {
-    html += `<div class="fee-line">
-      <span>${isConsignment ? 'Payout:' : 'Commission:'}</span>
-      <span>${breakdown.commission}${!isConsignment ? ` (${formatCurrency(result.commission)})` : ''}</span>
-    </div>`;
-  }
-
-  // Payment processing
-  if (breakdown.paymentProcessing && breakdown.paymentProcessing !== 'Included') {
-    html += `<div class="fee-line">
-      <span>Payment processing:</span>
-      <span>${breakdown.paymentProcessing} (${formatCurrency(result.paymentProcessing)})</span>
-    </div>`;
-  }
-
-  // Listing fee
-  if (breakdown.listingFee) {
-    html += `<div class="fee-line">
-      <span>Listing fee:</span>
-      <span>${breakdown.listingFee}</span>
-    </div>`;
-  }
-
-  // Total fees
-  html += `<div class="fee-line fee-line--total">
-    <span>Total fees:</span>
-    <span>${formatCurrency(result.totalFees)}</span>
-  </div>`;
-
-  // Net payout
-  html += `<div class="fee-line fee-line--net">
-    <span>Net payout:</span>
-    <span>${formatCurrency(result.netPayout)}</span>
-  </div>`;
-
-  // Notes
-  if (notes && notes.length > 0) {
-    html += `<div class="fee-notes">${notes.join(' • ')}</div>`;
-  }
-
-  container.innerHTML = html;
-  show(container);
-}
-
-function clearFeeBreakdown() {
-  const container = $('#fee-breakdown');
-  if (container) {
-    container.innerHTML = '';
-    hide(container);
-  }
+  updateProfitPreview();
 }
 
 // =============================================================================

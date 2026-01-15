@@ -8,7 +8,7 @@ import { showToast, createModalController } from './ui.js';
 import {
   $, $$, formatCurrency, formatDate, capitalize, formatStatus, formatPackaging, escapeHtml,
   sortData, createChainStoreDropdown, formatChainName, getLocationName, compressImage,
-  formatProfitDisplay
+  formatProfitDisplay, renderProfitWaterfall
 } from './utils.js';
 import { createSubTabController, initStoreDropdown, setVisible, createLazyModal, createTableController, renderDetailSections } from './components.js';
 import {
@@ -18,7 +18,7 @@ import {
   COLOUR_OPTIONS, MATERIAL_OPTIONS, PIPELINE_STATUSES, RESALE_PLATFORMS
 } from './config.js';
 import { queueSync } from './sync.js';
-import { generateSellingRecommendations, formatPlatformName, calculateTrendMultiplier } from './recommendations.js';
+import { generateSellingRecommendations, formatPlatformName, calculateTrendMultiplier, calculateEnhancedResaleValue } from './recommendations.js';
 import { calculatePlatformFees } from './fees.js';
 
 let inventoryData = [];
@@ -29,6 +29,7 @@ let pendingPhotos = []; // Array of {blob, filename, mimeType, type}
 let editingItemId = null;
 let modalOnSave = null;
 let visitContext = null; // Stores storeId/date when opened from visit workflow
+let estimatedPrices = new Map(); // Cached estimated sell prices by item ID
 
 // Photo type options for the dropdown
 const PHOTO_TYPES = ['front', 'back', 'detail', 'label', 'flaw', 'hallmark', 'closure', 'measurement', 'styled'];
@@ -192,6 +193,31 @@ export function switchToSellingView() {
 
 async function loadInventory() {
   inventoryData = await getAllInventory();
+
+  // Pre-calculate estimated sell prices for collection items
+  const collectionItems = inventoryData.filter(item =>
+    !isInPipeline(item.status) && item.status !== 'sold'
+  );
+
+  // Calculate prices in parallel
+  await Promise.all(collectionItems.map(async (item) => {
+    // Use existing estimated_resale_value if set
+    if (item.estimated_resale_value) {
+      estimatedPrices.set(item.id, item.estimated_resale_value);
+      return;
+    }
+
+    // Calculate using enhanced resale value logic
+    try {
+      const result = await calculateEnhancedResaleValue(item);
+      if (result?.value) {
+        estimatedPrices.set(item.id, result.value);
+      }
+    } catch (err) {
+      // Silently fail - price will show as '-'
+    }
+  }));
+
   if (inventoryTableCtrl) {
     inventoryTableCtrl.render();
   }
@@ -203,6 +229,8 @@ function setupTableController() {
     tbodySelector: '#inventory-tbody',
     getData: () => inventoryData,
     filterItem: (item, filters, search) => {
+      // Hide items in selling pipeline or sold
+      if (isInPipeline(item.status) || item.status === 'sold') return false;
       if (filters.category && item.category !== filters.category) return false;
       if (search) {
         const inTitle = item.title?.toLowerCase().includes(search);
@@ -213,11 +241,13 @@ function setupTableController() {
       return true;
     },
     getColumnValue: (item, col) => {
-      if (col === 'purchase_price') return Number(item[col]) || 0;
+      if (col === 'estimated_resale_value') {
+        return estimatedPrices.get(item.id) || 0;
+      }
       return item[col];
     },
     createRow: createInventoryRow,
-    emptyState: { colspan: 4, icon: 'I', message: 'No items found' },
+    emptyState: { colspan: 3, icon: 'I', message: 'No items found' },
     searchSelector: '#inventory-search',
     countSelector: '#inventory-count',
     countTemplate: '{count} item{s}',
@@ -232,7 +262,8 @@ function setupTableController() {
         }
       }),
       '.start-selling-btn': (el) => openStartSellingModal(el.dataset.id),
-      '.view-in-selling-btn': () => navigateToSelling()
+      '.view-in-selling-btn': () => navigateToSelling(),
+      '.profit-link': (el) => openProfitBreakdownModal(el.dataset.id)
     }
   });
 
@@ -240,25 +271,29 @@ function setupTableController() {
 }
 
 function createInventoryRow(item) {
-  const inPipeline = isInPipeline(item.status);
-  let sellButton = '';
+  const estSalePrice = estimatedPrices.get(item.id);
+  const costBasis = (item.purchase_price || 0) + (item.tax_paid || 0);
+  const estProfit = estSalePrice ? estSalePrice - costBasis : null;
 
-  if (item.status === 'sold') {
-    // No sell button for sold items
-  } else if (inPipeline) {
-    sellButton = `<button class="btn btn--sm view-in-selling-btn" data-id="${item.id}">View in Selling</button>`;
-  } else {
-    sellButton = `<button class="btn btn--sm btn--primary start-selling-btn" data-id="${item.id}">Sell</button>`;
+  let profitDisplay = '-';
+  let profitClass = '';
+  if (estProfit !== null) {
+    const { formatted, className } = formatProfitDisplay(estProfit);
+    profitDisplay = formatted;
+    profitClass = className;
   }
 
+  const profitContent = estProfit !== null
+    ? `<a href="#" class="profit-link ${profitClass}" data-id="${item.id}">${profitDisplay}</a>`
+    : '-';
+
   return `
-    <tr data-id="${item.id}">
+    <tr data-id="${item.id}" class="collection-row">
       <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
-      <td data-label="Cost">${formatCurrency(item.purchase_price || 0)}</td>
-      <td data-label="Status"><span class="status status--${item.status}">${formatStatus(item.status)}</span></td>
+      <td data-label="Est. profit" class="col-numeric">${profitContent}</td>
       <td class="table-actions">
         <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
-        ${sellButton}
+        <button class="btn btn--sm btn--primary start-selling-btn" data-id="${item.id}">Sell</button>
       </td>
     </tr>
   `;
@@ -481,7 +516,7 @@ function formatMaterialString(str) {
 }
 
 // Generate auto-title from item components
-function generateItemTitle(brand, colour, materials, subcategory) {
+function generateItemTitle(brand, colour, materials, subcategory, size) {
   const parts = [];
   if (brand) parts.push(brand);
   if (colour) parts.push(formatColour(colour).toLowerCase());
@@ -499,6 +534,7 @@ function generateItemTitle(brand, colour, materials, subcategory) {
   }
 
   if (subcategory) parts.push(formatStatus(subcategory).toLowerCase());
+  if (size) parts.push(size);
   return parts.join(' ') || 'Untitled item';
 }
 
@@ -1219,8 +1255,11 @@ async function handleItemSubmit(e) {
   if (primaryMaterialName) allMaterials.push(primaryMaterialName);
   secondaryMaterials.forEach(m => { if (m.name) allMaterials.push(m.name); });
 
+  // Get size for title
+  const labeledSize = formData.get('labeled_size')?.trim() || null;
+
   // Auto-generate title from components
-  const title = generateItemTitle(brand, primaryColour, allMaterials, subcategory);
+  const title = generateItemTitle(brand, primaryColour, allMaterials, subcategory, labeledSize);
 
   // Build item object
   const item = {
@@ -1243,7 +1282,7 @@ async function handleItemSubmit(e) {
     tax_paid: parseFloat(formData.get('tax_paid')) || 0,
 
     // Sizing
-    labeled_size: formData.get('labeled_size')?.trim() || null,
+    labeled_size: labeledSize,
     measurements: collectMeasurements(formData, category),
 
     // Materials (structured)
@@ -1607,9 +1646,9 @@ const startSellingModal = createLazyModal('#start-selling-dialog', {
       if (form) {
         form.addEventListener('submit', handleStartSellingSubmit);
       }
-      const compPriceInput = dialog.querySelector('#start-selling-comp-price');
-      if (compPriceInput) {
-        compPriceInput.addEventListener('input', handleCompPriceChange);
+      const basePriceInput = dialog.querySelector('#start-selling-base-price');
+      if (basePriceInput) {
+        basePriceInput.addEventListener('input', handleBasePriceChange);
       }
     }
 
@@ -1621,42 +1660,46 @@ const startSellingModal = createLazyModal('#start-selling-dialog', {
     const itemTitleEl = dialog.querySelector('#start-selling-item-title');
     const statusSelect = dialog.querySelector('#start-selling-status');
     const minPriceInput = dialog.querySelector('#start-selling-min-price');
-    const compPriceInput = dialog.querySelector('#start-selling-comp-price');
+    const basePriceInput = dialog.querySelector('#start-selling-base-price');
     const suggestionEl = dialog.querySelector('#start-selling-suggestion');
     const estValueInput = dialog.querySelector('#start-selling-est-value');
     const recommendationsSection = dialog.querySelector('#selling-recommendations');
 
     if (itemIdInput) itemIdInput.value = item.id;
     if (itemTitleEl) itemTitleEl.textContent = item.title || 'Untitled';
-    if (statusSelect) statusSelect.value = 'unlisted';
+    if (statusSelect) statusSelect.value = 'needs_photo';
     if (minPriceInput) minPriceInput.value = item.minimum_acceptable_price || '';
-    if (compPriceInput) compPriceInput.value = '';
+
+    // Always show recommendations section (base price field is always useful)
+    if (recommendationsSection) recommendationsSection.style.display = 'block';
+
+    // Set initial base price from estimated value or suggestion
+    const initialPrice = item.estimated_resale_value || recommendations?.suggestedPrice || fallbackSuggestion?.value || '';
+    if (basePriceInput) basePriceInput.value = initialPrice;
 
     if (recommendations) {
-      renderRecommendations(recommendations, item);
-      if (recommendationsSection) recommendationsSection.style.display = 'block';
-
+      renderRecommendations(recommendations, item, initialPrice);
       if (!item.estimated_resale_value && estValueInput) {
         estValueInput.value = recommendations.suggestedPrice;
       }
       if (suggestionEl) suggestionEl.textContent = '';
+    } else if (fallbackSuggestion) {
+      // Render with fallback
+      if (estValueInput) estValueInput.value = fallbackSuggestion.value;
+      if (suggestionEl) {
+        let hint = `Suggested: ${formatCurrency(fallbackSuggestion.value)} (${fallbackSuggestion.multiplier}× brand tier)`;
+        if (fallbackSuggestion.tips) hint += ` — ${fallbackSuggestion.tips}`;
+        suggestionEl.textContent = hint;
+      }
+      // Still render platform comparison with fallback price
+      renderRecommendations(null, item, initialPrice);
     } else {
-      if (recommendationsSection) recommendationsSection.style.display = 'none';
-
       if (item.estimated_resale_value) {
         if (estValueInput) estValueInput.value = item.estimated_resale_value;
-        if (suggestionEl) suggestionEl.textContent = '';
-      } else if (fallbackSuggestion) {
-        if (estValueInput) estValueInput.value = fallbackSuggestion.value;
-        if (suggestionEl) {
-          let hint = `Suggested: ${formatCurrency(fallbackSuggestion.value)} (${fallbackSuggestion.multiplier}× brand tier)`;
-          if (fallbackSuggestion.tips) hint += ` — ${fallbackSuggestion.tips}`;
-          suggestionEl.textContent = hint;
-        }
       } else {
         if (estValueInput) estValueInput.value = '';
-        if (suggestionEl) suggestionEl.textContent = '';
       }
+      if (suggestionEl) suggestionEl.textContent = '';
     }
 
     // Use existing value if set (takes priority)
@@ -1686,82 +1729,87 @@ export async function openStartSellingModal(itemId) {
 }
 
 /**
- * Handle comp price input change - recalculate recommendations.
+ * Handle base price input change - recalculate platform recommendations.
  */
-async function handleCompPriceChange(e) {
+async function handleBasePriceChange(e) {
   if (!currentSellingItem) return;
 
-  const compPrice = parseFloat(e.target.value) || null;
-  const recommendations = await generateSellingRecommendations(currentSellingItem, compPrice);
+  const basePrice = parseFloat(e.target.value) || null;
+  if (!basePrice) return;
 
-  if (recommendations) {
-    renderRecommendations(recommendations, currentSellingItem);
+  const recommendations = await generateSellingRecommendations(currentSellingItem, basePrice);
+  renderRecommendations(recommendations, currentSellingItem, basePrice);
 
-    // Update estimated value input
-    const estValueInput = $('#start-selling-est-value');
-    if (estValueInput && !currentSellingItem.estimated_resale_value) {
-      estValueInput.value = recommendations.suggestedPrice;
-    }
+  // Update estimated value input to match base price
+  const estValueInput = $('#start-selling-est-value');
+  if (estValueInput) {
+    estValueInput.value = basePrice;
   }
 }
 
 /**
  * Render recommendations in the Start Selling modal.
  */
-function renderRecommendations(rec, item) {
-  const costBasis = (item.purchase_price || 0) + (item.tax_paid || 0);
-
-  // Suggested price range
-  const priceRangeEl = $('#suggested-price-range');
-  const breakdownEl = $('#price-breakdown');
-
-  if (priceRangeEl && rec.priceRange) {
-    priceRangeEl.textContent = `${formatCurrency(rec.priceRange.min)} – ${formatCurrency(rec.priceRange.max)}`;
-  }
-
-  if (breakdownEl) {
-    const b = rec.priceBreakdown;
-    let breakdown = '';
-
-    if (b.baseSource === 'comp_price') {
-      // Using user-provided comp price
-      breakdown = `Based on comp: ${formatCurrency(b.base)}`;
-      if (b.conditionFactor !== 1.0) breakdown += ` × ${b.conditionFactor} condition`;
-      if (b.eraBonus !== 1.0) breakdown += ` × ${b.eraBonus} vintage`;
-    } else {
-      // Using category-based range
-      const categoryName = formatBaseCategory(b.baseCategory);
-      breakdown = `${categoryName} base × ${b.brandMultiplier}× brand`;
-      if (b.conditionFactor !== 1.0) breakdown += ` × ${b.conditionFactor} condition`;
-      if (b.eraBonus !== 1.0) breakdown += ` × ${b.eraBonus} vintage`;
-    }
-    breakdownEl.textContent = breakdown;
-  }
+function renderRecommendations(rec, item, basePrice) {
+  const purchasePrice = item.purchase_price || 0;
+  const taxPaid = item.tax_paid || 0;
+  const repairCosts = item.repairs_completed?.reduce((sum, r) => sum + (r.repair_cost || 0), 0) || 0;
+  const costBasis = purchasePrice + taxPaid + repairCosts;
+  const priceToUse = basePrice || rec?.suggestedPrice || item.estimated_resale_value || 0;
 
   // Recommended platform
   const platformEl = $('#recommended-platform');
-  const reasonsEl = $('#platform-reasons');
-  if (rec.recommendedPlatforms.length > 0) {
+  const explanationEl = $('#platform-explanation');
+
+  if (rec?.recommendedPlatforms?.length > 0) {
     const top = rec.recommendedPlatforms[0];
     if (platformEl) platformEl.textContent = formatPlatformName(top.platformId);
-    if (reasonsEl) reasonsEl.textContent = top.reasons.slice(0, 2).join(' · ');
+
+    // Build detailed explanation
+    if (explanationEl) {
+      const reasons = top.reasons || [];
+      let explanation = reasons.length > 0
+        ? reasons.slice(0, 3).join('. ') + '.'
+        : `Best profit margin at this price point.`;
+      explanationEl.textContent = explanation;
+    }
+  } else {
+    if (platformEl) platformEl.textContent = '-';
+    if (explanationEl) explanationEl.textContent = 'Enter a base price to see platform recommendations.';
   }
 
-  // Profit estimate for top platform
-  const profitEl = $('#profit-estimate');
-  const feeBreakdownEl = $('#fee-breakdown');
-  if (rec.profitEstimate && profitEl) {
-    const profit = rec.profitEstimate.profit;
-    const profitClass = profit >= 0 ? 'text-success' : 'text-danger';
-    profitEl.innerHTML = `<span class="${profitClass}">${formatCurrency(profit)}</span> after fees`;
-
-    if (feeBreakdownEl) {
-      feeBreakdownEl.textContent = `${formatCurrency(rec.profitEstimate.netPayout)} payout − ${formatCurrency(costBasis)} cost`;
+  // Profit waterfall
+  const waterfallContainer = $('#selling-profit-waterfall');
+  if (waterfallContainer) {
+    if (rec?.profitEstimate) {
+      const { netPayout, totalFees, profit } = rec.profitEstimate;
+      waterfallContainer.innerHTML = renderProfitWaterfall({
+        salePrice: priceToUse,
+        fees: totalFees,
+        payout: netPayout,
+        costBasis,
+        profit
+      }, { compact: true });
+    } else if (priceToUse > 0) {
+      // Estimate with ~15% fees if no specific platform data
+      const estFees = priceToUse * 0.15;
+      const estPayout = priceToUse - estFees;
+      const profit = estPayout - costBasis;
+      waterfallContainer.innerHTML = renderProfitWaterfall({
+        salePrice: priceToUse,
+        fees: estFees,
+        payout: estPayout,
+        costBasis,
+        profit
+      }, { compact: true });
+    } else {
+      waterfallContainer.innerHTML = '';
     }
   }
 
   // Platform comparison table - show all platforms
-  renderPlatformComparison(rec.recommendedPlatforms, costBasis, rec.suggestedPrice, item);
+  const recommendedPlatforms = rec?.recommendedPlatforms || [];
+  renderPlatformComparison(recommendedPlatforms, costBasis, priceToUse, item);
 }
 
 /**
@@ -1907,4 +1955,132 @@ async function handleStartSellingSubmit(e) {
     console.error('Failed to start selling:', err);
     showToast('Failed to add item to pipeline');
   }
+}
+
+// =============================================================================
+// PROFIT BREAKDOWN MODAL
+// =============================================================================
+
+const profitBreakdownModal = createLazyModal('#profit-breakdown-dialog');
+
+/**
+ * Open the profit breakdown modal for an item.
+ */
+async function openProfitBreakdownModal(itemId) {
+  const item = await getInventoryItem(itemId);
+  if (!item) {
+    showToast('Item not found');
+    return;
+  }
+
+  const estSalePrice = estimatedPrices.get(item.id) || item.estimated_resale_value;
+  if (!estSalePrice) {
+    showToast('No estimated price available');
+    return;
+  }
+
+  // Populate title
+  const titleEl = $('#breakdown-item-title');
+  if (titleEl) titleEl.textContent = item.title || 'Untitled';
+
+  // Calculate cost basis
+  const purchasePrice = item.purchase_price || 0;
+  const taxPaid = item.tax_paid || 0;
+  const repairCosts = item.repairs_completed?.reduce((sum, r) => sum + (r.repair_cost || 0), 0) || 0;
+  const costBasis = purchasePrice + taxPaid + repairCosts;
+
+  // Calculate all platform data
+  const platformData = calculatePlatformBreakdowns(estSalePrice, costBasis);
+
+  // Render best platform as highlighted card
+  const bestContainer = $('#breakdown-best-waterfall');
+  if (bestContainer && platformData.length > 0) {
+    const best = platformData[0];
+    bestContainer.innerHTML = renderPlatformCard(best, { highlighted: true });
+  }
+
+  // Render remaining platforms (skip the best one)
+  const comparisonContainer = $('#breakdown-platform-comparison');
+  if (comparisonContainer && platformData.length > 1) {
+    comparisonContainer.innerHTML = platformData.slice(1)
+      .map(p => renderPlatformCard(p))
+      .join('');
+  }
+
+  profitBreakdownModal.open();
+}
+
+/**
+ * Calculate platform fee breakdowns for all platforms.
+ */
+function calculatePlatformBreakdowns(salePrice, costBasis) {
+  const platforms = ['poshmark', 'ebay', 'etsy', 'depop', 'grailed', 'starluv'];
+
+  const platformData = platforms.map(platformId => {
+    const fees = calculatePlatformFees(platformId, salePrice);
+    const netPayout = fees?.netPayout || salePrice * 0.85;
+    const profit = netPayout - costBasis;
+    const totalFees = fees?.totalFees || salePrice * 0.15;
+
+    return {
+      platformId,
+      name: formatPlatformName(platformId),
+      totalFees,
+      feePercent: Math.round((totalFees / salePrice) * 100),
+      netPayout,
+      profit,
+      commission: fees?.commission || 0,
+      paymentProcessing: fees?.paymentProcessing || 0,
+      listingFee: fees?.listingFee || 0,
+      breakdown: fees?.breakdown || {}
+    };
+  });
+
+  // Sort by profit (highest first)
+  platformData.sort((a, b) => b.profit - a.profit);
+  return platformData;
+}
+
+/**
+ * Render a single platform card.
+ */
+function renderPlatformCard(p, options = {}) {
+  const { highlighted = false } = options;
+  const profitClass = p.profit >= 0 ? 'profit--positive' : 'profit--negative';
+  const cardClass = highlighted ? 'platform-card platform-card--best' : 'platform-card';
+
+  // Build fee breakdown lines
+  const feeLines = [];
+  if (p.commission > 0) {
+    const desc = p.breakdown.commission ? ` (${p.breakdown.commission})` : '';
+    feeLines.push(`<div class="platform-card__fee-line"><span>Commission</span><span>${formatCurrency(p.commission)}${desc}</span></div>`);
+  }
+  if (p.paymentProcessing > 0) {
+    const desc = p.breakdown.paymentProcessing ? ` (${p.breakdown.paymentProcessing})` : '';
+    feeLines.push(`<div class="platform-card__fee-line"><span>Payment processing</span><span>${formatCurrency(p.paymentProcessing)}${desc}</span></div>`);
+  }
+  if (p.listingFee > 0) {
+    feeLines.push(`<div class="platform-card__fee-line"><span>Listing fee</span><span>${formatCurrency(p.listingFee)}</span></div>`);
+  }
+
+  return `
+    <div class="${cardClass}">
+      <div class="platform-card__name">${escapeHtml(p.name)}</div>
+      <div class="platform-card__fees">
+        ${feeLines.join('')}
+        <div class="platform-card__fee-line platform-card__fee-total">
+          <span>Total fees</span>
+          <span>-${formatCurrency(p.totalFees)}</span>
+        </div>
+      </div>
+      <div class="platform-card__detail">
+        <span>Net payout</span>
+        <span>${formatCurrency(p.netPayout)}</span>
+      </div>
+      <div class="platform-card__profit">
+        <span>Est. profit</span>
+        <span class="${profitClass}">${formatCurrency(p.profit)}</span>
+      </div>
+    </div>
+  `;
 }
