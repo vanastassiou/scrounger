@@ -105,10 +105,10 @@ function setupModalHandlers() {
 
   actionItemsModal = createModalController(dialog);
 
-  // Handle clicks in modal table (event delegation)
-  const tbody = $('#action-items-tbody');
-  if (tbody) {
-    tbody.addEventListener('click', handleModalTableClick);
+  // Handle clicks in modal list (event delegation)
+  const listEl = $('#action-items-list');
+  if (listEl) {
+    listEl.addEventListener('click', handleModalListClick);
   }
 }
 
@@ -126,13 +126,13 @@ function openActionItemsModal(actionType) {
     titleEl.textContent = config.label;
   }
 
-  // Populate table
-  const tbody = $('#action-items-tbody');
-  if (tbody) {
+  // Populate list
+  const listEl = $('#action-items-list');
+  if (listEl) {
     if (data.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="2" class="text-center text-muted">No items</td></tr>`;
+      listEl.innerHTML = `<p class="text-center text-muted">No items</p>`;
     } else {
-      tbody.innerHTML = data.map(entry => renderModalRow(entry, actionType)).join('');
+      listEl.innerHTML = data.map(entry => renderModalRow(entry, actionType)).join('');
     }
   }
 
@@ -146,23 +146,18 @@ function renderModalRow(entry, actionType) {
   const reason = actionType === 'seasonal' ? (entry.reasons?.[0] || '') : '';
 
   return `
-    <tr data-id="${escapeHtml(item.id)}">
-      <td>
-        <span class="table-link">${escapeHtml(item.title || 'Untitled')}</span>
-        ${reason ? `<span class="seasonal-reason">${escapeHtml(reason)}</span>` : ''}
-      </td>
-      <td class="table-actions" data-label="">
-        <button class="btn btn--sm btn--primary sell-from-modal-btn" data-id="${escapeHtml(item.id)}">Sell</button>
-      </td>
-    </tr>
+    <button type="button" class="action-item" data-id="${escapeHtml(item.id)}">
+      <span class="action-item__title">${escapeHtml(item.title || 'Untitled')}</span>
+      ${reason ? `<span class="action-item__reason">${escapeHtml(reason)}</span>` : ''}
+    </button>
   `;
 }
 
-function handleModalTableClick(e) {
-  const sellBtn = e.target.closest('.sell-from-modal-btn');
-  if (sellBtn) {
+function handleModalListClick(e) {
+  const actionItem = e.target.closest('.action-item');
+  if (actionItem) {
     e.preventDefault();
-    const itemId = sellBtn.dataset.id;
+    const itemId = actionItem.dataset.id;
     handleSellFromModal(itemId);
   }
 }
