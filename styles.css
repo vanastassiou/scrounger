@@ -2521,8 +2521,8 @@
 
 .sub-tab {
   flex-shrink: 0;
-  padding: var(--space-sm) var(--space-md);
-  font-size: 0.875rem;
+  padding: var(--space-xs) var(--space-sm);
+  font-size: 0.8125rem;
   font-weight: 500;
   color: var(--color-text-muted);
   background: transparent;
@@ -2531,6 +2531,13 @@
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s;
   white-space: nowrap;
+}
+
+@media (min-width: 480px) {
+  .sub-tab {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.875rem;
+  }
 }
 
 .sub-tab:hover {
