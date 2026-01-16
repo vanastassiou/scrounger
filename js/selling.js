@@ -558,13 +558,6 @@ function renderPipelineRow(item) {
   const price = item.sold_price || item.estimated_resale_value || 0;
   const platform = item.sold_platform ? capitalize(item.sold_platform.replace('_', ' ')) : '-';
 
-  // Photo progress indicator for needs_photo status
-  let photoProgress = '';
-  if (item.status === 'needs_photo' && item._photoStatus) {
-    const { completeTypes, required } = item._photoStatus;
-    const complete = completeTypes?.length || 0;
-    photoProgress = `<span class="photo-progress-mini">${complete}/${required}</span>`;
-  }
 
   // Calculate estimated return for items not yet sold
   let estReturnHtml = '-';
@@ -613,10 +606,15 @@ function renderPipelineRow(item) {
     ? `<button class="btn btn--sm btn--ghost delist-btn" data-id="${item.id}">Delist</button>`
     : '';
 
+  const statusBadge = `<span class="status status--${item.status}">${formatStatus(item.status)}</span>`;
+
   return `
     <tr data-id="${item.id}">
-      <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || 'Untitled')}</a>${photoProgress}</td>
-      <td data-label="Status"><span class="status status--${item.status}">${formatStatus(item.status)}</span></td>
+      <td>
+        <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || 'Untitled')}</a>
+        <span class="mobile-status">${statusBadge}</span>
+      </td>
+      <td data-label="Status" class="desktop-only">${statusBadge}</td>
       <td data-label="Cost">${formatCurrency(cost)}</td>
       <td data-label="Price">${price > 0 ? formatCurrency(price) : '-'}</td>
       <td data-label="Est. Return">${estReturnHtml}</td>
