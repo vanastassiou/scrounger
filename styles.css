@@ -2258,8 +2258,46 @@
   font-size: 0.875rem;
 }
 
-#action-items-dialog .table td {
+/* Action Items List (in modal) */
+.action-items-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.action-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  padding: var(--space-sm) var(--space-md);
   background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  text-align: left;
+  color: var(--color-text);
+  transition: border-color 0.15s ease;
+}
+
+.action-item:hover,
+.action-item:focus {
+  border-color: var(--color-primary);
+  outline: none;
+}
+
+.action-item__title {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.action-item__reason {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+  margin-top: 2px;
 }
 
 /* =============================================================================
@@ -3192,15 +3230,6 @@
 
 .size-table-card .table {
   margin: 0;
-}
-
-/* Seasonal reason text in action items modal */
-.seasonal-reason {
-  font-size: 0.7rem;
-  color: var(--color-text-muted);
-  font-style: italic;
-  display: block;
-  margin-top: 2px;
 }
 
 /* =============================================================================

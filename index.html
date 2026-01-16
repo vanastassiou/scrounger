@@ -1146,23 +1146,13 @@
   </dialog>
 
   <!-- Action Items Modal -->
-  <dialog id="action-items-dialog" class="modal modal--large">
+  <dialog id="action-items-dialog" class="modal">
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="action-items-title">Items</h2>
         <button class="modal-close" aria-label="Close">&times;</button>
       </div>
-      <div class="table-container">
-        <table class="table table-responsive">
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody id="action-items-tbody"></tbody>
-        </table>
-      </div>
+      <div id="action-items-list" class="action-items-list"></div>
     </div>
   </dialog>
 
