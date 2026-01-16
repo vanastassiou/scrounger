@@ -1800,6 +1800,16 @@
   .text-error { color: var(--color-error); }
   .text-danger { color: var(--color-error); }
 
+  /* Warning box */
+  .delist-warning {
+    background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+    border: 1px solid var(--color-warning);
+    border-radius: var(--radius-sm);
+    padding: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+  .delist-warning p { margin: 0; }
+
   /* Display */
   .hidden { display: none !important; }
 
