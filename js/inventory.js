@@ -19,7 +19,7 @@ import {
 } from './config.js';
 import { queueSync } from './sync.js';
 import { generateSellingRecommendations, formatPlatformName, calculateTrendMultiplier, calculateEnhancedResaleValue } from './recommendations.js';
-import { calculatePlatformFees, round } from './fees.js';
+import { calculatePlatformFees, calculateEstimatedReturns, round } from './fees.js';
 import { calculateSuggestedResaleValue } from './data-loaders.js';
 import { openPhotoManager, getPhotoStatusSync } from './photos.js';
 
@@ -74,14 +74,15 @@ function setupInventorySubTabs() {
     dataAttr: 'invView',
     views: {
       collection: '#inv-collection-view',
-      selling: '#inv-selling-view'
+      selling: '#inv-selling-view',
+      archive: '#inv-archive-view'
     },
     storageKey: 'inventorySubTab',
     htmlDataAttr: 'invSub',
     defaultView: 'collection',
     onActivate: async (viewId) => {
-      // Reload pipeline data when switching to selling view
-      if (viewId === 'selling') {
+      // Reload pipeline data when switching to selling or archive view
+      if (viewId === 'selling' || viewId === 'archive') {
         const { loadPipeline } = await import('./selling.js');
         await loadPipeline();
       }
@@ -149,10 +150,13 @@ function setupTableController() {
       if (col === 'estimated_resale_value') {
         return estimatedPrices.get(item.id) || 0;
       }
+      if (col === 'est_return') {
+        return item._estReturn || 0;
+      }
       return item[col];
     },
     createRow: createInventoryRow,
-    emptyState: { colspan: 2, icon: 'I', message: 'No items found' },
+    emptyState: { colspan: 3, icon: '👗', message: 'No items found' },
     searchSelector: '#inventory-search',
     countSelector: '#inventory-count',
     countTemplate: '{count} item{s}',
@@ -177,24 +181,40 @@ function setupTableController() {
 
 export function createInventoryRow(item, options = {}) {
   const { showActions = true } = options;
-  const estSalePrice = estimatedPrices.get(item.id);
-  const costBasis = (item.purchase_price || 0) + (item.tax_paid || 0);
-  const estProfit = estSalePrice ? estSalePrice - costBasis : null;
 
-  let profitBadge = '';
-  if (estProfit !== null) {
-    const { formatted, className } = formatProfitDisplay(estProfit);
-    profitBadge = `<span class="profit-badge ${className}" data-id="${item.id}">${formatted}</span>`;
+  // Get estimated price from cache (may be calculated if not on item)
+  const estPrice = estimatedPrices.get(item.id) || item.estimated_resale_value || 0;
+
+  // Calculate estimated return range across platforms
+  let estReturnHtml = '-';
+  let estReturnValue = 0;
+  if (estPrice > 0) {
+    // Create temp item with cached price for calculation
+    const itemWithPrice = { ...item, estimated_resale_value: estPrice };
+    const estimates = calculateEstimatedReturns(itemWithPrice);
+    if (estimates.length > 0) {
+      const profits = estimates.map(e => e.profit);
+      const minProfit = Math.min(...profits);
+      const maxProfit = Math.max(...profits);
+      estReturnValue = maxProfit; // Use max for sorting
+
+      const profitClass = maxProfit >= 0 ? 'value--positive' : 'value--negative';
+      const rangeText = minProfit === maxProfit
+        ? formatCurrency(maxProfit)
+        : `${formatCurrency(minProfit)} – ${formatCurrency(maxProfit)}`;
+      estReturnHtml = `<span class="${profitClass}">${rangeText}</span>`;
+    }
   }
+
+  // Store for sorting
+  item._estReturn = estReturnValue;
 
   return `
     <tr data-id="${item.id}" class="collection-row">
       <td>
-        <span class="item-title-row">
-          <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a>
-          ${profitBadge}
-        </span>
+        <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a>
       </td>
+      <td data-label="Est. Return">${estReturnHtml}</td>
       <td class="table-actions">
         <button class="btn btn--sm btn--ghost edit-item-btn" data-id="${item.id}">Edit</button>
         <button class="btn btn--sm btn--primary start-selling-btn" data-id="${item.id}">Sell</button>

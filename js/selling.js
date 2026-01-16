@@ -32,6 +32,7 @@ import {
 } from './config.js';
 import { getAttachmentsByItem, createAttachment } from './db.js';
 import { openViewItemModal, openEditItemModal } from './inventory.js';
+import { openPhotoManager } from './photos.js';
 import { initFees, calculatePlatformFees, calculateEstimatedReturns } from './fees.js';
 import { show, hide, createLazyModal, createTableController } from './components.js';
 
@@ -41,7 +42,9 @@ import { show, hide, createLazyModal, createTableController } from './components
 
 let pipelineData = [];
 let nonPipelineData = [];
+let archiveData = [];
 let pipelineTableCtrl = null;
+let archiveTableCtrl = null;
 let currentSoldItem = null;
 let currentShipItem = null;
 let currentPhotoItem = null;
@@ -214,15 +217,22 @@ export function getTrackingUrl(carrier, trackingNumber) {
 export async function initSelling() {
   await initFees();
   setupTableController();
+  setupArchiveTableController();
   await loadPipeline();
   setupEventHandlers();
 }
 
-async function loadPipeline() {
-  pipelineData = await getInventoryInPipeline();
+export async function loadPipeline() {
+  const allPipelineItems = await getInventoryInPipeline();
+  // Separate archived items (confirmed_received) from active pipeline
+  pipelineData = allPipelineItems.filter(item => item.status !== 'confirmed_received');
+  archiveData = allPipelineItems.filter(item => item.status === 'confirmed_received');
   nonPipelineData = await getItemsNotInPipeline();
   if (pipelineTableCtrl) {
     pipelineTableCtrl.render();
+  }
+  if (archiveTableCtrl) {
+    archiveTableCtrl.render();
   }
 }
 
@@ -268,7 +278,7 @@ function setupTableController() {
       }
     },
     createRow: renderPipelineRow,
-    emptyState: { colspan: 8, icon: '💰', message: 'No items in pipeline' },
+    emptyState: { colspan: 6, icon: '💰', message: 'No items in pipeline' },
     searchSelector: '#selling-search',
     defaultSort: { column: 'status', direction: 'asc' },
     filterSelects: [
@@ -292,7 +302,9 @@ function setupTableController() {
       '.status-next-btn': (el) => {
         const itemId = el.dataset.id;
         const nextStatus = el.dataset.nextStatus;
-        if (nextStatus === 'listed') {
+        if (nextStatus === 'unlisted') {
+          openPhotoUploadModal(itemId);
+        } else if (nextStatus === 'listed') {
           openMarkAsListedModal(itemId);
         } else if (nextStatus === 'shipped') {
           openShipItemModal(itemId);
@@ -307,10 +319,79 @@ function setupTableController() {
       },
       '.delist-btn': (el) => {
         openDelistItemModal(el.dataset.id);
+      },
+      '.edit-listing-link': (el) => {
+        openEditListingModal(el.dataset.id);
       }
     },
     onRender: updateItemCount
   }).init();
+}
+
+function setupArchiveTableController() {
+  archiveTableCtrl = createTableController({
+    tableSelector: '#archive-table',
+    tbodySelector: '#archive-tbody',
+    getData: () => archiveData,
+    filterItem: (item, filters, search) => {
+      if (search) {
+        const title = (item.title || '').toLowerCase();
+        const brand = (item.brand || '').toLowerCase();
+        return title.includes(search) || brand.includes(search);
+      }
+      return true;
+    },
+    getColumnValue: (item, col) => {
+      switch (col) {
+        case 'title': return (item.title || '').toLowerCase();
+        case 'sold_date': return item.sold_date || '';
+        case 'sold_platform': return item.sold_platform || '';
+        case 'profit': return calculateProfit(item).profit;
+        default: return item.sold_date || item.created_at;
+      }
+    },
+    createRow: renderArchiveRow,
+    emptyState: { colspan: 4, icon: '📦', message: 'No archived items' },
+    searchSelector: '#archive-search',
+    defaultSort: { column: 'sold_date', direction: 'desc' },
+    clickHandlers: {
+      '.table-link': (el) => {
+        openViewItemModal(el.dataset.id);
+      },
+      '.edit-item-btn': (el) => {
+        openEditItemModal(el.dataset.id, {
+          onSave: async () => {
+            await loadPipeline();
+          }
+        });
+      }
+    },
+    onRender: (filteredData) => {
+      const countEl = $('#archive-count');
+      if (countEl) {
+        countEl.textContent = `${filteredData.length} archived items`;
+      }
+    }
+  }).init();
+}
+
+function renderArchiveRow(item) {
+  const { profit } = calculateProfit(item);
+  const { formatted: profitDisplay, className: profitClass } = formatProfitDisplay(profit);
+  const soldDate = item.sold_date ? new Date(item.sold_date).toLocaleDateString() : '-';
+  const platform = item.sold_platform ? capitalize(item.sold_platform.replace('_', ' ')) : '-';
+
+  return `
+    <tr data-id="${item.id}">
+      <td>
+        <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || 'Untitled')}</a>
+        <button class="btn-icon edit-item-btn" data-id="${item.id}" aria-label="Go to Collection">✏️</button>
+      </td>
+      <td data-label="Sold">${soldDate}</td>
+      <td data-label="Platform">${platform}</td>
+      <td data-label="Profit" class="${profitClass}">${profitDisplay}</td>
+    </tr>
+  `;
 }
 
 function setupEventHandlers() {
@@ -358,19 +439,22 @@ function setupEventHandlers() {
     transform: (formData) => ({
       itemId: formData.get('item_id'),
       soldData: {
+        status: 'shipped',
         sold_date: formData.get('sold_date'),
         sold_price: parseFloat(formData.get('sold_price')),
         sold_platform: formData.get('sold_platform'),
         shipping_cost: parseFloat(formData.get('shipping_cost')) || 0,
-        platform_fees: parseFloat(formData.get('platform_fees')) || 0
+        platform_fees: parseFloat(formData.get('platform_fees')) || 0,
+        recipient_address: formData.get('recipient_address') || null,
+        tracking_url: formData.get('tracking_url') || null,
+        ship_date: formData.get('sold_date') // Use sale date as ship date
       }
     }),
     onSubmit: async ({ itemId, soldData }) => {
-      await markItemAsSold(itemId, soldData);
-      await archiveItem(itemId);
+      await updateInventoryItem(itemId, soldData);
     },
     onSuccess: async () => {
-      showToast('Item sold and archived');
+      showToast('Item marked as sold and shipped');
       markSoldModal.close();
       await loadPipeline();
       currentSoldItem = null;
@@ -538,79 +622,77 @@ function renderPipelineRow(item) {
   const { profit, margin } = calculateProfit(item);
   const { formatted: profitDisplay, className: profitClass } = formatProfitDisplay(profit);
 
-  const cost = (item.purchase_price || 0) + (item.tax_paid || 0);
-  const price = item.sold_price || item.estimated_resale_value || 0;
-  const platform = item.sold_platform ? capitalize(item.sold_platform.replace('_', ' ')) : '-';
+  const price = item.sold_price || item.listed_price || item.estimated_resale_value || 0;
+  const selectedPlatform = item.sold_platform || item.list_platform;
+  const platformName = selectedPlatform ? capitalize(selectedPlatform.replace('_', ' ')) : '-';
 
+  // Platform display: link to listing if URL exists, with edit option for listed items
+  let platformDisplay = platformName;
+  const canEditListing = item.status === 'listed' || item.list_platform;
+  if (item.listing_url) {
+    platformDisplay = `<a href="${escapeHtml(item.listing_url)}" target="_blank" rel="noopener">${platformName}</a>`;
+    if (canEditListing) {
+      platformDisplay += ` <button class="btn-icon edit-listing-link" data-id="${item.id}" aria-label="Edit listing">✏️</button>`;
+    }
+  } else if (canEditListing) {
+    platformDisplay = `<a href="#" class="edit-listing-link" data-id="${item.id}">${platformName}</a>`;
+  }
 
-  // Calculate estimated return for items not yet sold
+  // Calculate estimated return only when platform is selected
   let estReturnHtml = '-';
-  if (item.status !== 'sold' && item.estimated_resale_value > 0) {
+  if (item.status !== 'sold' && item.estimated_resale_value > 0 && selectedPlatform) {
     const estimates = calculateEstimatedReturns(item);
-    if (estimates.length > 0) {
-      const best = estimates[0];
-      const profitClass = best.profit >= 0 ? 'value--positive' : 'value--negative';
-      const platformName = capitalize(best.platformId.replace('_', ' '));
-      const tooltipText = `${formatCurrency(best.netPayout)} payout on ${platformName}`;
-      estReturnHtml = `<span class="est-return" title="${escapeHtml(tooltipText)}">
-        <span class="${profitClass}">${formatCurrency(best.profit)}</span>
-        <span class="est-platform">${best.platformId}</span>
-      </span>`;
+    const platformEstimate = estimates.find(e => e.platformId === selectedPlatform);
+    if (platformEstimate) {
+      const profitClass = platformEstimate.profit >= 0 ? 'value--positive' : 'value--negative';
+      estReturnHtml = `<span class="${profitClass}">${formatCurrency(platformEstimate.profit)}</span>`;
     }
   }
+
+  // Descriptive labels for next step
+  const nextStepLabels = {
+    'needs_photo': 'Add photos',
+    'unlisted': 'List item',
+    'listed': 'Mark sold',
+    'shipped': 'Confirm receipt'
+  };
+  const nextStepDisplay = nextStepLabels[item.status] || '-';
 
   // Determine action button
   let actionButton = '';
   const isInPipeline = PIPELINE_STATUSES.includes(item.status);
 
   if (!isInPipeline) {
-    // Non-pipeline item - show "List for sale" button
-    actionButton = `<button class="btn btn--sm btn--primary list-for-sale-btn" data-id="${item.id}">List for sale</button>`;
+    actionButton = `<button class="btn btn--sm btn--cta list-for-sale-btn" data-id="${item.id}">List for sale</button>`;
   } else if (item.status === 'listed') {
-    actionButton = `<button class="btn btn--sm btn--primary mark-sold-btn" data-id="${item.id}">Mark sold</button>`;
-  } else if (item.status !== 'shipped') {
+    actionButton = `<button class="btn btn--sm btn--cta mark-sold-btn" data-id="${item.id}">Mark sold</button>`;
+  } else if (item.status === 'shipped') {
+    actionButton = `<button class="btn btn--sm btn--cta status-next-btn" data-id="${item.id}" data-next-status="confirmed_received">Confirm receipt</button>`;
+  } else {
     const nextStatus = getNextStatus(item.status);
     if (nextStatus) {
-      // Use descriptive action labels instead of status names
-      const actionLabels = {
-        'unlisted': 'Add photos',
-        'listed': 'Mark listed',
-        'packaged': 'Mark packaged',
-        'shipped': 'Ship item',
-        'confirmed_received': 'Confirm delivery'
-      };
-      const label = actionLabels[nextStatus] || capitalize(nextStatus.replace('_', ' '));
-      actionButton = `<button class="btn btn--sm status-next-btn" data-id="${item.id}" data-next-status="${nextStatus}">${label}</button>`;
+      const label = nextStepLabels[item.status] || capitalize(nextStatus.replace('_', ' '));
+      actionButton = `<button class="btn btn--sm btn--cta status-next-btn" data-id="${item.id}" data-next-status="${nextStatus}">${label}</button>`;
     }
   }
 
   // Delist button - only for pre-sold pipeline statuses
   const delistableStatuses = ['needs_photo', 'unlisted', 'listed'];
   const delistButton = delistableStatuses.includes(item.status)
-    ? `<button class="btn btn--sm btn--ghost delist-btn" data-id="${item.id}">Delist</button>`
+    ? `<button class="btn btn--sm btn--ghost delist-btn" data-id="${item.id}">Don't sell</button>`
     : '';
-
-  const statusBadge = `<span class="status status--${item.status}">${formatStatus(item.status)}</span>`;
 
   return `
     <tr data-id="${item.id}">
       <td>
         <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || 'Untitled')}</a>
-        <span class="mobile-status">${statusBadge}</span>
+        <button class="btn-icon edit-item-btn" data-id="${item.id}" aria-label="Go to Collection">✏️</button>
       </td>
-      <td data-label="Status" class="desktop-only">${statusBadge}</td>
-      <td data-label="Cost">${formatCurrency(cost)}</td>
+      <td data-label="Next">${actionButton}${delistButton}</td>
       <td data-label="Price">${price > 0 ? formatCurrency(price) : '-'}</td>
-      <td data-label="Est. Return">${estReturnHtml}</td>
-      <td data-label="Profit" class="${profitClass}">${item.status === 'sold' ? profitDisplay : '-'}</td>
-      <td data-label="Platform">${platform}</td>
-      <td class="table-actions">
-        <div class="table-actions-inner">
-          <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
-          ${actionButton}
-          ${delistButton}
-        </div>
-      </td>
+      <td data-label="Est.&#10;Return">${estReturnHtml}</td>
+      <td data-label="Platform">${platformDisplay}</td>
+      <td data-label="Profit"${item.status === 'sold' ? ` class="${profitClass}"` : ''}>${item.status === 'sold' ? profitDisplay : '-'}</td>
     </tr>
   `;
 }
@@ -657,14 +739,20 @@ const markSoldModal = createLazyModal('#mark-sold-dialog', {
     const platformSelect = dialog.querySelector('#sold-platform');
     const shippingInput = dialog.querySelector('#shipping-cost');
     const feesInput = dialog.querySelector('#platform-fees');
+    const addressInput = dialog.querySelector('#sold-recipient-address');
+    const trackingInput = dialog.querySelector('#sold-tracking-url');
 
     if (itemIdInput) itemIdInput.value = item.id;
     if (titleEl) titleEl.textContent = item.title || 'Untitled';
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
-    if (priceInput) priceInput.value = item.estimated_resale_value || '';
-    if (platformSelect) platformSelect.value = '';
+    // Pre-populate price from listing price if available
+    if (priceInput) priceInput.value = item.listed_price || item.estimated_resale_value || '';
+    // Pre-populate platform from listing platform if available
+    if (platformSelect) platformSelect.value = item.list_platform || '';
     if (shippingInput) shippingInput.value = '';
     if (feesInput) feesInput.value = '';
+    if (addressInput) addressInput.value = '';
+    if (trackingInput) trackingInput.value = '';
 
     // Reset fee state
     hide('#reset-fees-btn');
@@ -916,7 +1004,7 @@ async function openPhotoUploadModal(itemId) {
   const attachments = await getAttachmentsByItem(itemId);
 
   // Check if photos are already complete
-  const validation = validatePhotos(item, attachments);
+  const validation = validatePhotosComplete(item, attachments);
   if (validation.valid) {
     // Photos already complete, just transition
     await updateItemStatus(itemId, 'unlisted');
@@ -1072,43 +1160,52 @@ const markAsListedModal = createLazyModal('#mark-listed-dialog', {
 
     if (itemIdInput) itemIdInput.value = item.id;
     if (titleEl) titleEl.textContent = item.title || 'Untitled';
-    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
-    if (platformSelect) platformSelect.value = '';
-    if (priceInput) priceInput.value = item.estimated_resale_value || '';
-    if (urlInput) urlInput.value = '';
+    // Pre-populate with existing values if editing, otherwise use defaults
+    if (dateInput) dateInput.value = item.list_date || new Date().toISOString().split('T')[0];
+    if (platformSelect) platformSelect.value = item.list_platform || '';
+    if (priceInput) priceInput.value = item.listed_price || item.estimated_resale_value || '';
+    if (urlInput) urlInput.value = item.listing_url || '';
   },
   onClose: () => {
     currentListedItem = null;
   }
 });
 
-async function openMarkAsListedModal(itemId) {
+async function openMarkAsListedModal(itemId, options = {}) {
+  const { skipValidation = false } = options;
   const item = await getInventoryItem(itemId);
   if (!item) {
     showToast('Item not found');
     return;
   }
 
-  // Validate photos before allowing listing
-  const attachments = await getAttachmentsByItem(itemId);
-  const photoValidation = validatePhotos(item, attachments);
+  // Skip validation if editing an already-listed item
+  if (!skipValidation && item.status !== 'listed') {
+    // Validate photos before allowing listing
+    const attachments = await getAttachmentsByItem(itemId);
+    const photoValidation = validatePhotosComplete(item, attachments);
 
-  if (!photoValidation.valid) {
-    // Show photo required modal
-    showPhotoRequiredModal(item, photoValidation.missing, async () => {
-      await openPhotoManager(itemId, {
-        onComplete: async (status) => {
-          if (status.complete) {
-            // Re-attempt listing after photos complete
-            await openMarkAsListedModal(itemId);
+    if (!photoValidation.valid) {
+      // Show photo required modal
+      showPhotoRequiredModal(item, photoValidation.missing, async () => {
+        await openPhotoManager(itemId, {
+          onComplete: async (status) => {
+            if (status.complete) {
+              // Re-attempt listing after photos complete
+              await openMarkAsListedModal(itemId);
+            }
           }
-        }
+        });
       });
-    });
-    return;
+      return;
+    }
   }
 
   markAsListedModal.open({ item });
+}
+
+async function openEditListingModal(itemId) {
+  await openMarkAsListedModal(itemId, { skipValidation: true });
 }
 
 // =============================================================================
@@ -1131,12 +1228,13 @@ const confirmDeliveryModal = createLazyModal('#confirm-delivery-dialog', {
     if (titleEl) titleEl.textContent = item.title || 'Untitled';
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
-    // Generate tracking URL
+    // Show tracking URL if available
     if (trackingLinkEl) {
-      const url = getTrackingUrl(item.shipping_carrier, item.tracking_number);
+      // Prefer direct tracking_url, fall back to generated URL
+      const url = item.tracking_url || getTrackingUrl(item.shipping_carrier, item.tracking_number);
       if (url) {
         trackingLinkEl.href = url;
-        trackingLinkEl.textContent = `Track on ${capitalize(item.shipping_carrier || 'carrier')}`;
+        trackingLinkEl.textContent = item.tracking_url ? 'View tracking' : `Track on ${capitalize(item.shipping_carrier || 'carrier')}`;
         show(trackingLinkEl);
       } else {
         hide(trackingLinkEl);
@@ -1208,13 +1306,14 @@ async function completeDeliveryConfirmation() {
       'delivery_confirmation'
     );
 
-    // Update item status
+    // Update item status and archive
     await updateInventoryItem(currentDeliveryItem.id, {
       status: 'confirmed_received',
       received_date: receivedDate
     });
+    await archiveItem(currentDeliveryItem.id);
 
-    showToast('Delivery confirmed');
+    showToast('Delivery confirmed and archived');
     confirmDeliveryModal.close();
     await loadPipeline();
     currentDeliveryItem = null;
@@ -1293,7 +1392,6 @@ async function delistItem() {
 export {
   openShipItemModal,
   listItemForSale,
-  loadPipeline,
   nonPipelineData,
   openPhotoUploadModal,
   openMarkAsListedModal,

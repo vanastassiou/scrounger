@@ -56,9 +56,10 @@
     html[data-tab="references"] .tab[data-tab="references"],
     html[data-tab="settings"] .tab[data-tab="settings"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
     /* Prevent flash of wrong sub-tab */
-    #inv-collection-view, #inv-selling-view { display: none; }
+    #inv-collection-view, #inv-selling-view, #inv-archive-view { display: none; }
     html[data-inv-sub="collection"] #inv-collection-view { display: block; }
     html[data-inv-sub="selling"] #inv-selling-view { display: block; }
+    html[data-inv-sub="archive"] #inv-archive-view { display: block; }
     #ref-stores-view, #ref-brands-view, #ref-platforms-view, #ref-trends-view { display: none; }
     html[data-ref-sub="stores"] #ref-stores-view { display: block; }
     html[data-ref-sub="brands"] #ref-brands-view { display: block; }
@@ -68,6 +69,7 @@
     .sub-tab { color: var(--color-text-muted); border-bottom-color: transparent; }
     html[data-inv-sub="collection"] .sub-tab[data-inv-view="collection"],
     html[data-inv-sub="selling"] .sub-tab[data-inv-view="selling"],
+    html[data-inv-sub="archive"] .sub-tab[data-inv-view="archive"],
     html[data-ref-sub="stores"] .sub-tab[data-ref-view="stores"],
     html[data-ref-sub="brands"] .sub-tab[data-ref-view="brands"],
     html[data-ref-sub="platforms"] .sub-tab[data-ref-view="platforms"],
@@ -166,6 +168,7 @@
       <nav class="sub-tabs" role="tablist" aria-label="Inventory views">
         <button class="sub-tab" data-inv-view="collection" role="tab" aria-selected="true" aria-controls="inv-collection-view">Collection</button>
         <button class="sub-tab" data-inv-view="selling" role="tab" aria-selected="false" aria-controls="inv-selling-view">Selling</button>
+        <button class="sub-tab" data-inv-view="archive" role="tab" aria-selected="false" aria-controls="inv-archive-view">Archive</button>
       </nav>
 
       <!-- Collection View -->
@@ -186,11 +189,12 @@
             <thead>
               <tr>
                 <th data-sort="title">Item</th>
-                <th></th>
+                <th data-sort="est_return" class="col-numeric">Est. Return</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="inventory-tbody">
-              <tr><td colspan="2" class="empty-state"><div class="empty-icon">👗</div><p>Loading...</p></td></tr>
+              <tr><td colspan="3" class="empty-state"><div class="empty-icon">👗</div><p>Loading...</p></td></tr>
             </tbody>
           </table>
         </div>
@@ -208,7 +212,6 @@
             <option value="sold">Sold</option>
             <option value="packaged">Packaged</option>
             <option value="shipped">Shipped</option>
-            <option value="confirmed_received">Confirmed received</option>
           </select>
           <select class="filter-select" id="platform-filter" aria-label="Filter by platform">
             <option value="all">All platforms</option>
@@ -226,22 +229,20 @@
 
         <!-- Pipeline Table -->
         <div class="table-container">
-          <table class="table table-responsive table--wide-actions" id="selling-table">
+          <table class="table table-responsive" id="selling-table">
             <thead>
               <tr>
                 <th data-sort="title">Item</th>
-                <th data-sort="status">Status</th>
-                <th data-sort="purchase_price" class="col-numeric">Cost</th>
+                <th data-sort="status">Next step</th>
                 <th data-sort="sold_price" class="col-numeric">Price</th>
                 <th class="col-numeric">Est. Return</th>
-                <th data-sort="profit" class="col-numeric">Profit</th>
                 <th data-sort="sold_platform">Platform</th>
-                <th>Actions</th>
+                <th data-sort="profit" class="col-numeric">Profit</th>
               </tr>
             </thead>
             <tbody id="selling-tbody">
               <tr>
-                <td colspan="8" class="empty-state">
+                <td colspan="6" class="empty-state">
                   <div class="empty-icon">💰</div>
                   <p>No items in sales pipeline</p>
                 </td>
@@ -250,6 +251,35 @@
           </table>
         </div>
         <div id="selling-count" class="text-muted"></div>
+      </div>
+
+      <!-- Archive View -->
+      <div id="inv-archive-view" class="inv-view hidden">
+        <div class="table-toolbar">
+          <input type="text" class="form-input" id="archive-search" placeholder="Search archived items...">
+        </div>
+
+        <div class="table-container">
+          <table class="table table-responsive" id="archive-table">
+            <thead>
+              <tr>
+                <th data-sort="title">Item</th>
+                <th data-sort="sold_date">Sold</th>
+                <th data-sort="sold_platform">Platform</th>
+                <th data-sort="profit" class="col-numeric">Profit</th>
+              </tr>
+            </thead>
+            <tbody id="archive-tbody">
+              <tr>
+                <td colspan="4" class="empty-state">
+                  <div class="empty-icon">📦</div>
+                  <p>No archived items</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="archive-count" class="text-muted"></div>
       </div>
     </section>
 
@@ -1116,7 +1146,19 @@
           <div id="profit-waterfall"></div>
         </div>
 
-        <button type="submit" class="btn btn--primary btn--block">Confirm sale</button>
+        <fieldset class="form-fieldset">
+          <legend>Shipping details</legend>
+          <div class="form-group">
+            <label class="form-label" for="sold-recipient-address">Recipient address</label>
+            <textarea class="form-input" id="sold-recipient-address" name="recipient_address" rows="2" placeholder="Shipping address..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="sold-tracking-url">Tracking URL</label>
+            <input type="url" class="form-input" id="sold-tracking-url" name="tracking_url" placeholder="https://...">
+          </div>
+        </fieldset>
+
+        <button type="submit" class="btn btn--primary btn--block">Confirm sale & ship</button>
       </form>
     </div>
   </dialog>
