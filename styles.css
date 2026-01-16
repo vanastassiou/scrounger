@@ -1894,14 +1894,6 @@
     }
   }
 
-  /* Store table cells */
-  .store-info {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.25rem 0.75rem;
-  }
-
   .store-address {
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-normal);
@@ -2936,7 +2928,7 @@
   border-bottom: 1px solid var(--color-border);
 }
 
-#visit-context-label {
+.visit-context-label {
   font-weight: var(--font-weight-medium);
   color: var(--color-text);
 }
