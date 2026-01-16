@@ -1084,81 +1084,110 @@
   </dialog>
 
   <!-- Mark As Sold Dialog -->
-  <dialog id="mark-sold-dialog" class="modal">
+  <dialog id="mark-sold-dialog" class="modal modal--sale">
     <div class="modal-content">
       <div class="modal-header">
-        <h2>Mark item as sold</h2>
+        <h2><a href="#" id="sold-item-title" class="modal-title-link"></a></h2>
         <button class="modal-close" aria-label="Close">&times;</button>
       </div>
       <form id="mark-sold-form">
         <input type="hidden" id="sold-item-id" name="item_id">
 
-        <div class="form-group">
-          <label class="form-label">Item</label>
-          <div id="sold-item-title" class="text-muted"></div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label" for="sold-date">Sale date *</label>
-            <input type="date" class="form-input" id="sold-date" name="sold_date" required>
+        <!-- Financial Flow Header -->
+        <div class="sale-flow-header" id="sale-flow-header">
+          <div class="sale-flow__item">
+            <span class="sale-flow__label">Sale</span>
+            <span class="sale-flow__value" id="flow-sale">$0.00</span>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="sold-price">Sale price *</label>
-            <input type="number" class="form-input" id="sold-price" name="sold_price" step="0.01" min="0" required placeholder="0.00">
+          <span class="sale-flow__arrow" aria-hidden="true"></span>
+          <div class="sale-flow__item sale-flow__item--deduct">
+            <span class="sale-flow__label">Fees</span>
+            <span class="sale-flow__value sale-flow__value--negative" id="flow-fees">-$0.00</span>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="sold-platform">Platform *</label>
-          <select class="form-select" id="sold-platform" name="sold_platform" required>
-            <option value="">Select...</option>
-            <option value="poshmark">Poshmark</option>
-            <option value="ebay">eBay</option>
-            <option value="etsy">Etsy</option>
-            <option value="depop">Depop</option>
-            <option value="vestiaire_collective">Vestiaire Collective</option>
-            <option value="therealreal">The RealReal</option>
-            <option value="grailed">Grailed</option>
-            <option value="starluv">Starluv</option>
-            <option value="facebook_marketplace">Facebook Marketplace</option>
-            <option value="local_consignment">Local Consignment</option>
-            <option value="other">Other</option>
-          </select>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label" for="shipping-cost">Shipping cost</label>
-            <input type="number" class="form-input" id="shipping-cost" name="shipping_cost" step="0.01" min="0" placeholder="0.00">
+          <span class="sale-flow__arrow" aria-hidden="true"></span>
+          <div class="sale-flow__item">
+            <span class="sale-flow__label">Payout</span>
+            <span class="sale-flow__value" id="flow-payout">$0.00</span>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="platform-fees">
-              Platform fees
-              <button type="button" id="reset-fees-btn" class="btn-link hidden">Reset</button>
-            </label>
-            <input type="number" class="form-input" id="platform-fees" name="platform_fees" step="0.01" min="0" placeholder="0.00">
+          <span class="sale-flow__arrow" aria-hidden="true"></span>
+          <div class="sale-flow__item sale-flow__item--cost">
+            <span class="sale-flow__label">Cost</span>
+            <span class="sale-flow__value sale-flow__value--negative" id="flow-cost">-$0.00</span>
+          </div>
+          <span class="sale-flow__equals" aria-hidden="true">=</span>
+          <div class="sale-flow__item sale-flow__item--profit">
+            <span class="sale-flow__label">Profit</span>
+            <span class="sale-flow__value sale-flow__value--profit" id="flow-profit">$0.00</span>
           </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Profit breakdown</label>
-          <div id="profit-waterfall"></div>
+        <!-- 2-Column Form Grid -->
+        <div class="sale-form-grid">
+          <!-- Column 1: Transaction -->
+          <div class="sale-form-section">
+            <div class="form-group">
+              <label class="form-label" for="sold-date">Date *</label>
+              <input type="date" class="form-input form-input--lg" id="sold-date" name="sold_date" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="sold-platform">Platform *</label>
+              <select class="form-select form-select--lg" id="sold-platform" name="sold_platform" required>
+                <option value="">Select...</option>
+                <option value="poshmark">Poshmark</option>
+                <option value="ebay">eBay</option>
+                <option value="etsy">Etsy</option>
+                <option value="depop">Depop</option>
+                <option value="vestiaire_collective">Vestiaire Collective</option>
+                <option value="therealreal">The RealReal</option>
+                <option value="grailed">Grailed</option>
+                <option value="starluv">Starluv</option>
+                <option value="facebook_marketplace">Facebook Marketplace</option>
+                <option value="local_consignment">Local Consignment</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="shipping-cost">Shipping cost</label>
+              <input type="number" class="form-input form-input--lg" id="shipping-cost" name="shipping_cost" step="0.01" min="0" placeholder="0.00">
+            </div>
+          </div>
+
+          <!-- Column 2: Pricing -->
+          <div class="sale-form-section">
+            <div class="form-group">
+              <label class="form-label" for="sold-price">Sale price *</label>
+              <input type="number" class="form-input form-input--lg" id="sold-price" name="sold_price" step="0.01" min="0" required placeholder="0.00">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="platform-fees">
+                Platform fees
+                <button type="button" id="reset-fees-btn" class="btn-link hidden">Reset</button>
+              </label>
+              <input type="number" class="form-input form-input--lg" id="platform-fees" name="platform_fees" step="0.01" min="0" placeholder="Auto-calculated">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="purchaser-username">Buyer</label>
+              <input type="text" class="form-input form-input--lg" id="purchaser-username" name="purchaser_username" placeholder="@username">
+            </div>
+          </div>
         </div>
 
-        <fieldset class="form-fieldset">
-          <legend>Shipping details</legend>
-          <div class="form-group">
-            <label class="form-label" for="sold-recipient-address">Recipient address</label>
-            <textarea class="form-input" id="sold-recipient-address" name="recipient_address" rows="2" placeholder="Shipping address..."></textarea>
+        <!-- Shipping Section -->
+        <div class="sale-shipping-section">
+          <h3 class="sale-section-heading">Shipping details</h3>
+          <div class="sale-shipping-grid">
+            <div class="form-group">
+              <label class="form-label" for="sold-recipient-address">Address</label>
+              <textarea class="form-input" id="sold-recipient-address" name="recipient_address" rows="2" placeholder="Name, street, city, postal..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="sold-tracking-url">Tracking URL</label>
+              <input type="url" class="form-input" id="sold-tracking-url" name="tracking_url" placeholder="https://...">
+            </div>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="sold-tracking-url">Tracking URL</label>
-            <input type="url" class="form-input" id="sold-tracking-url" name="tracking_url" placeholder="https://...">
-          </div>
-        </fieldset>
+        </div>
 
-        <button type="submit" class="btn btn--primary btn--block">Confirm sale & ship</button>
+        <button type="submit" class="btn btn--primary btn--block btn--lg">Confirm sale & ship</button>
       </form>
     </div>
   </dialog>
