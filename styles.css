@@ -3149,11 +3149,34 @@
 /* Platform comparison full table */
 .platform-comparison-full {
   margin-top: var(--space-sm);
+  table-layout: auto;
 }
 
 .platform-comparison-full th,
 .platform-comparison-full td {
   padding: var(--space-xs) var(--space-sm);
+}
+
+/* Platform column: auto-width to fit content */
+.platform-comparison-full th:nth-child(1),
+.platform-comparison-full td:nth-child(1) {
+  white-space: nowrap;
+  width: 1%;
+}
+
+/* Fee/Profit columns: compact, no wrap */
+.platform-comparison-full th:nth-child(2),
+.platform-comparison-full td:nth-child(2),
+.platform-comparison-full th:nth-child(3),
+.platform-comparison-full td:nth-child(3) {
+  white-space: nowrap;
+  width: 1%;
+}
+
+/* Why column: takes remaining space */
+.platform-comparison-full th:nth-child(4),
+.platform-comparison-full td:nth-child(4) {
+  width: auto;
 }
 
 .platform-row--recommended {
@@ -3297,6 +3320,23 @@
 
 .alternatives-details summary:hover {
   text-decoration: underline;
+}
+
+/* Start selling modal streamlined layout */
+.start-selling-item-header {
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.start-selling-item-header .item-title {
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: var(--space-xs);
+}
+
+.start-selling-item-header .item-meta {
+  font-size: 0.85rem;
 }
 
 .platform-comparison-table {
