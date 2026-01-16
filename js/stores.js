@@ -256,7 +256,7 @@ function renderStoreDetails(store, stats, items) {
       (b.acquisition_date || '').localeCompare(a.acquisition_date || '')
     );
 
-    let itemsHtml = '<table class="mini-table"><thead><tr><th>Item</th><th>Date</th><th>Price</th></tr></thead><tbody>';
+    let itemsHtml = '<table class="table table--mini"><thead><tr><th>Item</th><th>Date</th><th>Price</th></tr></thead><tbody>';
     for (const item of sortedItems) {
       const title = item.title || 'Untitled item';
       const date = item.acquisition_date ? formatDate(item.acquisition_date) : '-';
