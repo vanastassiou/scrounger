@@ -322,7 +322,7 @@ async function handleCreateFolder() {
   const folderName = input?.value.trim();
 
   if (!folderName) {
-    showToast('Enter a folder name', 'error');
+    showToast('Enter a folder name');
     return;
   }
 
@@ -426,7 +426,7 @@ async function handleExportLocal() {
     showToast('Data exported');
   } catch (err) {
     console.error('Export failed:', err);
-    showToast('Export failed', 'error');
+    showToast('Export failed');
   }
 }
 
@@ -443,7 +443,7 @@ async function handleExportDrive() {
     showToast(`Backup saved to Google Drive: ${filename}`);
   } catch (err) {
     console.error('Export to Drive failed:', err);
-    showToast('Export to Drive failed: ' + err.message, 'error');
+    showToast('Export to Drive failed: ' + err.message);
   } finally {
     if (btn) btn.disabled = false;
   }
@@ -475,7 +475,7 @@ function handleImportLocal() {
       showImportConfirm(normalized);
     } catch (err) {
       console.error('Import failed:', err);
-      showToast('Import failed: ' + err.message, 'error');
+      showToast('Import failed: ' + err.message);
     }
   };
 
@@ -550,7 +550,7 @@ async function handleImportDrive() {
     const backups = await listDriveBackups();
 
     if (backups.length === 0) {
-      showToast('No backups found in Google Drive', 'error');
+      showToast('No backups found in Google Drive');
       return;
     }
 
@@ -562,7 +562,7 @@ async function handleImportDrive() {
     showImportConfirm(data, latestBackup.name);
   } catch (err) {
     console.error('Import from Drive failed:', err);
-    showToast('Import from Drive failed: ' + err.message, 'error');
+    showToast('Import from Drive failed: ' + err.message);
   }
 }
 
@@ -625,7 +625,7 @@ async function executeImport() {
     window.location.reload();
   } catch (err) {
     console.error('Import failed:', err);
-    showToast(`${buttonText} failed: ${err.message}`, 'error');
+    showToast(`${buttonText} failed: ${err.message}`);
     if (importConfirmModal) importConfirmModal.close();
   } finally {
     pendingImportData = null;
@@ -676,7 +676,7 @@ async function executeClearData() {
     window.location.reload();
   } catch (err) {
     console.error('Clear failed:', err);
-    showToast('Clear failed', 'error');
+    showToast('Clear failed');
     if (clearDataModal) clearDataModal.close();
   } finally {
     if (confirmBtn) {

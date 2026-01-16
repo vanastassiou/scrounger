@@ -331,7 +331,8 @@ export function createMobileSortDropdown(table, { getState, setState, onSort }) 
   if (container.querySelector('.mobile-sort')) return;
 
   const headers = table.querySelectorAll('th[data-sort]');
-  if (headers.length === 0) return;
+  // Skip if no sortable columns or only one (redundant)
+  if (headers.length <= 1) return;
 
   // Build options from headers
   const options = Array.from(headers).map(th => {
