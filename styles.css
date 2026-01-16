@@ -410,14 +410,8 @@
 
   .action-buttons {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--space-sm);
-  }
-
-  @media (min-width: 480px) {
-    .action-buttons {
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    }
   }
 
   /* Filter Row */
@@ -689,6 +683,14 @@
 
   .form-section-content {
     padding-top: var(--space-md);
+  }
+
+  /* Mobile: Force single-column form layout */
+  @media (max-width: 600px) {
+    .form-row,
+    .form-row--3 {
+      grid-template-columns: 1fr;
+    }
   }
 
   /* Form Actions */
@@ -1622,8 +1624,8 @@
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     color: var(--color-text);
-    width: fit-content;
-    max-width: var(--modal-width);
+    width: var(--modal-width);
+    max-width: var(--modal-max-width);
     height: fit-content;
     max-height: 90vh;
     overflow: hidden;
@@ -2312,15 +2314,6 @@
   background: var(--color-danger-hover);
 }
 
-/* =============================================================================
-   ITEM PICKER MODAL
-   ============================================================================= */
-
-.modal-content--wide {
-  width: 100%;
-  max-width: 500px;
-}
-
 .modal-body {
   /* No extra padding - modal-content provides container padding */
 }
@@ -2385,40 +2378,6 @@
 
 .option-text small {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
-}
-
-.item-picker-list {
-  max-height: var(--picker-max-height);
-  overflow-y: auto;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-}
-
-.item-picker-item {
-  padding: var(--space-md);
-  border-bottom: 1px solid var(--color-border);
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.item-picker-item:last-child {
-  border-bottom: none;
-}
-
-.item-picker-item:hover {
-  background: var(--color-surface-elevated);
-}
-
-.item-picker-title {
-  font-weight: 500;
-  margin-bottom: var(--space-xs);
-}
-
-.item-picker-meta {
-  display: flex;
-  gap: var(--space-sm);
-  font-size: 0.875rem;
   color: var(--color-text-muted);
 }
 
