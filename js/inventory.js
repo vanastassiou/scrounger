@@ -168,14 +168,7 @@ function setupTableController() {
       }),
       '.start-selling-btn': (el) => openStartSellingModal(el.dataset.id),
       '.view-in-selling-btn': () => navigateToSelling(),
-      '.profit-badge': (el) => openProfitBreakdownModal(el.dataset.id),
-      '.photo-btn': async (el) => {
-        await openPhotoManager(el.dataset.id, {
-          onComplete: async () => {
-            await loadInventory();
-          }
-        });
-      }
+      '.profit-badge': (el) => openProfitBreakdownModal(el.dataset.id)
     }
   });
 
@@ -194,34 +187,18 @@ export function createInventoryRow(item, options = {}) {
     profitBadge = `<span class="profit-badge ${className}" data-id="${item.id}">${formatted}</span>`;
   }
 
-  // Photo status indicator
-  const photoStatus = item._photoStatus;
-  let photoIndicator = '';
-  if (photoStatus) {
-    if (photoStatus.complete) {
-      photoIndicator = `<button class="btn btn--sm photo-btn" data-id="${item.id}" title="Photos complete">Photos</button>`;
-    } else {
-      photoIndicator = `<button class="btn btn--sm photo-btn" data-id="${item.id}" title="Add photos">Add photos</button>`;
-    }
-  }
-
-  const actionsCell = showActions
-    ? `<td class="table-actions">
-        <div class="table-actions-inner">
-          ${photoIndicator}
-          <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
-          <button class="btn btn--sm start-selling-btn" data-id="${item.id}">Sell</button>
-        </div>
-      </td>`
-    : '';
-
-  const estValueDisplay = estSalePrice ? formatCurrency(estSalePrice) : '-';
-
   return `
-    <tr data-id="${item.id}">
-      <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
-      <td data-label="Est. Value">${estValueDisplay}</td>
-      ${actionsCell}
+    <tr data-id="${item.id}" class="collection-row">
+      <td>
+        <span class="item-title-row">
+          <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a>
+          ${profitBadge}
+        </span>
+      </td>
+      <td class="table-actions">
+        <button class="btn btn--sm btn--ghost edit-item-btn" data-id="${item.id}">Edit</button>
+        <button class="btn btn--sm btn--primary start-selling-btn" data-id="${item.id}">Sell</button>
+      </td>
     </tr>
   `;
 }

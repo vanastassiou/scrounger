@@ -34,7 +34,6 @@ import { getAttachmentsByItem, createAttachment } from './db.js';
 import { openViewItemModal, openEditItemModal } from './inventory.js';
 import { initFees, calculatePlatformFees, calculateEstimatedReturns } from './fees.js';
 import { show, hide, createLazyModal, createTableController } from './components.js';
-import { openPhotoManager, validatePhotosComplete as validatePhotos, getPhotoStatusSync } from './photos.js';
 
 // =============================================================================
 // STATE
@@ -222,18 +221,6 @@ export async function initSelling() {
 async function loadPipeline() {
   pipelineData = await getInventoryInPipeline();
   nonPipelineData = await getItemsNotInPipeline();
-
-  // Pre-compute photo status for needs_photo items
-  const needsPhotoItems = pipelineData.filter(i => i.status === 'needs_photo');
-  await Promise.all(needsPhotoItems.map(async (item) => {
-    try {
-      const attachments = await getAttachmentsByItem(item.id);
-      item._photoStatus = getPhotoStatusSync(item, attachments);
-    } catch (err) {
-      // Silently fail
-    }
-  }));
-
   if (pipelineTableCtrl) {
     pipelineTableCtrl.render();
   }
@@ -305,10 +292,7 @@ function setupTableController() {
       '.status-next-btn': (el) => {
         const itemId = el.dataset.id;
         const nextStatus = el.dataset.nextStatus;
-        // Route to appropriate modal based on transition
-        if (nextStatus === 'unlisted') {
-          openPhotoUploadModal(itemId);
-        } else if (nextStatus === 'listed') {
+        if (nextStatus === 'listed') {
           openMarkAsListedModal(itemId);
         } else if (nextStatus === 'shipped') {
           openShipItemModal(itemId);
@@ -330,7 +314,7 @@ function setupTableController() {
 }
 
 function setupEventHandlers() {
-  // Ship item form (with validation)
+  // Ship item form
   createFormHandler({
     formSelector: '#ship-item-form',
     transform: (formData) => ({
