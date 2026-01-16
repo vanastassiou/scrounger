@@ -573,7 +573,16 @@ function renderPipelineRow(item) {
   } else if (item.status !== 'shipped') {
     const nextStatus = getNextStatus(item.status);
     if (nextStatus) {
-      actionButton = `<button class="btn btn--sm status-next-btn" data-id="${item.id}" data-next-status="${nextStatus}">${capitalize(nextStatus.replace('_', ' '))}</button>`;
+      // Use descriptive action labels instead of status names
+      const actionLabels = {
+        'unlisted': 'Add photos',
+        'listed': 'Mark listed',
+        'packaged': 'Mark packaged',
+        'shipped': 'Ship item',
+        'confirmed_received': 'Confirm delivery'
+      };
+      const label = actionLabels[nextStatus] || capitalize(nextStatus.replace('_', ' '));
+      actionButton = `<button class="btn btn--sm status-next-btn" data-id="${item.id}" data-next-status="${nextStatus}">${label}</button>`;
     }
   }
 
