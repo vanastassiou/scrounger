@@ -1554,9 +1554,9 @@ const startSellingModal = createLazyModal('#start-selling-dialog', {
       if (form) {
         form.addEventListener('submit', handleStartSellingSubmit);
       }
-      const basePriceInput = dialog.querySelector('#start-selling-base-price');
-      if (basePriceInput) {
-        basePriceInput.addEventListener('input', handleBasePriceChange);
+      const listingPriceInput = dialog.querySelector('#start-selling-listing-price');
+      if (listingPriceInput) {
+        listingPriceInput.addEventListener('input', handleListingPriceChange);
       }
     }
 
@@ -1566,53 +1566,42 @@ const startSellingModal = createLazyModal('#start-selling-dialog', {
     // Populate form
     const itemIdInput = dialog.querySelector('#start-selling-item-id');
     const itemTitleEl = dialog.querySelector('#start-selling-item-title');
-    const statusSelect = dialog.querySelector('#start-selling-status');
-    const minPriceInput = dialog.querySelector('#start-selling-min-price');
-    const basePriceInput = dialog.querySelector('#start-selling-base-price');
+    const itemMetaEl = dialog.querySelector('#start-selling-item-meta');
+    const listingPriceInput = dialog.querySelector('#start-selling-listing-price');
     const suggestionEl = dialog.querySelector('#start-selling-suggestion');
     const estValueInput = dialog.querySelector('#start-selling-est-value');
-    const recommendationsSection = dialog.querySelector('#selling-recommendations');
 
     if (itemIdInput) itemIdInput.value = item.id;
     if (itemTitleEl) itemTitleEl.textContent = item.title || 'Untitled';
-    if (statusSelect) statusSelect.value = 'needs_photo';
-    if (minPriceInput) minPriceInput.value = item.minimum_acceptable_price || '';
 
-    // Always show recommendations section (base price field is always useful)
-    if (recommendationsSection) recommendationsSection.style.display = 'block';
-
-    // Set initial base price from estimated value or suggestion
-    const initialPrice = item.estimated_resale_value || recommendations?.suggestedPrice || fallbackSuggestion?.value || '';
-    if (basePriceInput) basePriceInput.value = initialPrice;
-
-    if (recommendations) {
-      renderRecommendations(recommendations, item, initialPrice);
-      if (!item.estimated_resale_value && estValueInput) {
-        estValueInput.value = recommendations.suggestedPrice;
-      }
-      if (suggestionEl) suggestionEl.textContent = '';
-    } else if (fallbackSuggestion) {
-      // Render with fallback
-      if (estValueInput) estValueInput.value = fallbackSuggestion.value;
-      if (suggestionEl) {
-        let hint = `Suggested: ${formatCurrency(fallbackSuggestion.value)} (${fallbackSuggestion.multiplier}× brand tier)`;
-        if (fallbackSuggestion.tips) hint += ` — ${fallbackSuggestion.tips}`;
-        suggestionEl.textContent = hint;
-      }
-      // Still render platform comparison with fallback price
-      renderRecommendations(null, item, initialPrice);
-    } else {
-      if (item.estimated_resale_value) {
-        if (estValueInput) estValueInput.value = item.estimated_resale_value;
-      } else {
-        if (estValueInput) estValueInput.value = '';
-      }
-      if (suggestionEl) suggestionEl.textContent = '';
+    // Render item metadata (brand, category)
+    if (itemMetaEl) {
+      const parts = [];
+      if (item.brand) parts.push(item.brand);
+      if (item.category) parts.push(capitalize(item.category));
+      itemMetaEl.textContent = parts.join(' · ') || '';
     }
 
-    // Use existing value if set (takes priority)
-    if (item.estimated_resale_value && estValueInput) {
-      estValueInput.value = item.estimated_resale_value;
+    // Set initial listing price from estimated value or suggestion
+    const initialPrice = item.estimated_resale_value || recommendations?.suggestedPrice || fallbackSuggestion?.value || '';
+    if (listingPriceInput) listingPriceInput.value = initialPrice;
+    if (estValueInput) estValueInput.value = initialPrice;
+
+    // Show price suggestion hint
+    if (suggestionEl) {
+      if (recommendations?.priceRange) {
+        const { min, max } = recommendations.priceRange;
+        suggestionEl.textContent = `Suggested: ${formatCurrency(min)}–${formatCurrency(max)}`;
+      } else if (fallbackSuggestion) {
+        suggestionEl.textContent = `Suggested: ${formatCurrency(fallbackSuggestion.value)} (${fallbackSuggestion.multiplier}× brand tier)`;
+      } else {
+        suggestionEl.textContent = '';
+      }
+    }
+
+    // Render recommendations
+    if (initialPrice) {
+      renderRecommendations(recommendations, item, initialPrice);
     }
   }
 });
@@ -1637,21 +1626,21 @@ export async function openStartSellingModal(itemId) {
 }
 
 /**
- * Handle base price input change - recalculate platform recommendations.
+ * Handle listing price input change - recalculate platform recommendations.
  */
-async function handleBasePriceChange(e) {
+async function handleListingPriceChange(e) {
   if (!currentSellingItem) return;
 
-  const basePrice = parseFloat(e.target.value) || null;
-  if (!basePrice) return;
+  const listingPrice = parseFloat(e.target.value) || null;
+  if (!listingPrice) return;
 
-  const recommendations = await generateSellingRecommendations(currentSellingItem, basePrice);
-  renderRecommendations(recommendations, currentSellingItem, basePrice);
+  const recommendations = await generateSellingRecommendations(currentSellingItem, listingPrice);
+  renderRecommendations(recommendations, currentSellingItem, listingPrice);
 
-  // Update estimated value input to match base price
+  // Sync to hidden estimated value field
   const estValueInput = $('#start-selling-est-value');
   if (estValueInput) {
-    estValueInput.value = basePrice;
+    estValueInput.value = listingPrice;
   }
 }
 
@@ -1805,7 +1794,7 @@ async function renderPlatformComparison(recommendedPlatforms, costBasis, suggest
           <th>Platform</th>
           <th class="col-numeric">Fee</th>
           <th class="col-numeric">Profit</th>
-          <th>Fit</th>
+          <th>Why</th>
         </tr>
       </thead>
       <tbody>
@@ -1834,17 +1823,12 @@ async function handleStartSellingSubmit(e) {
 
   const formData = new FormData(e.target);
   const itemId = formData.get('item_id');
-  const status = formData.get('status');
   const estimatedValue = parseFloat(formData.get('estimated_resale_value')) || null;
-  const minPrice = parseFloat(formData.get('minimum_acceptable_price')) || null;
 
   try {
-    const updates = { status };
+    const updates = { status: 'needs_photo' };
     if (estimatedValue !== null) {
       updates.estimated_resale_value = estimatedValue;
-    }
-    if (minPrice !== null) {
-      updates.minimum_acceptable_price = minPrice;
     }
 
     await updateInventoryItem(itemId, updates);

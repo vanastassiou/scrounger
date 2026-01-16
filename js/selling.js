@@ -307,6 +307,9 @@ function setupTableController() {
       },
       '.list-for-sale-btn': (el) => {
         listItemForSale(parseInt(el.dataset.id));
+      },
+      '.delist-btn': (el) => {
+        openDelistItemModal(el.dataset.id);
       }
     },
     onRender: updateItemCount
@@ -514,6 +517,20 @@ function setupEventHandlers() {
   if (deliveryConfirmBtn) {
     deliveryConfirmBtn.addEventListener('click', completeDeliveryConfirmation);
   }
+
+  // Delist confirmation handlers
+  const delistConfirmBtn = $('#delist-confirm-btn');
+  if (delistConfirmBtn) {
+    delistConfirmBtn.addEventListener('click', delistItem);
+  }
+
+  const delistCancelBtn = $('#delist-cancel-btn');
+  if (delistCancelBtn) {
+    delistCancelBtn.addEventListener('click', () => {
+      const dialog = document.getElementById('delist-item-dialog');
+      if (dialog) dialog.close();
+    });
+  }
 }
 
 // =============================================================================
@@ -560,6 +577,12 @@ function renderPipelineRow(item) {
     }
   }
 
+  // Delist button - only for pre-sold pipeline statuses
+  const delistableStatuses = ['needs_photo', 'unlisted', 'listed'];
+  const delistButton = delistableStatuses.includes(item.status)
+    ? `<button class="btn btn--sm btn--ghost delist-btn" data-id="${item.id}">Delist</button>`
+    : '';
+
   return `
     <tr data-id="${item.id}">
       <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || 'Untitled')}</a></td>
@@ -572,6 +595,7 @@ function renderPipelineRow(item) {
       <td class="table-actions">
         <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
         ${actionButton}
+        ${delistButton}
       </td>
     </tr>
   `;
@@ -1118,6 +1142,71 @@ async function completeDeliveryConfirmation() {
   }
 }
 
+// =============================================================================
+// DELIST ITEM MODAL
+// =============================================================================
+
+let currentDelistItem = null;
+
+const delistItemModal = createLazyModal('#delist-item-dialog', {
+  onOpen: (dialog, { item }) => {
+    currentDelistItem = item;
+
+    const titleEl = dialog.querySelector('#delist-item-title');
+    const warningEl = dialog.querySelector('#delist-listed-warning');
+    const platformEl = dialog.querySelector('#delist-platform-name');
+
+    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+
+    // Show warning if item is currently listed on a platform
+    if (item.status === 'listed' && item.list_platform) {
+      if (warningEl) warningEl.hidden = false;
+      if (platformEl) platformEl.textContent = capitalize(item.list_platform.replace(/_/g, ' '));
+    } else {
+      if (warningEl) warningEl.hidden = true;
+    }
+  },
+  onClose: () => {
+    currentDelistItem = null;
+  }
+});
+
+async function openDelistItemModal(itemId) {
+  const item = await getInventoryItem(itemId);
+  if (!item) {
+    showToast('Item not found');
+    return;
+  }
+
+  // Validate item can be delisted
+  const delistableStatuses = ['needs_photo', 'unlisted', 'listed'];
+  if (!delistableStatuses.includes(item.status)) {
+    showToast('Item cannot be delisted from current status');
+    return;
+  }
+
+  delistItemModal.open({ item });
+}
+
+async function delistItem() {
+  if (!currentDelistItem) return;
+
+  try {
+    // Only update status - preserve all listing data
+    await updateInventoryItem(currentDelistItem.id, {
+      status: 'in_collection'
+    });
+
+    showToast('Item returned to collection');
+    delistItemModal.close();
+    await loadPipeline();
+    currentDelistItem = null;
+  } catch (err) {
+    console.error('Failed to delist item:', err);
+    showToast('Failed to return item to collection');
+  }
+}
+
 export {
   openShipItemModal,
   listItemForSale,
@@ -1129,5 +1218,7 @@ export {
   handlePhotoUpload,
   completePhotoUpload,
   handleDeliveryScreenshot,
-  completeDeliveryConfirmation
+  completeDeliveryConfirmation,
+  openDelistItemModal,
+  delistItem
 };
