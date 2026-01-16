@@ -3767,11 +3767,17 @@
 }
 
 .platform-row--recommended {
-  background: var(--color-surface-elevated);
+  background: var(--color-primary-light);
+  border-left: 3px solid var(--color-primary);
+}
+
+.platform-row--recommended td {
+  font-weight: var(--font-weight-medium);
 }
 
 .platform-row--recommended td:first-child {
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-primary);
 }
 
 .badge--small {
