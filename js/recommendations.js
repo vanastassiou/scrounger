@@ -1003,7 +1003,7 @@ function isVintage(era) {
  */
 function isStreetwearBrand(brand) {
   if (!brand) return false;
-  const normalized = normalizeBrandName(brand);
+  const normalized = normalizeForLookup(brand);
   return STREETWEAR_BRANDS.some(sw => normalized.includes(sw));
 }
 
