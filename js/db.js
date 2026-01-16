@@ -22,41 +22,16 @@ export function resetDB() {
 export async function clearAllData() {
   try {
     const db = await openDB();
-    const tx = db.transaction(['inventory', 'visits', 'stores', 'settings', 'attachments', 'archive'], 'readwrite');
+    const stores = ['inventory', 'visits', 'stores', 'settings', 'attachments', 'archive'];
+    const tx = db.transaction(stores, 'readwrite');
 
-    await Promise.all([
-      new Promise((resolve, reject) => {
-        const req = tx.objectStore('inventory').clear();
-        req.onsuccess = resolve;
-        req.onerror = () => reject(req.error);
-      }),
-      new Promise((resolve, reject) => {
-        const req = tx.objectStore('visits').clear();
-        req.onsuccess = resolve;
-        req.onerror = () => reject(req.error);
-      }),
-      new Promise((resolve, reject) => {
-        const req = tx.objectStore('stores').clear();
-        req.onsuccess = resolve;
-        req.onerror = () => reject(req.error);
-      }),
-      new Promise((resolve, reject) => {
-        const req = tx.objectStore('settings').clear();
-        req.onsuccess = resolve;
-        req.onerror = () => reject(req.error);
-      }),
-      new Promise((resolve, reject) => {
-        const req = tx.objectStore('attachments').clear();
-        req.onsuccess = resolve;
-        req.onerror = () => reject(req.error);
-      }),
-      new Promise((resolve, reject) => {
-        const req = tx.objectStore('archive').clear();
-        req.onsuccess = resolve;
-        req.onerror = () => reject(req.error);
-      })
-    ]);
+    const clearStoreInTx = (storeName) => new Promise((resolve, reject) => {
+      const req = tx.objectStore(storeName).clear();
+      req.onsuccess = resolve;
+      req.onerror = () => reject(req.error);
+    });
 
+    await Promise.all(stores.map(clearStoreInTx));
     return { success: true };
   } catch (err) {
     return handleError(err, 'Failed to clear data', { success: false });

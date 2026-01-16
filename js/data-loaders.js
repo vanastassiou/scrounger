@@ -73,7 +73,6 @@ export async function loadBrandsLookup() {
     }
 
     extractBrands(data);
-    console.log(`Loaded ${brandsLookup.size} brands for resale suggestions`);
     return brandsLookup;
   } catch (err) {
     console.error('Failed to load brands data:', err);
