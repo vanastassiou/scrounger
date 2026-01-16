@@ -417,19 +417,29 @@ function renderTable() {
 
   tbody.innerHTML = filtered.map(brand => {
     const tierClass = `tier-badge tier-badge--${brand.tier.toLowerCase()}`;
-    const notesHtml = [brand.notes, brand.tips].filter(Boolean).join(' ');
     const categoryLabel = brand.category.charAt(0).toUpperCase() + brand.category.slice(1);
+    const altText = brand.alt?.length ? ` (${brand.alt.join(', ')})` : '';
+    const multText = brand.multiplier != null ? `${brand.multiplier}x` : '';
 
     return `
-      <tr data-brand-key="${escapeHtml(brand.key)}">
-        <td class="brand-name">
-          ${escapeHtml(brand.name)}
-          ${brand.alt?.length ? `<span class="brand-alt">(${escapeHtml(brand.alt.join(', '))})</span>` : ''}
+      <tr class="brand-row" data-brand-key="${escapeHtml(brand.key)}">
+        <td>
+          <div class="brand-row__mobile">
+            <span class="brand-row__name">${escapeHtml(brand.name)} <span class="brand-row__type">(${escapeHtml(categoryLabel)})</span></span>
+            <div class="brand-row__meta">
+              ${multText ? `<span class="brand-row__mult">${multText}</span>` : ''}
+              <span class="${tierClass}">${escapeHtml(brand.tier)}</span>
+            </div>
+          </div>
+          <div class="brand-row__desktop">
+            ${escapeHtml(brand.name)}
+            ${brand.alt?.length ? `<span class="brand-alt">(${escapeHtml(brand.alt.join(', '))})</span>` : ''}
+          </div>
         </td>
         <td data-label="Type">${escapeHtml(categoryLabel)}</td>
         <td data-label="Tier"><span class="${tierClass}">${escapeHtml(brand.tier)}</span></td>
         <td data-label="Multiplier">${brand.multiplier != null ? brand.multiplier + 'x' : '-'}</td>
-        <td data-label="Notes" class="brand-notes">${escapeHtml(notesHtml)}</td>
+        <td data-label="Notes" class="brand-notes"></td>
       </tr>
     `;
   }).join('');

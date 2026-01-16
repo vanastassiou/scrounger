@@ -128,9 +128,22 @@ function createStoreRow(store, stats) {
   }
 
   return `
-    <tr data-store-id="${store.id}">
+    <tr class="store-row" data-store-id="${store.id}">
       <td>
-        <div class="store-info">
+        <div class="store-row__mobile">
+          <div class="store-row__title">
+            <a href="#" class="store-row__name table-link">${escapeHtml(store.name)}</a>
+            <div class="store-row__meta">
+              <span class="tier tier--${store.tier}">${store.tier}</span>
+              ${addressHtml}
+            </div>
+          </div>
+          <div class="store-row__stats">
+            <span class="store-row__stat">Visits: <span class="store-row__stat-value">${visitCount}</span></span>
+            <span class="store-row__stat">Hit rate: <span class="store-row__stat-value">${hitRate}</span></span>
+          </div>
+        </div>
+        <div class="store-row__desktop">
           <a href="#" class="store-name table-link">${escapeHtml(store.name)}</a>
           ${addressHtml}
         </div>
