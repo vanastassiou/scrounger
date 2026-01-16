@@ -2520,12 +2520,140 @@
   margin-top: 2px;
 }
 
-/* Setup wizard actions */
-.setup-actions {
+/* Setup wizard step cards */
+.setup-intro {
+  color: var(--color-text-muted);
+}
+
+.setup-steps {
   display: flex;
   flex-direction: column;
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+.setup-step {
+  display: flex;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: opacity 0.2s, border-color 0.2s;
+}
+
+.setup-step__indicator {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.setup-step__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.setup-step__label {
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
+}
+
+.setup-step__hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.setup-step__value {
+  display: flex;
+  align-items: center;
   gap: var(--space-sm);
-  margin-top: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.setup-step__text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* State: Pending */
+.setup-step[data-state="pending"] {
+  opacity: 0.5;
+}
+
+.setup-step[data-state="pending"] .setup-step__action,
+.setup-step[data-state="pending"] .setup-step__value {
+  display: none;
+}
+
+.setup-step[data-state="pending"] .setup-step__hint {
+  display: block;
+}
+
+/* State: Active */
+.setup-step[data-state="active"] {
+  border-color: var(--color-primary);
+}
+
+.setup-step[data-state="active"] .setup-step__indicator {
+  border-color: var(--color-primary);
+}
+
+.setup-step[data-state="active"] .setup-step__action {
+  display: block;
+}
+
+.setup-step[data-state="active"] .setup-step__value,
+.setup-step[data-state="active"] .setup-step__hint {
+  display: none;
+}
+
+/* State: Complete */
+.setup-step[data-state="complete"] .setup-step__indicator {
+  background: var(--color-success);
+  border-color: var(--color-success);
+}
+
+.setup-step[data-state="complete"] .setup-step__action,
+.setup-step[data-state="complete"] .setup-step__hint {
+  display: none;
+}
+
+.setup-step[data-state="complete"] .setup-step__value {
+  display: flex;
+}
+
+/* Responsive: stack value on small screens */
+@media (max-width: 400px) {
+  .setup-step__value {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .setup-step__value .btn {
+    margin-top: var(--space-xs);
+  }
+}
+
+/* Google Picker centering */
+.picker-dialog {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+.picker-dialog-bg {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .form-input--readonly {
@@ -3198,4 +3326,93 @@
 
 .platform-comparison-row:last-child {
   border-bottom: none;
+}
+
+/* =============================================================================
+   SELLING WORKFLOW - VALIDATION & PHOTO MODALS
+   ============================================================================= */
+
+/* Validation Error List */
+.validation-error-list {
+  list-style: disc;
+  padding-left: var(--space-lg);
+  margin: var(--space-md) 0;
+  color: var(--color-danger, #dc3545);
+}
+
+.validation-error-list li {
+  margin-bottom: var(--space-xs);
+}
+
+/* Photo Requirements Grid */
+.photo-req-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin: var(--space-sm) 0;
+}
+
+.photo-req {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  border: 1px solid var(--color-border);
+}
+
+.photo-req--complete {
+  background: var(--color-success-bg, #d4edda);
+  border-color: var(--color-success, #28a745);
+  color: var(--color-success, #28a745);
+}
+
+.photo-req--missing {
+  background: var(--color-bg);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.photo-req-icon {
+  font-weight: 700;
+}
+
+.photo-req-label {
+  font-weight: 500;
+}
+
+/* Photo Preview Grid */
+.photo-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+.photo-preview-grid img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+/* Screenshot Preview */
+.screenshot-preview-container {
+  margin-top: var(--space-sm);
+}
+
+.screenshot-preview {
+  max-width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+
+/* Status badge for confirmed_received */
+.status--confirmed_received {
+  background: var(--color-success);
+  color: white;
 }

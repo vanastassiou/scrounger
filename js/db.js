@@ -384,7 +384,7 @@ export async function getInventoryInPipeline() {
   try {
     const items = await getAllFromStore('inventory');
     const pipelineStatuses = [
-      'needs_photo', 'unlisted', 'listed', 'sold', 'packaged', 'shipped'
+      'needs_photo', 'unlisted', 'listed', 'sold', 'packaged', 'shipped', 'confirmed_received'
     ];
 
     return items.filter(item => pipelineStatuses.includes(item.status))
@@ -398,7 +398,7 @@ export async function getItemsNotInPipeline() {
   try {
     const items = await getAllFromStore('inventory');
     const pipelineStatuses = [
-      'needs_photo', 'unlisted', 'listed', 'sold', 'packaged', 'shipped'
+      'needs_photo', 'unlisted', 'listed', 'sold', 'packaged', 'shipped', 'confirmed_received'
     ];
 
     return items.filter(item => !pipelineStatuses.includes(item.status))
@@ -871,7 +871,7 @@ export async function markVisitsSynced(ids) {
 // ATTACHMENTS CRUD (for photo sync)
 // =============================================================================
 
-export async function createAttachment(itemId, filename, blob, mimeType) {
+export async function createAttachment(itemId, filename, blob, mimeType, type = null) {
   try {
     const now = nowISO();
     const attachment = {
@@ -880,6 +880,7 @@ export async function createAttachment(itemId, filename, blob, mimeType) {
       filename,
       blob,
       mimeType: mimeType || 'application/octet-stream',
+      type: type, // e.g. 'front', 'back', 'label', 'flaw', 'delivery_confirmation'
       synced: false,
       driveFileId: null,
       created_at: now,

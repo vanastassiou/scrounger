@@ -205,6 +205,7 @@
             <option value="sold">Sold</option>
             <option value="packaged">Packaged</option>
             <option value="shipped">Shipped</option>
+            <option value="confirmed_received">Confirmed received</option>
           </select>
           <select class="filter-select" id="platform-filter" aria-label="Filter by platform">
             <option value="all">All platforms</option>
@@ -1259,6 +1260,11 @@
         </div>
 
         <div class="form-group">
+          <label class="form-label" for="recipient-address">Recipient address *</label>
+          <textarea class="form-textarea" id="recipient-address" name="recipient_address" rows="3" placeholder="Paste full address from platform..." required></textarea>
+        </div>
+
+        <div class="form-group">
           <label class="form-label" for="shipping-carrier">Carrier *</label>
           <select class="form-select" id="shipping-carrier" name="shipping_carrier" required>
             <option value="">Select...</option>
@@ -1271,8 +1277,8 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="tracking-number">Tracking number</label>
-          <input type="text" class="form-input" id="tracking-number" name="tracking_number" placeholder="Enter tracking number">
+          <label class="form-label" for="tracking-number">Tracking number *</label>
+          <input type="text" class="form-input" id="tracking-number" name="tracking_number" placeholder="Enter tracking number" required>
         </div>
 
         <div class="form-row">
@@ -1281,13 +1287,170 @@
             <input type="date" class="form-input" id="ship-date" name="ship_date" required>
           </div>
           <div class="form-group">
-            <label class="form-label" for="ship-shipping-cost">Shipping cost</label>
-            <input type="number" class="form-input" id="ship-shipping-cost" name="shipping_cost" step="0.01" min="0" placeholder="0.00">
+            <label class="form-label" for="estimated-delivery">Est. delivery *</label>
+            <input type="date" class="form-input" id="estimated-delivery" name="estimated_delivery" required>
           </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="ship-shipping-cost">Shipping cost</label>
+          <input type="number" class="form-input" id="ship-shipping-cost" name="shipping_cost" step="0.01" min="0" placeholder="0.00">
         </div>
 
         <button type="submit" class="btn btn--primary btn--block">Mark as shipped</button>
       </form>
+    </div>
+  </dialog>
+
+  <!-- Validation Error Dialog -->
+  <dialog id="validation-error-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Missing information</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Cannot list <strong id="validation-error-title"></strong> for sale. The following information is missing:</p>
+        <ul id="validation-error-list" class="validation-error-list"></ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn--primary" id="validation-edit-btn">Edit item</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Photo Upload Dialog -->
+  <dialog id="photo-upload-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add photos</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">Photographing: <strong id="photo-upload-title"></strong></p>
+
+        <div class="form-group">
+          <label class="form-label">Required photos</label>
+          <div id="photo-requirements-grid" class="photo-req-grid"></div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="photo-type-select">Photo type</label>
+            <select class="form-select" id="photo-type-select">
+              <option value="">Select type...</option>
+              <option value="front">Front</option>
+              <option value="back">Back</option>
+              <option value="label">Label</option>
+              <option value="flaw">Flaw</option>
+              <option value="detail">Detail</option>
+              <option value="hallmark">Hallmark</option>
+              <option value="closure">Closure</option>
+              <option value="measurement">Measurement</option>
+              <option value="styled">Styled</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="photo-upload-input">Upload</label>
+            <input type="file" class="form-input" id="photo-upload-input" accept="image/*">
+          </div>
+        </div>
+
+        <div id="photo-preview-grid" class="photo-preview-grid"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn--primary" id="photo-complete-btn" disabled>Complete</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Mark as Listed Dialog -->
+  <dialog id="mark-listed-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Mark as listed</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <form id="mark-listed-form">
+        <input type="hidden" id="listed-item-id" name="item_id">
+
+        <div class="form-group">
+          <label class="form-label">Item</label>
+          <div id="listed-item-title" class="text-muted"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="list-platform">Platform *</label>
+          <select class="form-select" id="list-platform" name="list_platform" required>
+            <option value="">Select...</option>
+            <option value="poshmark">Poshmark</option>
+            <option value="ebay">eBay</option>
+            <option value="etsy">Etsy</option>
+            <option value="depop">Depop</option>
+            <option value="vestiaire_collective">Vestiaire Collective</option>
+            <option value="therealreal">The RealReal</option>
+            <option value="grailed">Grailed</option>
+            <option value="starluv">Starluv</option>
+            <option value="facebook_marketplace">Facebook Marketplace</option>
+            <option value="local_consignment">Local Consignment</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="list-date">List date *</label>
+            <input type="date" class="form-input" id="list-date" name="list_date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="listed-price">Listed price *</label>
+            <input type="number" class="form-input" id="listed-price" name="listed_price" step="0.01" min="0" placeholder="0.00" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="listing-url">Listing URL</label>
+          <input type="url" class="form-input" id="listing-url" name="listing_url" placeholder="https://...">
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--block">Mark as listed</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Confirm Delivery Dialog -->
+  <dialog id="confirm-delivery-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Confirm delivery</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="delivery-item-id" name="item_id">
+
+        <div class="form-group">
+          <label class="form-label">Item</label>
+          <div id="delivery-item-title" class="text-muted"></div>
+        </div>
+
+        <div class="form-group">
+          <a id="tracking-link" href="#" target="_blank" rel="noopener" class="btn btn--secondary btn--block">Check tracking</a>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="received-date">Confirmation date *</label>
+          <input type="date" class="form-input" id="received-date" name="received_date" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="delivery-screenshot-input">Delivery confirmation screenshot *</label>
+          <input type="file" class="form-input" id="delivery-screenshot-input" accept="image/*" required>
+          <div id="delivery-screenshot-preview" class="screenshot-preview-container"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn--primary" id="delivery-confirm-btn" disabled>Confirm delivery</button>
+      </div>
     </div>
   </dialog>
 
@@ -1438,11 +1601,39 @@
         <h2>Welcome to Bargain Huntress</h2>
       </div>
       <div class="modal-body">
-        <p>This app stores your data in Google Drive. Please connect your Google account to get started.</p>
+        <p class="setup-intro">This app stores your data in Google Drive. Connect your account to get started.</p>
 
-        <div class="setup-actions">
-          <button class="btn btn--block btn--primary" id="setup-connect-btn">Connect Google Drive account</button>
-          <button class="btn btn--block" id="setup-folder-btn" disabled>Select sync folder</button>
+        <div class="setup-steps">
+          <!-- Step 1: Account -->
+          <div class="setup-step" id="setup-step-account" data-state="active">
+            <div class="setup-step__indicator"></div>
+            <div class="setup-step__content">
+              <div class="setup-step__label">Google Account</div>
+              <div class="setup-step__action">
+                <button class="btn btn--primary btn--block" id="setup-connect-btn">Connect Google Drive</button>
+              </div>
+              <div class="setup-step__value">
+                <span class="setup-step__text" id="setup-account-email"></span>
+                <button class="btn btn--sm" id="setup-account-change">Change</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 2: Folder -->
+          <div class="setup-step" id="setup-step-folder" data-state="pending">
+            <div class="setup-step__indicator"></div>
+            <div class="setup-step__content">
+              <div class="setup-step__label">Storage Folder</div>
+              <div class="setup-step__action">
+                <button class="btn btn--block" id="setup-folder-btn" disabled>Select Folder</button>
+              </div>
+              <div class="setup-step__value">
+                <span class="setup-step__text" id="setup-folder-name"></span>
+                <button class="btn btn--sm" id="setup-folder-change">Change</button>
+              </div>
+              <div class="setup-step__hint" id="setup-folder-hint">Connect your account first</div>
+            </div>
+          </div>
         </div>
       </div>
       <footer class="modal-footer">

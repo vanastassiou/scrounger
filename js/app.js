@@ -16,7 +16,9 @@ import {
   isConnected,
   isFolderConfigured,
   getAccountEmail,
+  getFolder,
   connect,
+  disconnect,
   selectFolder,
   syncOnOpen
 } from './sync.js';
@@ -97,40 +99,51 @@ async function showSetupWizard() {
   const dialog = document.getElementById('setup-wizard-dialog');
   if (!dialog) return;
 
+  // Elements
+  const stepAccount = document.getElementById('setup-step-account');
+  const stepFolder = document.getElementById('setup-step-folder');
   const connectBtn = document.getElementById('setup-connect-btn');
   const folderBtn = document.getElementById('setup-folder-btn');
   const doneBtn = document.getElementById('setup-done-btn');
+  const accountEmail = document.getElementById('setup-account-email');
+  const accountChangeBtn = document.getElementById('setup-account-change');
+  const folderName = document.getElementById('setup-folder-name');
+  const folderChangeBtn = document.getElementById('setup-folder-change');
+  const folderHint = document.getElementById('setup-folder-hint');
 
   async function updateWizardUI() {
     const syncEnabled = isSyncEnabled();
     const connected = isConnected();
     const folderConfigured = isFolderConfigured();
 
-    // Connect button
+    // Step 1: Account
     if (!syncEnabled) {
+      stepAccount.dataset.state = 'pending';
       connectBtn.textContent = 'Sync not available';
       connectBtn.disabled = true;
     } else if (connected) {
+      stepAccount.dataset.state = 'complete';
       const email = await getAccountEmail();
-      connectBtn.textContent = email ? `Connected as ${email}` : 'Connected';
-      connectBtn.disabled = true;
+      accountEmail.textContent = email || 'Connected';
     } else {
-      connectBtn.textContent = 'Connect Google Drive account';
+      stepAccount.dataset.state = 'active';
+      connectBtn.textContent = 'Connect Google Drive';
       connectBtn.disabled = false;
     }
 
-    // Folder button
-    if (connected) {
-      folderBtn.disabled = false;
-      if (folderConfigured) {
-        folderBtn.textContent = 'Folder selected';
-        folderBtn.disabled = true;
-      } else {
-        folderBtn.textContent = 'Select sync folder';
-      }
-    } else {
+    // Step 2: Folder
+    if (!connected) {
+      stepFolder.dataset.state = 'pending';
+      folderHint.textContent = syncEnabled ? 'Connect your account first' : 'Sync not available';
       folderBtn.disabled = true;
-      folderBtn.textContent = 'Select sync folder';
+    } else if (folderConfigured) {
+      stepFolder.dataset.state = 'complete';
+      const folder = getFolder();
+      folderName.textContent = folder?.name || 'Selected';
+    } else {
+      stepFolder.dataset.state = 'active';
+      folderBtn.textContent = 'Select Folder';
+      folderBtn.disabled = false;
     }
 
     // Done button - enabled if sync complete OR sync not available
@@ -158,6 +171,12 @@ async function showSetupWizard() {
       // OAuth will redirect, so this line won't execute until after redirect back
     });
 
+    // Account change button - disconnect and reset
+    accountChangeBtn.addEventListener('click', () => {
+      disconnect();
+      updateWizardUI();
+    });
+
     // Folder button
     folderBtn.addEventListener('click', async () => {
       folderBtn.disabled = true;
@@ -173,6 +192,19 @@ async function showSetupWizard() {
         showToast('Failed to select folder: ' + err.message);
         folderBtn.disabled = false;
         folderBtn.textContent = 'Select Folder';
+      }
+    });
+
+    // Folder change button - open picker to select new folder
+    folderChangeBtn.addEventListener('click', async () => {
+      dialog.close();
+      try {
+        await selectFolder();
+        dialog.showModal();
+        await updateWizardUI();
+      } catch (err) {
+        dialog.showModal();
+        showToast('Failed to select folder: ' + err.message);
       }
     });
 
