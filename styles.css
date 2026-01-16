@@ -1585,23 +1585,23 @@
      Compact row layout - Stores & Brands (mobile only)
      ========================================================================== */
 
-  /* Responsive row layouts - hide mobile on desktop */
+  /* Responsive row layouts - hide mobile on desktop (!important to override utility classes) */
   .row-mobile {
-    display: none;
+    display: none !important;
   }
 
   @media (max-width: 640px) {
     /* Mobile: show mobile layout, hide desktop layout */
     .row-mobile {
-      display: block;
+      display: block !important;
     }
 
     .row-mobile.flex {
-      display: flex;
+      display: flex !important;
     }
 
     .row-desktop {
-      display: none;
+      display: none !important;
     }
 
     /* Stores table - compact list */
