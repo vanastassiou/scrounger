@@ -1585,21 +1585,22 @@
      Compact row layout - Stores & Brands (mobile only)
      ========================================================================== */
 
-  /* Desktop: hide mobile layout, show desktop layout */
-  .store-row__mobile,
-  .brand-row__mobile {
+  /* Responsive row layouts - hide mobile on desktop */
+  .row-mobile {
     display: none;
   }
 
   @media (max-width: 640px) {
     /* Mobile: show mobile layout, hide desktop layout */
-    .store-row__mobile,
-    .brand-row__mobile {
+    .row-mobile {
       display: block;
     }
 
-    .store-row__desktop,
-    .brand-row__desktop {
+    .row-mobile.flex {
+      display: flex;
+    }
+
+    .row-desktop {
       display: none;
     }
 
@@ -1721,8 +1722,8 @@
       display: none;
     }
 
-    .brand-row__mobile {
-      display: flex;
+    /* Brand row mobile layout uses .row-mobile.flex with these additional styles */
+    .brand-row-layout {
       align-items: center;
       justify-content: space-between;
       gap: var(--space-sm);
@@ -1892,11 +1893,6 @@
     .table-responsive tfoot td[colspan] {
       flex: none;
     }
-  }
-
-  .store-address {
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-normal);
   }
 
   /* Item details */
@@ -2267,6 +2263,33 @@
 
   .list-plain li {
     padding: var(--space-2xs) 0;
+  }
+
+  /* Animation */
+  .fade-in {
+    animation: fadeIn 0.2s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* Header bar with bottom border */
+  .header-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+    padding-bottom: var(--space-sm);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  /* Toolbar - flex container aligned right */
+  .toolbar {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: var(--space-md);
   }
 }
 
@@ -2904,39 +2927,6 @@
   color: var(--color-text-muted);
   font-style: italic;
   margin-top: 2px;
-}
-
-/* =============================================================================
-   VISIT WORKFLOW
-   ============================================================================= */
-
-.visit-step {
-  animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-.visit-header-info {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-  margin-bottom: var(--space-md);
-  padding-bottom: var(--space-sm);
-  border-bottom: 1px solid var(--color-border);
-}
-
-.visit-context-label {
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text);
-}
-
-.visit-items-toolbar {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: var(--space-md);
 }
 
 /* Disabled form fields */

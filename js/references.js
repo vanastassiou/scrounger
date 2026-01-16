@@ -424,14 +424,14 @@ function renderTable() {
     return `
       <tr class="brand-row" data-brand-key="${escapeHtml(brand.key)}">
         <td>
-          <div class="brand-row__mobile">
+          <div class="row-mobile flex brand-row-layout">
             <span class="brand-row__name">${escapeHtml(brand.name)} <span class="brand-row__type">(${escapeHtml(categoryLabel)})</span></span>
             <div class="brand-row__meta">
               ${multText ? `<span class="brand-row__mult">${multText}</span>` : ''}
               <span class="${tierClass}">${escapeHtml(brand.tier)}</span>
             </div>
           </div>
-          <div class="brand-row__desktop">
+          <div class="row-desktop">
             ${escapeHtml(brand.name)}
             ${brand.alt?.length ? `<span class="brand-alt">(${escapeHtml(brand.alt.join(', '))})</span>` : ''}
           </div>
