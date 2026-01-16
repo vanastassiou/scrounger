@@ -40,6 +40,7 @@ export const STATUS_OPTIONS = [
   'sold',
   'packaged',
   'shipped',
+  'confirmed_received',
   'returned',
   'donated',
   'kept'
@@ -271,8 +272,24 @@ export const PIPELINE_STATUSES = [
   'listed',
   'sold',
   'packaged',
-  'shipped'
+  'shipped',
+  'confirmed_received'
 ];
+
+// Carrier tracking URL templates - {tracking} placeholder for tracking number
+export const CARRIER_TRACKING_URLS = {
+  usps: 'https://tools.usps.com/go/TrackConfirmAction?tLabels={tracking}',
+  ups: 'https://www.ups.com/track?tracknum={tracking}',
+  fedex: 'https://www.fedex.com/fedextrack/?trknbr={tracking}',
+  dhl: 'https://www.dhl.com/en/express/tracking.html?AWB={tracking}',
+  other: null
+};
+
+// Required photo types for pipeline (front, back, label always required)
+export const REQUIRED_PHOTO_TYPES = ['front', 'back', 'label'];
+
+// Conditions that require flaws to be documented before entering pipeline
+export const CONDITIONS_REQUIRING_FLAWS = ['good', 'fair', 'poor', 'for_parts'];
 
 export const RESALE_PLATFORMS = [
   'poshmark',

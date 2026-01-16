@@ -2,7 +2,7 @@
 // SERVICE WORKER
 // =============================================================================
 
-const CACHE_NAME = 'thrift-inventory-v3';
+const CACHE_NAME = 'thrift-inventory-v4';
 const ASSETS = [
   '/',
   '/index.html',
@@ -49,10 +49,15 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // Let navigation requests pass through (OAuth callbacks, etc.)
+  // Skip OAuth callback URLs entirely - let the browser handle them
+  if (url.searchParams.has('code') || url.searchParams.has('state')) {
+    return; // Don't call event.respondWith - let browser handle normally
+  }
+
+  // Let navigation requests pass through
   if (event.request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).catch(() => {
+      fetch(event.request, { redirect: 'follow' }).catch(() => {
         // Fall back to cached index.html if network fails
         return caches.match('/index.html');
       })

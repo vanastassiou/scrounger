@@ -22,7 +22,15 @@ import {
   escapeHtml,
   createFormHandler
 } from './utils.js';
-import { RESALE_PLATFORMS, PIPELINE_STATUSES, getStatusSortOrder } from './config.js';
+import {
+  RESALE_PLATFORMS,
+  PIPELINE_STATUSES,
+  getStatusSortOrder,
+  CARRIER_TRACKING_URLS,
+  REQUIRED_PHOTO_TYPES,
+  CONDITIONS_REQUIRING_FLAWS
+} from './config.js';
+import { getAttachmentsByItem, createAttachment } from './db.js';
 import { openViewItemModal, openEditItemModal } from './inventory.js';
 import { initFees, calculatePlatformFees, calculateEstimatedReturns } from './fees.js';
 import { show, hide, createLazyModal, createTableController } from './components.js';
@@ -36,8 +44,168 @@ let nonPipelineData = [];
 let pipelineTableCtrl = null;
 let currentSoldItem = null;
 let currentShipItem = null;
+let currentPhotoItem = null;
+let currentListedItem = null;
+let currentDeliveryItem = null;
 let feesManuallyEdited = false;
 let currentFeeResult = null; // Track fee calculation result for waterfall display
+let pendingDeliveryScreenshot = null;
+
+// =============================================================================
+// VALIDATION FUNCTIONS
+// =============================================================================
+
+/**
+ * Validate item has required data before entering the selling pipeline.
+ * @param {Object} item - Inventory item
+ * @returns {{ valid: boolean, errors: string[] }}
+ */
+export function validatePipelineEntry(item) {
+  const errors = [];
+
+  if (!item.brand) {
+    errors.push('Brand is required');
+  }
+  if (!item.subcategory) {
+    errors.push('Item type is required');
+  }
+  if (!item.primary_colour) {
+    errors.push('Primary colour is required');
+  }
+  if (!item.overall_condition) {
+    errors.push('Condition is required');
+  }
+  if (!item.primary_material) {
+    errors.push('Primary material is required');
+  }
+
+  // Check for sizing (labeled_size OR at least one measurement)
+  const hasMeasurements = item.measurements && Object.values(item.measurements).some(v => v && v > 0);
+  if (!item.labeled_size && !hasMeasurements) {
+    errors.push('Size (labeled or measurements) is required');
+  }
+
+  // If condition warrants flaws, require them
+  if (CONDITIONS_REQUIRING_FLAWS.includes(item.overall_condition)) {
+    if (!item.flaws || item.flaws.length === 0) {
+      errors.push(`Flaws must be documented for "${item.overall_condition}" condition`);
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Validate that required photos exist for an item.
+ * @param {Object} item - Inventory item
+ * @param {Array} attachments - Item attachments
+ * @returns {{ valid: boolean, missing: string[] }}
+ */
+export function validatePhotosComplete(item, attachments) {
+  const missing = [];
+
+  // Get photo types from attachments
+  const existingTypes = new Set(
+    attachments
+      .filter(a => a.type)
+      .map(a => a.type)
+  );
+
+  // Check required types
+  for (const requiredType of REQUIRED_PHOTO_TYPES) {
+    if (!existingTypes.has(requiredType)) {
+      missing.push(requiredType);
+    }
+  }
+
+  // Check flaw photos if item has flaws
+  if (item.flaws && item.flaws.length > 0) {
+    if (!existingTypes.has('flaw')) {
+      missing.push('flaw');
+    }
+  }
+
+  return { valid: missing.length === 0, missing };
+}
+
+/**
+ * Validate listing data for the listed transition.
+ * @param {Object} data - Form data object
+ * @returns {{ valid: boolean, errors: string[] }}
+ */
+export function validateListingData(data) {
+  const errors = [];
+
+  if (!data.list_platform) {
+    errors.push('Platform is required');
+  }
+  if (!data.list_date) {
+    errors.push('List date is required');
+  }
+  if (!data.listed_price || data.listed_price <= 0) {
+    errors.push('Listed price is required');
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Validate shipping data for the shipped transition.
+ * @param {Object} data - Form data object
+ * @returns {{ valid: boolean, errors: string[] }}
+ */
+export function validateShippingData(data) {
+  const errors = [];
+
+  if (!data.recipient_address || data.recipient_address.trim() === '') {
+    errors.push('Recipient address is required');
+  }
+  if (!data.shipping_carrier) {
+    errors.push('Carrier is required');
+  }
+  if (!data.tracking_number || data.tracking_number.trim() === '') {
+    errors.push('Tracking number is required');
+  }
+  if (!data.ship_date) {
+    errors.push('Ship date is required');
+  }
+  if (!data.estimated_delivery) {
+    errors.push('Estimated delivery date is required');
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Validate delivery confirmation data.
+ * @param {Object} data - Form data object
+ * @param {boolean} hasScreenshot - Whether a screenshot is attached
+ * @returns {{ valid: boolean, errors: string[] }}
+ */
+export function validateDeliveryConfirmation(data, hasScreenshot) {
+  const errors = [];
+
+  if (!data.received_date) {
+    errors.push('Confirmation date is required');
+  }
+  if (!hasScreenshot) {
+    errors.push('Delivery confirmation screenshot is required');
+  }
+
+  return { valid: errors.length === 0, errors };
+}
+
+/**
+ * Generate tracking URL for a carrier.
+ * @param {string} carrier - Carrier code
+ * @param {string} trackingNumber - Tracking number
+ * @returns {string|null} - Tracking URL or null if not available
+ */
+export function getTrackingUrl(carrier, trackingNumber) {
+  const template = CARRIER_TRACKING_URLS[carrier];
+  if (!template || !trackingNumber) return null;
+  return template.replace('{tracking}', encodeURIComponent(trackingNumber));
+}
 
 // =============================================================================
 // INITIALIZATION
@@ -124,8 +292,15 @@ function setupTableController() {
       '.status-next-btn': (el) => {
         const itemId = parseInt(el.dataset.id);
         const nextStatus = el.dataset.nextStatus;
-        if (nextStatus === 'shipped') {
+        // Route to appropriate modal based on transition
+        if (nextStatus === 'unlisted') {
+          openPhotoUploadModal(itemId);
+        } else if (nextStatus === 'listed') {
+          openMarkAsListedModal(itemId);
+        } else if (nextStatus === 'shipped') {
           openShipItemModal(itemId);
+        } else if (nextStatus === 'confirmed_received') {
+          openConfirmDeliveryModal(itemId);
         } else {
           updateItemStatus(itemId, nextStatus);
         }
@@ -139,19 +314,31 @@ function setupTableController() {
 }
 
 function setupEventHandlers() {
-  // Ship item form
+  // Ship item form (with validation)
   createFormHandler({
     formSelector: '#ship-item-form',
     transform: (formData) => ({
       itemId: parseInt(formData.get('item_id')),
       shipData: {
         status: 'shipped',
+        recipient_address: formData.get('recipient_address'),
         shipping_carrier: formData.get('shipping_carrier'),
-        tracking_number: formData.get('tracking_number') || null,
+        tracking_number: formData.get('tracking_number'),
         ship_date: formData.get('ship_date'),
+        estimated_delivery: formData.get('estimated_delivery'),
         shipping_cost: parseFloat(formData.get('shipping_cost')) || 0
       }
     }),
+    validate: (formData) => {
+      const data = {
+        recipient_address: formData.get('recipient_address'),
+        shipping_carrier: formData.get('shipping_carrier'),
+        tracking_number: formData.get('tracking_number'),
+        ship_date: formData.get('ship_date'),
+        estimated_delivery: formData.get('estimated_delivery')
+      };
+      return validateShippingData(data);
+    },
     onSubmit: async ({ itemId, shipData }) => {
       await updateInventoryItem(itemId, shipData);
     },
@@ -161,7 +348,7 @@ function setupEventHandlers() {
       await loadPipeline();
       currentShipItem = null;
     },
-    onError: () => showToast('Failed to ship item'),
+    onError: (err) => showToast(err.message || 'Failed to ship item'),
     resetOnSuccess: false
   });
 
@@ -189,6 +376,40 @@ function setupEventHandlers() {
       currentSoldItem = null;
     },
     onError: () => showToast('Failed to mark item as sold'),
+    resetOnSuccess: false
+  });
+
+  // Mark-as-listed form
+  createFormHandler({
+    formSelector: '#mark-listed-form',
+    transform: (formData) => ({
+      itemId: parseInt(formData.get('item_id')),
+      listingData: {
+        status: 'listed',
+        list_platform: formData.get('list_platform'),
+        list_date: formData.get('list_date'),
+        listed_price: parseFloat(formData.get('listed_price')),
+        listing_url: formData.get('listing_url') || null
+      }
+    }),
+    validate: (formData) => {
+      const data = {
+        list_platform: formData.get('list_platform'),
+        list_date: formData.get('list_date'),
+        listed_price: parseFloat(formData.get('listed_price'))
+      };
+      return validateListingData(data);
+    },
+    onSubmit: async ({ itemId, listingData }) => {
+      await updateInventoryItem(itemId, listingData);
+    },
+    onSuccess: async () => {
+      showToast('Item marked as listed');
+      markAsListedModal.close();
+      await loadPipeline();
+      currentListedItem = null;
+    },
+    onError: (err) => showToast(err.message || 'Failed to mark item as listed'),
     resetOnSuccess: false
   });
 
@@ -243,6 +464,55 @@ function setupEventHandlers() {
         updateFeeCalculation();
       });
     }
+  }
+
+  // Validation error modal - edit button
+  const validationEditBtn = $('#validation-edit-btn');
+  if (validationEditBtn) {
+    validationEditBtn.addEventListener('click', () => {
+      const itemId = validationEditBtn.dataset.id;
+      validationErrorModal.close();
+      openEditItemModal(itemId, {
+        onSave: async () => {
+          await loadPipeline();
+        }
+      });
+    });
+  }
+
+  // Photo upload form handlers
+  const photoUploadInput = $('#photo-upload-input');
+  const photoTypeSelect = $('#photo-type-select');
+  if (photoUploadInput && photoTypeSelect) {
+    photoUploadInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      const photoType = photoTypeSelect.value;
+      if (file && photoType) {
+        await handlePhotoUpload(file, photoType);
+        photoUploadInput.value = '';
+      }
+    });
+  }
+
+  const photoCompleteBtn = $('#photo-complete-btn');
+  if (photoCompleteBtn) {
+    photoCompleteBtn.addEventListener('click', completePhotoUpload);
+  }
+
+  // Delivery confirmation form handlers
+  const deliveryScreenshotInput = $('#delivery-screenshot-input');
+  if (deliveryScreenshotInput) {
+    deliveryScreenshotInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        handleDeliveryScreenshot(file);
+      }
+    });
+  }
+
+  const deliveryConfirmBtn = $('#delivery-confirm-btn');
+  if (deliveryConfirmBtn) {
+    deliveryConfirmBtn.addEventListener('click', completeDeliveryConfirmation);
   }
 }
 
@@ -314,7 +584,8 @@ function getNextStatus(currentStatus) {
     'listed',
     'sold',
     'packaged',
-    'shipped'
+    'shipped',
+    'confirmed_received'
   ];
 
   const currentIndex = statusOrder.indexOf(currentStatus);
@@ -497,12 +768,26 @@ async function openShipItemModal(itemId) {
 }
 
 // =============================================================================
-// LIST FOR SALE
+// LIST FOR SALE (with validation)
 // =============================================================================
 
 async function listItemForSale(itemId) {
   try {
-    await updateInventoryItem(itemId, { status: 'unlisted' });
+    const item = await getInventoryItem(itemId);
+    if (!item) {
+      showToast('Item not found');
+      return;
+    }
+
+    // Validate item before entering pipeline
+    const validation = validatePipelineEntry(item);
+    if (!validation.valid) {
+      openValidationErrorModal(item, validation.errors);
+      return;
+    }
+
+    // Enter pipeline at needs_photo status
+    await updateInventoryItem(itemId, { status: 'needs_photo' });
     showToast('Item added to selling pipeline');
     await loadPipeline();
   } catch (err) {
@@ -511,4 +796,338 @@ async function listItemForSale(itemId) {
   }
 }
 
-export { openShipItemModal, listItemForSale, loadPipeline, nonPipelineData };
+// =============================================================================
+// VALIDATION ERROR MODAL
+// =============================================================================
+
+const validationErrorModal = createLazyModal('#validation-error-dialog', {
+  onOpen: (dialog, { item, errors }) => {
+    const titleEl = dialog.querySelector('#validation-error-title');
+    const listEl = dialog.querySelector('#validation-error-list');
+    const editBtn = dialog.querySelector('#validation-edit-btn');
+
+    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+    if (listEl) {
+      listEl.innerHTML = errors.map(err => `<li>${escapeHtml(err)}</li>`).join('');
+    }
+    if (editBtn) {
+      editBtn.dataset.id = item.id;
+    }
+  }
+});
+
+function openValidationErrorModal(item, errors) {
+  validationErrorModal.open({ item, errors });
+}
+
+// =============================================================================
+// PHOTO UPLOAD MODAL
+// =============================================================================
+
+let pendingPhotos = [];
+
+const photoUploadModal = createLazyModal('#photo-upload-dialog', {
+  onOpen: async (dialog, { item, attachments }) => {
+    currentPhotoItem = item;
+    pendingPhotos = [];
+
+    const titleEl = dialog.querySelector('#photo-upload-title');
+    const gridEl = dialog.querySelector('#photo-requirements-grid');
+    const previewEl = dialog.querySelector('#photo-preview-grid');
+    const completeBtn = dialog.querySelector('#photo-complete-btn');
+
+    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+
+    // Determine required photo types
+    const requiredTypes = [...REQUIRED_PHOTO_TYPES];
+    if (item.flaws && item.flaws.length > 0) {
+      requiredTypes.push('flaw');
+    }
+
+    // Check which types exist
+    const existingTypes = new Set(attachments.filter(a => a.type).map(a => a.type));
+
+    if (gridEl) {
+      gridEl.innerHTML = requiredTypes.map(type => {
+        const hasType = existingTypes.has(type);
+        const icon = hasType ? '✓' : '✗';
+        const className = hasType ? 'photo-req--complete' : 'photo-req--missing';
+        return `<div class="photo-req ${className}" data-type="${type}">
+          <span class="photo-req-icon">${icon}</span>
+          <span class="photo-req-label">${capitalize(type)}</span>
+        </div>`;
+      }).join('');
+    }
+
+    if (previewEl) previewEl.innerHTML = '';
+    updatePhotoCompleteBtn(completeBtn, requiredTypes, existingTypes);
+  },
+  onClose: () => {
+    pendingPhotos = [];
+    currentPhotoItem = null;
+  }
+});
+
+async function openPhotoUploadModal(itemId) {
+  const item = await getInventoryItem(itemId);
+  if (!item) {
+    showToast('Item not found');
+    return;
+  }
+
+  const attachments = await getAttachmentsByItem(itemId);
+
+  // Check if photos are already complete
+  const validation = validatePhotosComplete(item, attachments);
+  if (validation.valid) {
+    // Photos already complete, just transition
+    await updateItemStatus(itemId, 'unlisted');
+    return;
+  }
+
+  photoUploadModal.open({ item, attachments });
+}
+
+function updatePhotoCompleteBtn(btn, requiredTypes, existingTypes) {
+  if (!btn) return;
+  const allComplete = requiredTypes.every(type => existingTypes.has(type));
+  btn.disabled = !allComplete;
+}
+
+async function handlePhotoUpload(file, photoType) {
+  if (!currentPhotoItem) return;
+
+  try {
+    // Compress image
+    const compressedBlob = await compressImage(file);
+    const filename = `${photoType}_${file.name}`;
+
+    // Save attachment
+    await createAttachment(
+      currentPhotoItem.id,
+      filename,
+      compressedBlob,
+      'image/jpeg',
+      photoType
+    );
+
+    // Refresh modal
+    const attachments = await getAttachmentsByItem(currentPhotoItem.id);
+    const dialog = photoUploadModal.dialog;
+    if (dialog) {
+      photoUploadModal.close();
+      photoUploadModal.open({ item: currentPhotoItem, attachments });
+    }
+
+    showToast(`${capitalize(photoType)} photo saved`);
+  } catch (err) {
+    console.error('Failed to upload photo:', err);
+    showToast('Failed to save photo');
+  }
+}
+
+async function completePhotoUpload() {
+  if (!currentPhotoItem) return;
+
+  try {
+    await updateInventoryItem(currentPhotoItem.id, { status: 'unlisted' });
+    showToast('Photos complete - item ready to list');
+    photoUploadModal.close();
+    await loadPipeline();
+    currentPhotoItem = null;
+  } catch (err) {
+    console.error('Failed to complete photo upload:', err);
+    showToast('Failed to update item');
+  }
+}
+
+// Simple image compression
+async function compressImage(file, maxWidth = 1200, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let { width, height } = img;
+
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(resolve, 'image/jpeg', quality);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+// =============================================================================
+// MARK AS LISTED MODAL
+// =============================================================================
+
+const markAsListedModal = createLazyModal('#mark-listed-dialog', {
+  onOpen: (dialog, { item }) => {
+    currentListedItem = item;
+
+    const itemIdInput = dialog.querySelector('#listed-item-id');
+    const titleEl = dialog.querySelector('#listed-item-title');
+    const dateInput = dialog.querySelector('#list-date');
+    const platformSelect = dialog.querySelector('#list-platform');
+    const priceInput = dialog.querySelector('#listed-price');
+    const urlInput = dialog.querySelector('#listing-url');
+
+    if (itemIdInput) itemIdInput.value = item.id;
+    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+    if (platformSelect) platformSelect.value = '';
+    if (priceInput) priceInput.value = item.estimated_resale_value || '';
+    if (urlInput) urlInput.value = '';
+  },
+  onClose: () => {
+    currentListedItem = null;
+  }
+});
+
+async function openMarkAsListedModal(itemId) {
+  const item = await getInventoryItem(itemId);
+  if (!item) {
+    showToast('Item not found');
+    return;
+  }
+
+  markAsListedModal.open({ item });
+}
+
+// =============================================================================
+// CONFIRM DELIVERY MODAL
+// =============================================================================
+
+const confirmDeliveryModal = createLazyModal('#confirm-delivery-dialog', {
+  onOpen: (dialog, { item }) => {
+    currentDeliveryItem = item;
+    pendingDeliveryScreenshot = null;
+
+    const itemIdInput = dialog.querySelector('#delivery-item-id');
+    const titleEl = dialog.querySelector('#delivery-item-title');
+    const dateInput = dialog.querySelector('#received-date');
+    const trackingLinkEl = dialog.querySelector('#tracking-link');
+    const previewEl = dialog.querySelector('#delivery-screenshot-preview');
+    const confirmBtn = dialog.querySelector('#delivery-confirm-btn');
+
+    if (itemIdInput) itemIdInput.value = item.id;
+    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+    if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+
+    // Generate tracking URL
+    if (trackingLinkEl) {
+      const url = getTrackingUrl(item.shipping_carrier, item.tracking_number);
+      if (url) {
+        trackingLinkEl.href = url;
+        trackingLinkEl.textContent = `Track on ${capitalize(item.shipping_carrier || 'carrier')}`;
+        show(trackingLinkEl);
+      } else {
+        hide(trackingLinkEl);
+      }
+    }
+
+    if (previewEl) previewEl.innerHTML = '';
+    if (confirmBtn) confirmBtn.disabled = true;
+  },
+  onClose: () => {
+    currentDeliveryItem = null;
+    pendingDeliveryScreenshot = null;
+  }
+});
+
+async function openConfirmDeliveryModal(itemId) {
+  const item = await getInventoryItem(itemId);
+  if (!item) {
+    showToast('Item not found');
+    return;
+  }
+
+  confirmDeliveryModal.open({ item });
+}
+
+function handleDeliveryScreenshot(file) {
+  pendingDeliveryScreenshot = file;
+
+  const previewEl = $('#delivery-screenshot-preview');
+  const confirmBtn = $('#delivery-confirm-btn');
+
+  if (previewEl && file) {
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    img.className = 'screenshot-preview';
+    previewEl.innerHTML = '';
+    previewEl.appendChild(img);
+  }
+
+  if (confirmBtn) {
+    confirmBtn.disabled = !file;
+  }
+}
+
+async function completeDeliveryConfirmation() {
+  if (!currentDeliveryItem || !pendingDeliveryScreenshot) return;
+
+  const receivedDate = $('#received-date')?.value;
+
+  // Validate
+  const validation = validateDeliveryConfirmation(
+    { received_date: receivedDate },
+    !!pendingDeliveryScreenshot
+  );
+
+  if (!validation.valid) {
+    showToast(validation.errors[0]);
+    return;
+  }
+
+  try {
+    // Save screenshot as attachment
+    const compressedBlob = await compressImage(pendingDeliveryScreenshot);
+    await createAttachment(
+      currentDeliveryItem.id,
+      'delivery_confirmation.jpg',
+      compressedBlob,
+      'image/jpeg',
+      'delivery_confirmation'
+    );
+
+    // Update item status
+    await updateInventoryItem(currentDeliveryItem.id, {
+      status: 'confirmed_received',
+      received_date: receivedDate
+    });
+
+    showToast('Delivery confirmed');
+    confirmDeliveryModal.close();
+    await loadPipeline();
+    currentDeliveryItem = null;
+    pendingDeliveryScreenshot = null;
+  } catch (err) {
+    console.error('Failed to confirm delivery:', err);
+    showToast('Failed to confirm delivery');
+  }
+}
+
+export {
+  openShipItemModal,
+  listItemForSale,
+  loadPipeline,
+  nonPipelineData,
+  openPhotoUploadModal,
+  openMarkAsListedModal,
+  openConfirmDeliveryModal,
+  handlePhotoUpload,
+  completePhotoUpload,
+  handleDeliveryScreenshot,
+  completeDeliveryConfirmation
+};
