@@ -15,6 +15,7 @@ import {
   isSyncEnabled,
   isConnected,
   isFolderConfigured,
+  getAccountEmail,
   connect,
   selectFolder,
   syncOnOpen
@@ -27,8 +28,6 @@ import { escapeHtml } from './utils.js';
 // =============================================================================
 
 async function init() {
-  console.log('Bargain Huntress starting...');
-
   // Initialize sync module first (needed to check setup status)
   await initSync();
 
@@ -83,8 +82,6 @@ async function init() {
       await renderDashboardStats();
     }
   });
-
-  console.log('Bargain Huntress ready');
 }
 
 async function renderDashboardStats() {
@@ -104,7 +101,7 @@ async function showSetupWizard() {
   const folderBtn = document.getElementById('setup-folder-btn');
   const doneBtn = document.getElementById('setup-done-btn');
 
-  function updateWizardUI() {
+  async function updateWizardUI() {
     const syncEnabled = isSyncEnabled();
     const connected = isConnected();
     const folderConfigured = isFolderConfigured();
@@ -114,7 +111,8 @@ async function showSetupWizard() {
       connectBtn.textContent = 'Sync not available';
       connectBtn.disabled = true;
     } else if (connected) {
-      connectBtn.textContent = 'Connected to Google Drive';
+      const email = await getAccountEmail();
+      connectBtn.textContent = email ? `Connected as ${email}` : 'Connected';
       connectBtn.disabled = true;
     } else {
       connectBtn.textContent = 'Connect Google Drive account';
@@ -135,12 +133,12 @@ async function showSetupWizard() {
       folderBtn.textContent = 'Select sync folder';
     }
 
-    // Done button
-    doneBtn.disabled = !connected || !folderConfigured;
+    // Done button - enabled if sync complete OR sync not available
+    doneBtn.disabled = syncEnabled && (!connected || !folderConfigured);
   }
 
   // Initial UI state
-  updateWizardUI();
+  await updateWizardUI();
 
   // Prevent closing with Escape key
   dialog.addEventListener('cancel', (e) => {
@@ -169,10 +167,10 @@ async function showSetupWizard() {
       try {
         await selectFolder();
         dialog.showModal();
-        updateWizardUI();
+        await updateWizardUI();
       } catch (err) {
         dialog.showModal();
-        showToast('Failed to select folder: ' + err.message, 'error');
+        showToast('Failed to select folder: ' + err.message);
         folderBtn.disabled = false;
         folderBtn.textContent = 'Select Folder';
       }
@@ -186,7 +184,7 @@ async function showSetupWizard() {
 
     // Check if we just returned from OAuth
     if (isConnected()) {
-      updateWizardUI();
+      updateWizardUI(); // fire-and-forget, UI will update
     }
   });
 }

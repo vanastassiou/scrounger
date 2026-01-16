@@ -2,7 +2,6 @@
 // SELLING MODULE
 // =============================================================================
 
-import { state } from './state.js';
 import {
   getInventoryInPipeline,
   getItemsNotInPipeline,
@@ -14,25 +13,19 @@ import {
 import { showToast } from './ui.js';
 import {
   $,
-  $$,
   formatCurrency,
-  formatDate,
   capitalize,
   formatStatus,
   calculateProfit,
   formatProfitDisplay,
   renderProfitWaterfall,
   escapeHtml,
-  createSortableTable,
-  emptyStateRow,
-  updateSortIndicators,
-  createFormHandler,
-  createMobileSortDropdown
+  createFormHandler
 } from './utils.js';
 import { RESALE_PLATFORMS, PIPELINE_STATUSES, getStatusSortOrder } from './config.js';
 import { openViewItemModal, openEditItemModal } from './inventory.js';
 import { initFees, calculatePlatformFees, calculateEstimatedReturns } from './fees.js';
-import { setVisible, show, hide, createLazyModal } from './components.js';
+import { show, hide, createLazyModal, createTableController } from './components.js';
 
 // =============================================================================
 // STATE
@@ -40,11 +33,7 @@ import { setVisible, show, hide, createLazyModal } from './components.js';
 
 let pipelineData = [];
 let nonPipelineData = [];
-let sortColumn = 'status';
-let sortDirection = 'asc';
-let filterStatus = null;
-let filterPlatform = null;
-let searchTerm = '';
+let pipelineTableCtrl = null;
 let currentSoldItem = null;
 let currentShipItem = null;
 let feesManuallyEdited = false;
@@ -56,6 +45,7 @@ let currentFeeResult = null; // Track fee calculation result for waterfall displ
 
 export async function initSelling() {
   await initFees();
+  setupTableController();
   await loadPipeline();
   setupEventHandlers();
 }
@@ -63,109 +53,92 @@ export async function initSelling() {
 async function loadPipeline() {
   pipelineData = await getInventoryInPipeline();
   nonPipelineData = await getItemsNotInPipeline();
-  renderPipelineTable();
+  if (pipelineTableCtrl) {
+    pipelineTableCtrl.render();
+  }
 }
 
-function setupEventHandlers() {
-  // Status filter dropdown
-  const statusFilter = $('#status-filter');
-  if (statusFilter) {
-    statusFilter.addEventListener('change', (e) => {
-      filterStatus = e.target.value === 'all' ? null : e.target.value;
-      renderPipelineTable();
-    });
+function updateItemCount(filteredData) {
+  const countEl = $('#selling-count');
+  if (countEl) {
+    const totalItems = pipelineData.length + nonPipelineData.length;
+    countEl.textContent = `Showing ${filteredData.length} of ${totalItems} items`;
   }
+}
 
-  // Platform filter
-  const platformFilter = $('#platform-filter');
-  if (platformFilter) {
-    platformFilter.addEventListener('change', (e) => {
-      filterPlatform = e.target.value === 'all' ? null : e.target.value;
-      renderPipelineTable();
-    });
-  }
-
-  // Search
-  const searchInput = $('#selling-search');
-  if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-      searchTerm = e.target.value.toLowerCase();
-      renderPipelineTable();
-    });
-  }
-
-  // Table sorting and actions
-  const table = $('#selling-table');
-  if (table) {
-    const sortConfig = {
-      getState: () => ({ sortColumn, sortDirection }),
-      setState: (s) => { sortColumn = s.sortColumn; sortDirection = s.sortDirection; },
-      onSort: renderPipelineTable
-    };
-    const sortHandler = createSortableTable(sortConfig);
-    createMobileSortDropdown(table, sortConfig);
-
-    table.addEventListener('click', (e) => {
-      // Header sorting
-      if (sortHandler(e)) return;
-
-      // Item link click - view item details
-      const itemLink = e.target.closest('.table-link');
-      if (itemLink) {
-        e.preventDefault();
-        const itemId = itemLink.dataset.id;
-        openViewItemModal(itemId);
-        return;
+function setupTableController() {
+  pipelineTableCtrl = createTableController({
+    tableSelector: '#selling-table',
+    tbodySelector: '#selling-tbody',
+    getData: () => pipelineData,
+    filterItem: (item, filters, search) => {
+      // Filter by status
+      if (filters.status && item.status !== filters.status) return false;
+      // Filter by platform (only for sold items)
+      if (filters.platform && filters.platform !== 'all') {
+        if (item.status !== 'sold' || item.sold_platform !== filters.platform) return false;
       }
-
-      // Edit button click
-      const editBtn = e.target.closest('.edit-item-btn');
-      if (editBtn) {
-        e.preventDefault();
-        const itemId = editBtn.dataset.id;
-        openEditItemModal(itemId, {
+      // Filter by search
+      if (search) {
+        const title = (item.title || '').toLowerCase();
+        const brand = (item.brand || '').toLowerCase();
+        const description = (item.description || '').toLowerCase();
+        return title.includes(search) || brand.includes(search) || description.includes(search);
+      }
+      return true;
+    },
+    getColumnValue: (item, col) => {
+      switch (col) {
+        case 'title': return (item.title || '').toLowerCase();
+        case 'category': return item.category || '';
+        case 'status': return getStatusSortOrder(item.status);
+        case 'purchase_price': return item.purchase_price || 0;
+        case 'sold_price': return item.sold_price || 0;
+        case 'profit': return calculateProfit(item).profit;
+        case 'sold_platform': return item.sold_platform || '';
+        default: return item.created_at;
+      }
+    },
+    createRow: renderPipelineRow,
+    emptyState: { colspan: 8, icon: '💰', message: 'No items in pipeline' },
+    searchSelector: '#selling-search',
+    defaultSort: { column: 'status', direction: 'asc' },
+    filterSelects: [
+      { selector: '#status-filter', key: 'status' },
+      { selector: '#platform-filter', key: 'platform' }
+    ],
+    clickHandlers: {
+      '.table-link': (el) => {
+        openViewItemModal(el.dataset.id);
+      },
+      '.edit-item-btn': (el) => {
+        openEditItemModal(el.dataset.id, {
           onSave: async () => {
-            await loadPipelineData();
-            renderPipelineTable();
+            await loadPipeline();
           }
         });
-        return;
-      }
-
-      // Mark as sold button
-      const markSoldBtn = e.target.closest('.mark-sold-btn');
-      if (markSoldBtn) {
-        e.preventDefault();
-        const itemId = parseInt(markSoldBtn.dataset.id);
-        openMarkAsSoldModal(itemId);
-        return;
-      }
-
-      // Quick status update
-      const statusBtn = e.target.closest('.status-next-btn');
-      if (statusBtn) {
-        e.preventDefault();
-        const itemId = parseInt(statusBtn.dataset.id);
-        const nextStatus = statusBtn.dataset.nextStatus;
-        // Open ship modal for packaged -> shipped transition
+      },
+      '.mark-sold-btn': (el) => {
+        openMarkAsSoldModal(parseInt(el.dataset.id));
+      },
+      '.status-next-btn': (el) => {
+        const itemId = parseInt(el.dataset.id);
+        const nextStatus = el.dataset.nextStatus;
         if (nextStatus === 'shipped') {
           openShipItemModal(itemId);
         } else {
           updateItemStatus(itemId, nextStatus);
         }
-        return;
+      },
+      '.list-for-sale-btn': (el) => {
+        listItemForSale(parseInt(el.dataset.id));
       }
+    },
+    onRender: updateItemCount
+  }).init();
+}
 
-      // List for sale button
-      const listForSaleBtn = e.target.closest('.list-for-sale-btn');
-      if (listForSaleBtn) {
-        e.preventDefault();
-        const itemId = parseInt(listForSaleBtn.dataset.id);
-        listItemForSale(itemId);
-      }
-    });
-  }
-
+function setupEventHandlers() {
   // Ship item form
   createFormHandler({
     formSelector: '#ship-item-form',
@@ -183,12 +156,12 @@ function setupEventHandlers() {
       await updateInventoryItem(itemId, shipData);
     },
     onSuccess: async () => {
-      showToast('Item marked as shipped', 'success');
+      showToast('Item marked as shipped');
       shipItemModal.close();
       await loadPipeline();
       currentShipItem = null;
     },
-    onError: () => showToast('Failed to ship item', 'error'),
+    onError: () => showToast('Failed to ship item'),
     resetOnSuccess: false
   });
 
@@ -210,12 +183,12 @@ function setupEventHandlers() {
       await archiveItem(itemId);
     },
     onSuccess: async () => {
-      showToast('Item sold and archived', 'success');
+      showToast('Item sold and archived');
       markSoldModal.close();
       await loadPipeline();
       currentSoldItem = null;
     },
-    onError: () => showToast('Failed to mark item as sold', 'error'),
+    onError: () => showToast('Failed to mark item as sold'),
     resetOnSuccess: false
   });
 
@@ -276,97 +249,6 @@ function setupEventHandlers() {
 // =============================================================================
 // RENDERING
 // =============================================================================
-
-function renderPipelineTable() {
-  const tbody = $('#selling-tbody');
-  if (!tbody) return;
-
-  // Only show items in the sales pipeline (not in_collection)
-  let filtered = [...pipelineData];
-
-  // Filter by status
-  if (filterStatus) {
-    filtered = filtered.filter(item => item.status === filterStatus);
-  }
-
-  // Filter by platform (only for sold items)
-  if (filterPlatform && filterPlatform !== 'all') {
-    filtered = filtered.filter(item =>
-      item.status === 'sold' && item.sold_platform === filterPlatform
-    );
-  }
-
-  // Filter by search
-  if (searchTerm) {
-    filtered = filtered.filter(item => {
-      const title = (item.title || '').toLowerCase();
-      const brand = (item.brand || '').toLowerCase();
-      const description = (item.description || '').toLowerCase();
-      return title.includes(searchTerm) || brand.includes(searchTerm) || description.includes(searchTerm);
-    });
-  }
-
-  // Sort data
-  filtered.sort((a, b) => {
-    let aVal, bVal;
-
-    switch (sortColumn) {
-      case 'title':
-        aVal = (a.title || '').toLowerCase();
-        bVal = (b.title || '').toLowerCase();
-        break;
-      case 'category':
-        aVal = a.category || '';
-        bVal = b.category || '';
-        break;
-      case 'status':
-        aVal = getStatusSortOrder(a.status);
-        bVal = getStatusSortOrder(b.status);
-        break;
-      case 'purchase_price':
-        aVal = a.purchase_price || 0;
-        bVal = b.purchase_price || 0;
-        break;
-      case 'sold_price':
-        aVal = a.sold_price || 0;
-        bVal = b.sold_price || 0;
-        break;
-      case 'profit':
-        aVal = calculateProfit(a).profit;
-        bVal = calculateProfit(b).profit;
-        break;
-      case 'sold_platform':
-        aVal = a.sold_platform || '';
-        bVal = b.sold_platform || '';
-        break;
-      default:
-        aVal = a.created_at;
-        bVal = b.created_at;
-    }
-
-    if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-    if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
-
-  // Render rows
-  if (filtered.length === 0) {
-    tbody.innerHTML = emptyStateRow({ colspan: 8, icon: '💰', message: 'No items in pipeline' });
-  } else {
-    tbody.innerHTML = filtered.map(item => renderPipelineRow(item)).join('');
-  }
-
-  // Update sort indicators
-  const table = $('#selling-table');
-  if (table) updateSortIndicators(table, sortColumn, sortDirection);
-
-  // Update count
-  const countEl = $('#selling-count');
-  if (countEl) {
-    const totalItems = pipelineData.length + nonPipelineData.length;
-    countEl.textContent = `Showing ${filtered.length} of ${totalItems} items`;
-  }
-}
 
 function renderPipelineRow(item) {
   const { profit, margin } = calculateProfit(item);
@@ -486,7 +368,7 @@ const markSoldModal = createLazyModal('#mark-sold-dialog', {
 export async function openMarkAsSoldModal(itemId) {
   const item = await getInventoryItem(itemId);
   if (!item) {
-    showToast('Item not found', 'error');
+    showToast('Item not found');
     return;
   }
 
@@ -571,11 +453,11 @@ function updateFeeCalculation() {
 async function updateItemStatus(itemId, newStatus) {
   try {
     await updateInventoryItem(itemId, { status: newStatus });
-    showToast(`Status updated to ${formatStatus(newStatus)}`, 'success');
+    showToast(`Status updated to ${formatStatus(newStatus)}`);
     await loadPipeline();
   } catch (err) {
     console.error('Failed to update status:', err);
-    showToast('Failed to update status', 'error');
+    showToast('Failed to update status');
   }
 }
 
@@ -607,7 +489,7 @@ const shipItemModal = createLazyModal('#ship-item-dialog', {
 async function openShipItemModal(itemId) {
   const item = await getInventoryItem(itemId);
   if (!item) {
-    showToast('Item not found', 'error');
+    showToast('Item not found');
     return;
   }
 
@@ -621,11 +503,11 @@ async function openShipItemModal(itemId) {
 async function listItemForSale(itemId) {
   try {
     await updateInventoryItem(itemId, { status: 'unlisted' });
-    showToast('Item added to selling pipeline', 'success');
+    showToast('Item added to selling pipeline');
     await loadPipeline();
   } catch (err) {
     console.error('Failed to list item for sale:', err);
-    showToast('Failed to list item for sale', 'error');
+    showToast('Failed to list item for sale');
   }
 }
 

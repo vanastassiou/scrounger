@@ -159,10 +159,6 @@
 
     <!-- Inventory -->
     <section id="inventory" class="page" role="tabpanel" aria-labelledby="inventory-tab">
-      <div class="page-header">
-        <h2>Inventory</h2>
-      </div>
-
       <!-- Sub-navigation for Inventory -->
       <nav class="sub-tabs" role="tablist" aria-label="Inventory views">
         <button class="sub-tab" data-inv-view="collection" role="tab" aria-selected="true" aria-controls="inv-collection-view">Collection</button>
@@ -186,13 +182,12 @@
           <table class="table table-responsive" id="inventory-table">
             <thead>
               <tr>
-                <th data-sort="title">Title</th>
-                <th data-sort="estimated_resale_value" class="col-numeric">Est. profit</th>
-                <th>Actions</th>
+                <th data-sort="title">Item</th>
+                <th></th>
               </tr>
             </thead>
             <tbody id="inventory-tbody">
-              <tr><td colspan="3" class="empty-state"><div class="empty-icon">I</div><p>Loading...</p></td></tr>
+              <tr><td colspan="2" class="empty-state"><div class="empty-icon">I</div><p>Loading...</p></td></tr>
             </tbody>
           </table>
         </div>
@@ -256,10 +251,6 @@
 
     <!-- References -->
     <section id="references" class="page" role="tabpanel" aria-labelledby="references-tab">
-      <div class="page-header">
-        <h2>References</h2>
-      </div>
-
       <!-- Sub-navigation for References -->
       <nav class="sub-tabs" role="tablist" aria-label="Reference categories">
         <button class="sub-tab" data-ref-view="stores" role="tab" aria-selected="true" aria-controls="ref-stores-view">Stores</button>
@@ -448,10 +439,6 @@
 
     <!-- Settings -->
     <section id="settings" class="page page--narrow" role="tabpanel" aria-labelledby="settings-tab">
-      <div class="page-header">
-        <h2>Settings</h2>
-      </div>
-
       <!-- Google Drive Sync -->
       <article class="card">
         <h3 class="card-title">Google Drive Sync</h3>

@@ -137,7 +137,7 @@ function setupTableController() {
       return item[col];
     },
     createRow: createInventoryRow,
-    emptyState: { colspan: 3, icon: 'I', message: 'No items found' },
+    emptyState: { colspan: 2, icon: 'I', message: 'No items found' },
     searchSelector: '#inventory-search',
     countSelector: '#inventory-count',
     countTemplate: '{count} item{s}',
@@ -153,7 +153,7 @@ function setupTableController() {
       }),
       '.start-selling-btn': (el) => openStartSellingModal(el.dataset.id),
       '.view-in-selling-btn': () => navigateToSelling(),
-      '.profit-link': (el) => openProfitBreakdownModal(el.dataset.id)
+      '.profit-badge': (el) => openProfitBreakdownModal(el.dataset.id)
     }
   });
 
@@ -165,24 +165,20 @@ function createInventoryRow(item) {
   const costBasis = (item.purchase_price || 0) + (item.tax_paid || 0);
   const estProfit = estSalePrice ? estSalePrice - costBasis : null;
 
-  let profitDisplay = '-';
-  let profitClass = '';
+  let profitBadge = '';
   if (estProfit !== null) {
     const { formatted, className } = formatProfitDisplay(estProfit);
-    profitDisplay = formatted;
-    profitClass = className;
+    profitBadge = `<span class="profit-badge ${className}" data-id="${item.id}">${formatted}</span>`;
   }
-
-  const profitContent = estProfit !== null
-    ? `<a href="#" class="profit-link ${profitClass}" data-id="${item.id}">${profitDisplay}</a>`
-    : '-';
 
   return `
     <tr data-id="${item.id}" class="collection-row">
-      <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
-      <td data-label="Est. profit" class="col-numeric">${profitContent}</td>
+      <td>
+        <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a>
+      </td>
       <td class="table-actions">
-        <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
+        ${profitBadge}
+        <button class="btn btn--sm btn--ghost edit-item-btn" data-id="${item.id}">Edit</button>
         <button class="btn btn--sm btn--primary start-selling-btn" data-id="${item.id}">Sell</button>
       </td>
     </tr>
