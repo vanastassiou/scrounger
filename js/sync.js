@@ -12,7 +12,8 @@ import {
   getPendingAttachments,
   markAttachmentSynced,
   createAttachment,
-  getAttachment
+  getAttachment,
+  getInventoryItem
 } from './db.js';
 import { updateSyncStatus, showToast } from './ui.js';
 
@@ -290,7 +291,8 @@ export async function syncOnOpen() {
 // =============================================================================
 
 /**
- * Sync attachments (photos) with Google Drive
+ * Sync attachments (photos) with Google Drive.
+ * Uses item slug for folder organization when available.
  */
 async function syncAttachments() {
   if (!provider || !provider.isFolderConfigured()) {
@@ -302,11 +304,16 @@ async function syncAttachments() {
     const pending = await getPendingAttachments();
     for (const att of pending) {
       try {
+        // Get the item to get its slug ID for folder organization
+        const item = await getInventoryItem(att.itemId);
+        const itemSlug = item?.id || null;
+
         const driveId = await provider.uploadAttachment(
           att.id,
           att.filename,
           att.blob,
-          att.mimeType
+          att.mimeType,
+          itemSlug // Pass item slug for folder-based organization
         );
         await markAttachmentSynced(att.id, driveId);
       } catch (err) {

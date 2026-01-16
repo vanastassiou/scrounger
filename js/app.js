@@ -239,7 +239,7 @@ function initSelectItemDialog() {
     tbody.addEventListener('click', async (e) => {
       const row = e.target.closest('tr[data-id]');
       if (row) {
-        const itemId = parseInt(row.dataset.id);
+        const itemId = row.dataset.id;
         await listItemForSale(itemId);
         selectItemModal.close();
         // Refresh dashboard

@@ -11,6 +11,106 @@ export function generateId() {
 }
 
 /**
+ * Convert a string to a URL-safe slug.
+ * @param {string} str - Input string
+ * @returns {string} Lowercase, hyphenated, alphanumeric slug
+ */
+export function slugify(str) {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/**
+ * Generate a human-readable slug ID for an item.
+ * Format: {brand}-{colour}-{material}-{type}-{short_uuid}
+ * Example: pendleton-red-wool-sweater-a7b3c9d2
+ *
+ * @param {Object} item - Item data
+ * @param {string} [item.brand] - Brand name (optional, uses 'unbranded')
+ * @param {string} item.primary_colour - Primary colour (required for slug)
+ * @param {string|Object} item.primary_material - Material name or {name, percentage}
+ * @param {string} item.subcategory - Item type/subcategory
+ * @returns {string} URL-safe slug ID
+ * @throws {Error} If required fields are missing
+ */
+export function generateSlug(item) {
+  const parts = [];
+
+  // Brand (use 'unbranded' if missing)
+  const brand = item.brand?.trim() || 'unbranded';
+  parts.push(slugify(brand));
+
+  // Colour (required)
+  if (!item.primary_colour) {
+    throw new Error('primary_colour is required for slug generation');
+  }
+  parts.push(slugify(item.primary_colour));
+
+  // Material (handle object or string)
+  let materialName;
+  if (typeof item.primary_material === 'object' && item.primary_material?.name) {
+    materialName = item.primary_material.name;
+  } else if (typeof item.primary_material === 'string') {
+    materialName = item.primary_material;
+  }
+  if (!materialName) {
+    throw new Error('primary_material is required for slug generation');
+  }
+  parts.push(slugify(materialName));
+
+  // Type/subcategory (required)
+  if (!item.subcategory) {
+    throw new Error('subcategory is required for slug generation');
+  }
+  parts.push(slugify(item.subcategory));
+
+  // Short UUID suffix (8 chars for uniqueness)
+  const shortUuid = crypto.randomUUID().substring(0, 8);
+  parts.push(shortUuid);
+
+  return parts.join('-');
+}
+
+/**
+ * Check if an ID is a UUID (legacy format) vs a slug (new format).
+ * UUIDs are hex strings with specific patterns; slugs contain words.
+ * @param {string} id - Item ID
+ * @returns {boolean} True if UUID format
+ */
+export function isUuidFormat(id) {
+  if (!id) return false;
+  // UUID pattern: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx (standard or variant)
+  // Slugs contain words with letters beyond a-f and end with 8-char hex
+  return /^[0-9a-f]{8}-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+-[0-9a-f]+$/i.test(id);
+}
+
+/**
+ * Check if an item has all required fields for slug generation.
+ * @param {Object} item - Item object
+ * @returns {boolean} True if slug can be generated
+ */
+export function canGenerateSlug(item) {
+  if (!item) return false;
+  const hasMaterial = typeof item.primary_material === 'object'
+    ? !!item.primary_material?.name
+    : !!item.primary_material;
+  return !!(item.primary_colour && hasMaterial && item.subcategory);
+}
+
+/**
+ * Check if an item needs slug migration.
+ * @param {Object} item - Item object
+ * @returns {boolean} True if item has UUID ID but could have slug
+ */
+export function needsSlugMigration(item) {
+  return isUuidFormat(item?.id) && canGenerateSlug(item);
+}
+
+/**
  * Get current ISO timestamp.
  * @returns {string}
  */

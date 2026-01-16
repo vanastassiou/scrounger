@@ -152,6 +152,10 @@
             <span class="action-tile__count" id="tile-count-pending">0</span>
             <span class="action-tile__label">Awaiting delivery</span>
           </button>
+          <button class="action-tile action-tile--muted hidden" data-action="migrate">
+            <span class="action-tile__count" id="tile-count-migrate">0</span>
+            <span class="action-tile__label">Update ID</span>
+          </button>
         </div>
       </article>
     </section>
@@ -182,11 +186,12 @@
             <thead>
               <tr>
                 <th data-sort="title">Item</th>
-                <th></th>
+                <th class="col-numeric">Est. Value</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="inventory-tbody">
-              <tr><td colspan="2" class="empty-state"><div class="empty-icon">I</div><p>Loading...</p></td></tr>
+              <tr><td colspan="3" class="empty-state"><div class="empty-icon">👗</div><p>Loading...</p></td></tr>
             </tbody>
           </table>
         </div>
@@ -1338,6 +1343,158 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn--primary" id="photo-complete-btn" disabled>Complete</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Photo Manager Dialog (Reusable from any entry point) -->
+  <dialog id="photo-manager-dialog" class="modal modal--large">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add photos</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Item info -->
+        <div class="photo-manager-item">
+          <strong id="photo-manager-title"></strong>
+          <span id="photo-manager-meta" class="text-muted"></span>
+        </div>
+
+        <!-- Progress indicator -->
+        <div class="photo-progress">
+          <div class="photo-progress-bar">
+            <div class="photo-progress-fill" id="photo-progress-fill"></div>
+          </div>
+          <span class="photo-progress-text" id="photo-progress-text">0 of 3 required</span>
+        </div>
+
+        <!-- Required photos checklist (tappable) -->
+        <div class="photo-checklist" id="photo-checklist">
+          <!-- Dynamically populated -->
+        </div>
+
+        <!-- Camera/Upload actions (mobile-first) -->
+        <div class="photo-capture-actions">
+          <button type="button" class="btn btn--primary btn--lg" id="photo-capture-btn">
+            Take photo
+          </button>
+          <button type="button" class="btn btn--lg" id="photo-gallery-btn">
+            From gallery
+          </button>
+          <input type="file" id="photo-manager-input" accept="image/*" hidden>
+        </div>
+
+        <!-- Photo preview after capture -->
+        <div id="photo-capture-preview"></div>
+
+        <!-- Photo type selector (shown after capture) -->
+        <div class="photo-type-selector hidden" id="photo-type-selector">
+          <label class="form-label">Select photo type</label>
+          <div class="photo-type-buttons" id="photo-type-buttons">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- Existing photos gallery with delete -->
+        <div class="photo-existing-section">
+          <h4>Photos (<span id="photo-count">0</span>)</h4>
+          <div class="photo-existing-grid" id="photo-existing-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" id="photo-manager-cancel">Cancel</button>
+        <button type="button" class="btn btn--primary" id="photo-manager-done">Done</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Guided Capture Dialog (fullscreen camera) -->
+  <dialog id="guided-capture-dialog" class="modal modal--fullscreen">
+    <div class="guided-capture-modal">
+      <!-- Header -->
+      <div class="guided-capture-header">
+        <button type="button" class="guided-close-btn" id="guided-close-btn" aria-label="Close">&times;</button>
+        <div class="guided-step-text" id="guided-step-text">Step 1 of 3</div>
+        <div class="guided-progress-dots" id="guided-progress-dots">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Viewfinder section -->
+      <div class="guided-viewfinder-section hidden">
+        <video id="guided-viewfinder" autoplay playsinline muted></video>
+        <div class="viewfinder-overlay"></div>
+        <button type="button" class="guided-switch-btn" id="guided-switch-btn" aria-label="Switch camera">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+            <path d="M9 12c0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3-3 1.34-3 3zm13-3h-3.17l-1.24-1.35A1.99 1.99 0 0016.12 7H7.88c-.56 0-1.1.24-1.47.65L5.17 9H2c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2v-9c0-1.1-.9-2-2-2zm-10 9c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Preview section -->
+      <div class="guided-preview-section hidden">
+        <img id="guided-preview-img" alt="Captured photo">
+      </div>
+
+      <!-- Optional types section (shown after required complete) -->
+      <div class="guided-optional-section hidden">
+        <div class="guided-optional-success">
+          <svg viewBox="0 0 24 24" width="48" height="48" fill="var(--color-success)">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+        </div>
+        <div class="guided-optional-types" id="guided-optional-types">
+          <!-- Dynamically populated -->
+        </div>
+        <button type="button" class="btn btn--primary btn--lg guided-done-btn" id="guided-done-btn">Done</button>
+      </div>
+
+      <!-- Prompt -->
+      <div class="guided-prompt">
+        <h3 id="guided-prompt-title">Take Front photo</h3>
+        <p class="text-muted" id="guided-prompt-hint">Capture the full front view of the item</p>
+        <p class="guided-camera-error hidden" id="guided-camera-error"></p>
+      </div>
+
+      <!-- Capture controls -->
+      <div class="guided-capture-controls hidden">
+        <button type="button" class="guided-btn guided-btn--secondary" id="guided-gallery-btn">Gallery</button>
+        <button type="button" class="guided-btn guided-btn--capture" id="guided-capture-btn">
+          <span class="capture-ring"></span>
+        </button>
+        <button type="button" class="guided-btn guided-btn--secondary guided-btn--skip hidden" id="guided-skip-btn">Skip</button>
+      </div>
+
+      <!-- Preview controls -->
+      <div class="guided-preview-controls hidden">
+        <button type="button" class="btn btn--lg" id="guided-retake-btn">Retake</button>
+        <button type="button" class="btn btn--primary btn--lg" id="guided-save-btn">Save</button>
+      </div>
+
+      <!-- Hidden file input -->
+      <input type="file" id="guided-file-input" accept="image/*" hidden>
+    </div>
+  </dialog>
+
+  <!-- Photo Required Dialog (validation error) -->
+  <dialog id="photo-required-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Photos required</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Before listing <strong id="photo-required-title"></strong>, please add:</p>
+        <ul id="photo-required-list" class="photo-required-list">
+          <!-- Dynamically populated -->
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" id="photo-required-cancel">Cancel</button>
+        <button type="button" class="btn btn--primary" id="photo-required-add">Add photos</button>
       </div>
     </div>
   </dialog>

@@ -34,6 +34,7 @@ import { getAttachmentsByItem, createAttachment } from './db.js';
 import { openViewItemModal, openEditItemModal } from './inventory.js';
 import { initFees, calculatePlatformFees, calculateEstimatedReturns } from './fees.js';
 import { show, hide, createLazyModal, createTableController } from './components.js';
+import { openPhotoManager, validatePhotosComplete as validatePhotos, getPhotoStatusSync } from './photos.js';
 
 // =============================================================================
 // STATE
@@ -221,6 +222,18 @@ export async function initSelling() {
 async function loadPipeline() {
   pipelineData = await getInventoryInPipeline();
   nonPipelineData = await getItemsNotInPipeline();
+
+  // Pre-compute photo status for needs_photo items
+  const needsPhotoItems = pipelineData.filter(i => i.status === 'needs_photo');
+  await Promise.all(needsPhotoItems.map(async (item) => {
+    try {
+      const attachments = await getAttachmentsByItem(item.id);
+      item._photoStatus = getPhotoStatusSync(item, attachments);
+    } catch (err) {
+      // Silently fail
+    }
+  }));
+
   if (pipelineTableCtrl) {
     pipelineTableCtrl.render();
   }
@@ -287,10 +300,10 @@ function setupTableController() {
         });
       },
       '.mark-sold-btn': (el) => {
-        openMarkAsSoldModal(parseInt(el.dataset.id));
+        openMarkAsSoldModal(el.dataset.id);
       },
       '.status-next-btn': (el) => {
-        const itemId = parseInt(el.dataset.id);
+        const itemId = el.dataset.id;
         const nextStatus = el.dataset.nextStatus;
         // Route to appropriate modal based on transition
         if (nextStatus === 'unlisted') {
@@ -306,7 +319,7 @@ function setupTableController() {
         }
       },
       '.list-for-sale-btn': (el) => {
-        listItemForSale(parseInt(el.dataset.id));
+        listItemForSale(el.dataset.id);
       },
       '.delist-btn': (el) => {
         openDelistItemModal(el.dataset.id);
@@ -321,7 +334,7 @@ function setupEventHandlers() {
   createFormHandler({
     formSelector: '#ship-item-form',
     transform: (formData) => ({
-      itemId: parseInt(formData.get('item_id')),
+      itemId: formData.get('item_id'),
       shipData: {
         status: 'shipped',
         recipient_address: formData.get('recipient_address'),
@@ -359,7 +372,7 @@ function setupEventHandlers() {
   createFormHandler({
     formSelector: '#mark-sold-form',
     transform: (formData) => ({
-      itemId: parseInt(formData.get('item_id')),
+      itemId: formData.get('item_id'),
       soldData: {
         sold_date: formData.get('sold_date'),
         sold_price: parseFloat(formData.get('sold_price')),
@@ -386,7 +399,7 @@ function setupEventHandlers() {
   createFormHandler({
     formSelector: '#mark-listed-form',
     transform: (formData) => ({
-      itemId: parseInt(formData.get('item_id')),
+      itemId: formData.get('item_id'),
       listingData: {
         status: 'listed',
         list_platform: formData.get('list_platform'),
@@ -545,6 +558,14 @@ function renderPipelineRow(item) {
   const price = item.sold_price || item.estimated_resale_value || 0;
   const platform = item.sold_platform ? capitalize(item.sold_platform.replace('_', ' ')) : '-';
 
+  // Photo progress indicator for needs_photo status
+  let photoProgress = '';
+  if (item.status === 'needs_photo' && item._photoStatus) {
+    const { completeTypes, required } = item._photoStatus;
+    const complete = completeTypes?.length || 0;
+    photoProgress = `<span class="photo-progress-mini">${complete}/${required}</span>`;
+  }
+
   // Calculate estimated return for items not yet sold
   let estReturnHtml = '-';
   if (item.status !== 'sold' && item.estimated_resale_value > 0) {
@@ -594,7 +615,7 @@ function renderPipelineRow(item) {
 
   return `
     <tr data-id="${item.id}">
-      <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || 'Untitled')}</a></td>
+      <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || 'Untitled')}</a>${photoProgress}</td>
       <td data-label="Status"><span class="status status--${item.status}">${formatStatus(item.status)}</span></td>
       <td data-label="Cost">${formatCurrency(cost)}</td>
       <td data-label="Price">${price > 0 ? formatCurrency(price) : '-'}</td>
@@ -602,9 +623,11 @@ function renderPipelineRow(item) {
       <td data-label="Profit" class="${profitClass}">${item.status === 'sold' ? profitDisplay : '-'}</td>
       <td data-label="Platform">${platform}</td>
       <td class="table-actions">
-        <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
-        ${actionButton}
-        ${delistButton}
+        <div class="table-actions-inner">
+          <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
+          ${actionButton}
+          ${delistButton}
+        </div>
       </td>
     </tr>
   `;
@@ -911,14 +934,24 @@ async function openPhotoUploadModal(itemId) {
   const attachments = await getAttachmentsByItem(itemId);
 
   // Check if photos are already complete
-  const validation = validatePhotosComplete(item, attachments);
+  const validation = validatePhotos(item, attachments);
   if (validation.valid) {
     // Photos already complete, just transition
     await updateItemStatus(itemId, 'unlisted');
     return;
   }
 
-  photoUploadModal.open({ item, attachments });
+  // Use the centralized photo manager
+  await openPhotoManager(itemId, {
+    onComplete: async (status) => {
+      if (status.complete) {
+        // Transition to unlisted after photos complete
+        await updateItemStatus(itemId, 'unlisted');
+        showToast('Photos complete - item ready to list');
+      }
+      await loadPipeline();
+    }
+  });
 }
 
 function updatePhotoCompleteBtn(btn, requiredTypes, existingTypes) {
@@ -1001,6 +1034,46 @@ async function compressImage(file, maxWidth = 1200, quality = 0.85) {
 }
 
 // =============================================================================
+// PHOTO REQUIRED MODAL
+// =============================================================================
+
+const photoRequiredModal = createLazyModal('#photo-required-dialog', {
+  onOpen: (dialog, { item, missing, onAddPhotos }) => {
+    const titleEl = dialog.querySelector('#photo-required-title');
+    const listEl = dialog.querySelector('#photo-required-list');
+    const addBtn = dialog.querySelector('#photo-required-add');
+    const cancelBtn = dialog.querySelector('#photo-required-cancel');
+
+    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+    if (listEl) {
+      listEl.innerHTML = missing.map(type => `<li>${capitalize(type)}</li>`).join('');
+    }
+
+    // Set up button handlers (clone to remove old listeners)
+    if (addBtn) {
+      const newAddBtn = addBtn.cloneNode(true);
+      addBtn.parentNode.replaceChild(newAddBtn, addBtn);
+      newAddBtn.addEventListener('click', () => {
+        photoRequiredModal.close();
+        if (onAddPhotos) onAddPhotos();
+      });
+    }
+
+    if (cancelBtn) {
+      const newCancelBtn = cancelBtn.cloneNode(true);
+      cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+      newCancelBtn.addEventListener('click', () => {
+        photoRequiredModal.close();
+      });
+    }
+  }
+});
+
+function showPhotoRequiredModal(item, missing, onAddPhotos) {
+  photoRequiredModal.open({ item, missing, onAddPhotos });
+}
+
+// =============================================================================
 // MARK AS LISTED MODAL
 // =============================================================================
 
@@ -1031,6 +1104,25 @@ async function openMarkAsListedModal(itemId) {
   const item = await getInventoryItem(itemId);
   if (!item) {
     showToast('Item not found');
+    return;
+  }
+
+  // Validate photos before allowing listing
+  const attachments = await getAttachmentsByItem(itemId);
+  const photoValidation = validatePhotos(item, attachments);
+
+  if (!photoValidation.valid) {
+    // Show photo required modal
+    showPhotoRequiredModal(item, photoValidation.missing, async () => {
+      await openPhotoManager(itemId, {
+        onComplete: async (status) => {
+          if (status.complete) {
+            // Re-attempt listing after photos complete
+            await openMarkAsListedModal(itemId);
+          }
+        }
+      });
+    });
     return;
   }
 

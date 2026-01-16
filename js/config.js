@@ -288,6 +288,22 @@ export const CARRIER_TRACKING_URLS = {
 // Required photo types for pipeline (front, back, label always required)
 export const REQUIRED_PHOTO_TYPES = ['front', 'back', 'label'];
 
+// Optional photo types offered after required are complete
+export const OPTIONAL_PHOTO_TYPES = ['detail', 'hallmark', 'closure', 'measurement', 'styled'];
+
+// Hints for each photo type in guided capture
+export const PHOTO_TYPE_HINTS = {
+  front: 'Capture the full front view of the item',
+  back: 'Capture the full back view',
+  label: 'Photograph the brand and care labels',
+  flaw: 'Document any flaws clearly',
+  detail: 'Close-up of interesting details',
+  hallmark: 'Jewelry stamps and markings',
+  closure: 'Zippers, buttons, or clasps',
+  measurement: 'Item with measuring tape',
+  styled: 'Item styled or being worn'
+};
+
 // Conditions that require flaws to be documented before entering pipeline
 export const CONDITIONS_REQUIRING_FLAWS = ['good', 'fair', 'poor', 'for_parts'];
 
