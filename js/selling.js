@@ -443,6 +443,7 @@ function setupEventHandlers() {
         sold_date: formData.get('sold_date'),
         sold_price: parseFloat(formData.get('sold_price')),
         sold_platform: formData.get('sold_platform'),
+        purchaser_username: formData.get('purchaser_username') || null,
         shipping_cost: parseFloat(formData.get('shipping_cost')) || 0,
         platform_fees: parseFloat(formData.get('platform_fees')) || 0,
         recipient_address: formData.get('recipient_address') || null,
@@ -737,18 +738,30 @@ const markSoldModal = createLazyModal('#mark-sold-dialog', {
     const dateInput = dialog.querySelector('#sold-date');
     const priceInput = dialog.querySelector('#sold-price');
     const platformSelect = dialog.querySelector('#sold-platform');
+    const purchaserInput = dialog.querySelector('#purchaser-username');
     const shippingInput = dialog.querySelector('#shipping-cost');
     const feesInput = dialog.querySelector('#platform-fees');
     const addressInput = dialog.querySelector('#sold-recipient-address');
     const trackingInput = dialog.querySelector('#sold-tracking-url');
 
     if (itemIdInput) itemIdInput.value = item.id;
-    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+
+    // Set up title link to open view modal
+    if (titleEl) {
+      titleEl.textContent = item.title || 'Untitled';
+      titleEl.onclick = (e) => {
+        e.preventDefault();
+        markSoldModal.close();
+        openViewItemModal(item.id);
+      };
+    }
+
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
     // Pre-populate price from listing price if available
     if (priceInput) priceInput.value = item.listed_price || item.estimated_resale_value || '';
     // Pre-populate platform from listing platform if available
     if (platformSelect) platformSelect.value = item.list_platform || '';
+    if (purchaserInput) purchaserInput.value = item.purchaser_username || '';
     if (shippingInput) shippingInput.value = '';
     if (feesInput) feesInput.value = '';
     if (addressInput) addressInput.value = '';
@@ -758,7 +771,7 @@ const markSoldModal = createLazyModal('#mark-sold-dialog', {
     hide('#reset-fees-btn');
     currentFeeResult = null;
 
-    updateProfitPreview();
+    updateFeeCalculation();
   }
 });
 
@@ -773,8 +786,7 @@ export async function openMarkAsSoldModal(itemId) {
 }
 
 function updateProfitPreview() {
-  const container = $('#profit-waterfall');
-  if (!container || !currentSoldItem) return;
+  if (!currentSoldItem) return;
 
   const soldPrice = parseFloat($('#sold-price').value) || 0;
   const shippingCost = parseFloat($('#shipping-cost').value) || 0;
@@ -791,36 +803,23 @@ function updateProfitPreview() {
   // Profit is payout minus your costs
   const profit = payout - costBasis;
 
-  // Build fee details text
-  let feeDetails = '';
-  if (currentFeeResult) {
-    const parts = [];
-    if (currentFeeResult.breakdown?.commission) {
-      parts.push(currentFeeResult.breakdown.commission);
-    }
-    if (currentFeeResult.breakdown?.paymentProcessing && currentFeeResult.breakdown.paymentProcessing !== 'Included') {
-      parts.push(`+ ${currentFeeResult.breakdown.paymentProcessing} processing`);
-    }
-    feeDetails = parts.join(' ');
+  // Update flow header values
+  const flowSale = $('#flow-sale');
+  const flowFees = $('#flow-fees');
+  const flowPayout = $('#flow-payout');
+  const flowCost = $('#flow-cost');
+  const flowProfit = $('#flow-profit');
+
+  if (flowSale) flowSale.textContent = formatCurrency(soldPrice);
+  if (flowFees) flowFees.textContent = formatCurrency(-platformFees);
+  if (flowPayout) flowPayout.textContent = formatCurrency(payout);
+  if (flowCost) flowCost.textContent = formatCurrency(-costBasis);
+
+  if (flowProfit) {
+    flowProfit.textContent = formatCurrency(profit);
+    flowProfit.classList.remove('value--positive', 'value--negative');
+    flowProfit.classList.add(profit >= 0 ? 'value--positive' : 'value--negative');
   }
-
-  // Build cost details text
-  const costParts = [];
-  costParts.push(`${formatCurrency(purchasePrice)} purchase`);
-  if (taxPaid > 0) costParts.push(`+ ${formatCurrency(taxPaid)} tax`);
-  if (repairCosts > 0) costParts.push(`+ ${formatCurrency(repairCosts)} repairs`);
-  if (shippingCost > 0) costParts.push(`+ ${formatCurrency(shippingCost)} shipping`);
-  const costDetails = costParts.length > 1 ? costParts.join(' ') : '';
-
-  container.innerHTML = renderProfitWaterfall({
-    salePrice: soldPrice,
-    fees: platformFees,
-    payout,
-    costBasis,
-    profit,
-    feeDetails,
-    costDetails
-  }, { showDetails: true });
 }
 
 function updateFeeCalculation() {
