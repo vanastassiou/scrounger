@@ -160,7 +160,8 @@ function setupTableController() {
   inventoryTableCtrl.init();
 }
 
-function createInventoryRow(item) {
+export function createInventoryRow(item, options = {}) {
+  const { showActions = true } = options;
   const estSalePrice = estimatedPrices.get(item.id);
   const costBasis = (item.purchase_price || 0) + (item.tax_paid || 0);
   const estProfit = estSalePrice ? estSalePrice - costBasis : null;
@@ -171,6 +172,13 @@ function createInventoryRow(item) {
     profitBadge = `<span class="profit-badge ${className}" data-id="${item.id}">${formatted}</span>`;
   }
 
+  const actionsCell = showActions
+    ? `<td class="table-actions">
+        <button class="btn btn--sm btn--ghost edit-item-btn" data-id="${item.id}">Edit</button>
+        <button class="btn btn--sm btn--primary start-selling-btn" data-id="${item.id}">Sell</button>
+      </td>`
+    : '';
+
   return `
     <tr data-id="${item.id}" class="collection-row">
       <td>
@@ -179,10 +187,7 @@ function createInventoryRow(item) {
           ${profitBadge}
         </span>
       </td>
-      <td class="table-actions">
-        <button class="btn btn--sm btn--ghost edit-item-btn" data-id="${item.id}">Edit</button>
-        <button class="btn btn--sm btn--primary start-selling-btn" data-id="${item.id}">Sell</button>
-      </td>
+      ${actionsCell}
     </tr>
   `;
 }
@@ -901,6 +906,14 @@ export async function openEditItemModal(itemId, context = null) {
     const dateInput = $('#item-acquisition-date');
     if (storeSelect) storeSelect.removeAttribute('required');
     if (dateInput) dateInput.removeAttribute('required');
+  }
+
+  // Mobile: collapse all sections by default when editing
+  if (window.innerWidth <= 600) {
+    const dialog = $('#add-item-dialog');
+    dialog?.querySelectorAll('details.form-section--collapsible').forEach(d => {
+      d.removeAttribute('open');
+    });
   }
 
   addItemModal.open();

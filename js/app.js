@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { createTabController, createModalController, showToast } from './ui.js';
-import { initInventory, renderInventoryStats, openAddItemModal } from './inventory.js';
+import { initInventory, renderInventoryStats, openAddItemModal, createInventoryRow } from './inventory.js';
 import { initStores, renderStoreCount, loadStores } from './stores.js';
 import { initVisits, openLogVisitModal } from './visits.js';
 import { initSelling, listItemForSale } from './selling.js';
@@ -23,7 +23,6 @@ import {
   syncOnOpen
 } from './sync.js';
 import { getItemsNotInPipeline } from './db.js';
-import { escapeHtml } from './utils.js';
 
 // =============================================================================
 // INITIALIZATION
@@ -63,7 +62,6 @@ async function init() {
   // Dashboard action buttons
   document.getElementById('add-item-btn')?.addEventListener('click', openAddItemModal);
   document.getElementById('log-visit-btn')?.addEventListener('click', openLogVisitModal);
-  document.getElementById('list-for-sale-btn')?.addEventListener('click', openSelectItemDialog);
 
   // Item picker modal event handlers
   initSelectItemDialog();
@@ -236,12 +234,12 @@ function initSelectItemDialog() {
     });
   }
 
-  const listEl = document.getElementById('item-picker-list');
-  if (listEl) {
-    listEl.addEventListener('click', async (e) => {
-      const itemEl = e.target.closest('.item-picker-item');
-      if (itemEl) {
-        const itemId = parseInt(itemEl.dataset.id);
+  const tbody = document.getElementById('item-picker-tbody');
+  if (tbody) {
+    tbody.addEventListener('click', async (e) => {
+      const row = e.target.closest('tr[data-id]');
+      if (row) {
+        const itemId = parseInt(row.dataset.id);
         await listItemForSale(itemId);
         selectItemModal.close();
         // Refresh dashboard
@@ -267,8 +265,8 @@ async function openSelectItemDialog() {
 }
 
 function renderItemPickerList(searchTerm) {
-  const listEl = document.getElementById('item-picker-list');
-  if (!listEl) return;
+  const tbody = document.getElementById('item-picker-tbody');
+  if (!tbody) return;
 
   let filtered = selectItemData;
 
@@ -281,19 +279,11 @@ function renderItemPickerList(searchTerm) {
   }
 
   if (filtered.length === 0) {
-    listEl.innerHTML = '<p class="text-muted">No items available to list</p>';
+    tbody.innerHTML = '<tr><td class="empty-state"><p class="text-muted">No items available to list</p></td></tr>';
     return;
   }
 
-  listEl.innerHTML = filtered.map(item => `
-    <div class="item-picker-item" data-id="${item.id}">
-      <div class="item-picker-title">${escapeHtml(item.title || 'Untitled')}</div>
-      <div class="item-picker-meta">
-        ${item.brand ? `<span>${escapeHtml(item.brand)}</span>` : ''}
-        ${item.status ? `<span class="status status--${item.status}">${item.status}</span>` : ''}
-      </div>
-    </div>
-  `).join('');
+  tbody.innerHTML = filtered.map(item => createInventoryRow(item, { showActions: false })).join('');
 }
 
 // =============================================================================
