@@ -2371,69 +2371,6 @@
   color: var(--color-text-muted);
 }
 
-/* Profit Summary Card */
-.profit-summary {
-  padding: var(--space-md);
-  background: var(--color-surface-elevated);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border);
-}
-
-.profit-row {
-  display: flex;
-  justify-content: space-between;
-  padding: var(--space-xs) 0;
-  font-size: var(--font-size-sm);
-  color: var(--color-text-muted);
-}
-
-.profit-row--total {
-  margin-top: var(--space-sm);
-  padding-top: var(--space-sm);
-  border-top: 2px solid var(--color-border);
-  font-weight: var(--font-weight-semibold);
-  font-size: var(--font-size-base);
-  color: var(--color-text);
-}
-
-/* Fee Breakdown */
-.fee-breakdown {
-  margin-top: var(--space-sm);
-  padding: var(--space-sm);
-  background: var(--color-surface-elevated);
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border);
-  font-size: var(--font-size-sm);
-}
-
-.fee-line {
-  display: flex;
-  justify-content: space-between;
-  padding: var(--space-xs) 0;
-  color: var(--color-text-muted);
-}
-
-.fee-line--total {
-  margin-top: var(--space-xs);
-  padding-top: var(--space-xs);
-  border-top: 1px solid var(--color-border);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text);
-}
-
-.fee-line--net {
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-success);
-}
-
-.fee-notes {
-  margin-top: var(--space-xs);
-  padding-top: var(--space-xs);
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  font-style: italic;
-}
-
 /* Profit Waterfall - unified profit breakdown display */
 .profit-waterfall {
   display: flex;
@@ -2631,10 +2568,6 @@
 
 .sale-flow__value--negative {
   color: var(--color-text-muted);
-}
-
-.sale-flow__value--profit {
-  font-size: var(--font-size-base);
 }
 
 .sale-flow__value--profit.value--positive {
