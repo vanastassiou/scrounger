@@ -383,8 +383,10 @@ function renderSpreadsheet() {
       <td data-label="Brand">${escapeHtml(item.brand || '-')}</td>
       <td data-label="Cost">${formatCurrency(item.purchase_price || 0)}</td>
       <td class="table-actions">
-        <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
-        <button class="btn btn--sm btn--danger delete-item-btn" data-id="${item.id}">Delete</button>
+        <div class="table-actions-inner">
+          <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
+          <button class="btn btn--sm btn--danger delete-item-btn" data-id="${item.id}">Delete</button>
+        </div>
       </td>
     </tr>
   `).join('');

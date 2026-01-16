@@ -257,6 +257,50 @@ export function createGoogleDriveProvider(config) {
     return attachmentsFolderId;
   }
 
+  // Cache for item folder IDs
+  const itemFolderCache = new Map();
+
+  /**
+   * Get or create a folder for an item's attachments.
+   * @param {string} itemSlug - Item slug ID (used as folder name)
+   * @returns {Promise<string>} Folder ID
+   */
+  async function getOrCreateItemFolder(itemSlug) {
+    // Check cache first
+    if (itemFolderCache.has(itemSlug)) {
+      return itemFolderCache.get(itemSlug);
+    }
+
+    const attachmentsFolderId = await getOrCreateAttachmentsFolder();
+
+    // Search for existing item folder
+    const query = `name='${itemSlug}' and '${attachmentsFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    const result = await apiRequest(
+      `/drive/v3/files?q=${encodeURIComponent(query)}`
+    );
+
+    let folderId;
+    if (result?.files?.length > 0) {
+      folderId = result.files[0].id;
+    } else {
+      // Create new folder for item
+      const createResult = await apiRequest('/drive/v3/files', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: itemSlug,
+          parents: [attachmentsFolderId],
+          mimeType: 'application/vnd.google-apps.folder'
+        })
+      });
+      folderId = createResult.id;
+    }
+
+    // Cache the folder ID
+    itemFolderCache.set(itemSlug, folderId);
+    return folderId;
+  }
+
   /**
    * Fetch data from Google Drive
    */
@@ -319,13 +363,33 @@ export function createGoogleDriveProvider(config) {
   }
 
   /**
-   * Upload attachment to Google Drive
+   * Upload attachment to Google Drive.
+   * If itemSlug is provided, uploads to item folder with clean filename.
+   * Otherwise uses legacy flat structure with attachmentId prefix.
+   *
+   * @param {string} attachmentId - Attachment ID
+   * @param {string} filename - Original filename (e.g., "front.jpg")
+   * @param {Blob} blob - File data
+   * @param {string} mimeType - MIME type
+   * @param {string} [itemSlug] - Item slug ID for folder-based organization
+   * @returns {Promise<string>} Google Drive file ID
    */
-  async function uploadAttachment(attachmentId, filename, blob, mimeType) {
-    const folderId = await getOrCreateAttachmentsFolder();
+  async function uploadAttachment(attachmentId, filename, blob, mimeType, itemSlug = null) {
+    let folderId;
+    let uploadName;
+
+    if (itemSlug) {
+      // New folder-based structure: attachments/thrifting/{item-slug}/{filename}
+      folderId = await getOrCreateItemFolder(itemSlug);
+      uploadName = filename; // Clean filename like "front.jpg"
+    } else {
+      // Legacy flat structure: attachments/thrifting/{attachmentId}-{filename}
+      folderId = await getOrCreateAttachmentsFolder();
+      uploadName = `${attachmentId}-${filename}`;
+    }
 
     const metadata = {
-      name: `${attachmentId}-${filename}`,
+      name: uploadName,
       parents: [folderId],
       mimeType: mimeType || 'application/octet-stream'
     };

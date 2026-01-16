@@ -2,12 +2,14 @@
 // DASHBOARD ACTION ITEMS MODULE
 // =============================================================================
 
-import { getInventoryInPipeline, getAllInventory } from './db.js';
-import { $, $$, escapeHtml } from './utils.js';
-import { createModalController } from './ui.js';
+import { getInventoryInPipeline, getAllInventory, getItemsNeedingMigration, migrateItemToSlug } from './db.js';
+import { $, $$, escapeHtml, isUuidFormat } from './utils.js';
+import { createModalController, showToast } from './ui.js';
 import { setVisible } from './components.js';
 import { loadSeasonalData, getSeasonalOpportunities } from './seasonal.js';
 import { openStartSellingModal } from './inventory.js';
+import { openPhotoManager } from './photos.js';
+import { queueSync } from './sync.js';
 
 // =============================================================================
 // STATE
@@ -15,6 +17,7 @@ import { openStartSellingModal } from './inventory.js';
 
 let actionItemsModal = null;
 let currentActionData = {}; // Stores item arrays by action type
+let currentActionType = null; // Track which action type opened the modal
 
 // Tile configuration
 const TILE_CONFIG = {
@@ -23,7 +26,8 @@ const TILE_CONFIG = {
   ready: { label: 'Ready to list', countId: 'tile-count-ready' },
   shipping: { label: 'Needs packaging', countId: 'tile-count-shipping' },
   awaiting: { label: 'Ready to ship', countId: 'tile-count-awaiting' },
-  pending: { label: 'Awaiting delivery', countId: 'tile-count-pending' }
+  pending: { label: 'Awaiting delivery', countId: 'tile-count-pending' },
+  migrate: { label: 'Update ID', countId: 'tile-count-migrate', hideWhenEmpty: true }
 };
 
 // =============================================================================
@@ -44,6 +48,9 @@ export async function loadActionItems() {
   // Get seasonal opportunities from all listable items (pipeline + collection with resale intent)
   const seasonalMatches = getSeasonalOpportunities(allItems);
 
+  // Get items that can be migrated to slug IDs
+  const migrateItems = await getItemsNeedingMigration();
+
   // Store data for modal use
   currentActionData = {
     seasonal: seasonalMatches, // Array of {item, score, reasons}
@@ -51,7 +58,8 @@ export async function loadActionItems() {
     ready: pipelineItems.filter(i => i.status === 'unlisted'),
     shipping: pipelineItems.filter(i => i.status === 'sold'),
     awaiting: pipelineItems.filter(i => i.status === 'packaged'),
-    pending: pipelineItems.filter(i => i.status === 'shipped')
+    pending: pipelineItems.filter(i => i.status === 'shipped'),
+    migrate: migrateItems // Items with UUID IDs that can be migrated to slugs
   };
 
   updateTileCounts();
@@ -72,9 +80,15 @@ function updateTileCounts() {
 
     countEl.textContent = count;
 
-    // Show all tiles, but mute ones with no items
-    tile.classList.remove('hidden');
-    tile.classList.toggle('action-tile--muted', count === 0);
+    // Handle hideWhenEmpty tiles (like migrate)
+    if (config.hideWhenEmpty) {
+      tile.classList.toggle('hidden', count === 0);
+      tile.classList.remove('action-tile--muted');
+    } else {
+      // Show all tiles, but mute ones with no items
+      tile.classList.remove('hidden');
+      tile.classList.toggle('action-tile--muted', count === 0);
+    }
   });
 
   // Hide empty state since we always show tiles
@@ -120,6 +134,9 @@ function openActionItemsModal(actionType) {
 
   if (!config || !data) return;
 
+  // Track which action type opened the modal
+  currentActionType = actionType;
+
   // Set modal title
   const titleEl = $('#action-items-title');
   if (titleEl) {
@@ -158,16 +175,44 @@ function handleModalListClick(e) {
   if (actionItem) {
     e.preventDefault();
     const itemId = actionItem.dataset.id;
-    handleSellFromModal(itemId);
+    handleActionFromModal(itemId, currentActionType);
   }
 }
 
-async function handleSellFromModal(itemId) {
+async function handleActionFromModal(itemId, actionType) {
   // Close action items modal
   if (actionItemsModal) {
     actionItemsModal.close();
   }
 
-  // Open the start selling modal (from inventory.js)
-  await openStartSellingModal(itemId);
+  // Route based on action type
+  if (actionType === 'photo') {
+    // Open photo manager for items needing photos
+    await openPhotoManager(itemId, {
+      onComplete: async () => {
+        await loadActionItems(); // Refresh counts
+      }
+    });
+  } else if (actionType === 'migrate') {
+    // Migrate item from UUID to slug ID
+    await handleMigrateItem(itemId);
+  } else {
+    // Default: open the start selling modal
+    await openStartSellingModal(itemId);
+  }
+}
+
+/**
+ * Handle migration of an item from UUID to slug ID.
+ */
+async function handleMigrateItem(itemId) {
+  try {
+    const updatedItem = await migrateItemToSlug(itemId);
+    showToast(`ID updated to: ${updatedItem.id}`);
+    queueSync(); // Trigger sync to re-upload attachments to new folder
+    await loadActionItems(); // Refresh counts
+  } catch (err) {
+    console.error('Migration failed:', err);
+    showToast(err.message || 'Failed to update ID');
+  }
 }

@@ -4,7 +4,7 @@
 // Native IndexedDB wrapper. No external dependencies.
 
 import { DB_NAME, DB_VERSION } from './config.js';
-import { generateId, nowISO, handleError } from './utils.js';
+import { generateId, generateSlug, canGenerateSlug, isUuidFormat, nowISO, handleError } from './utils.js';
 import { showToast } from './ui.js';
 
 let dbInstance = null;
@@ -256,9 +256,23 @@ export async function computeVisitsFromInventory() {
 export async function createInventoryItem(data) {
   try {
     const now = nowISO();
+
+    // Generate slug ID if all required fields are present, else fall back to UUID
+    let id;
+    if (canGenerateSlug(data)) {
+      try {
+        id = generateSlug(data);
+      } catch (err) {
+        console.warn('Slug generation failed, using UUID:', err.message);
+        id = generateId();
+      }
+    } else {
+      id = generateId();
+    }
+
     const item = {
       ...data,
-      id: generateId(),
+      id,
       source: data.source || 'user',
       created_at: now,
       updated_at: now,
@@ -532,6 +546,100 @@ export async function getInventoryByStore(storeId) {
   } catch (err) {
     return handleError(err, `Failed to get inventory by store ${storeId}`, []);
   }
+}
+
+/**
+ * Migrate an item from UUID ID to slug ID.
+ * Updates the item's ID and re-links all attachments.
+ * @param {string} oldId - Current UUID ID
+ * @returns {Promise<Object>} Updated item with new slug ID
+ */
+export async function migrateItemToSlug(oldId) {
+  const db = await openDB();
+
+  // Get the item
+  const inventoryStore = db.transaction('inventory').objectStore('inventory');
+  const item = await promisify(inventoryStore.get(oldId));
+  if (!item) throw new Error('Item not found');
+
+  // Check if it can be migrated
+  if (!canGenerateSlug(item)) {
+    throw new Error('Item is missing required fields for slug generation (colour, material, or type)');
+  }
+
+  // Generate new slug ID
+  const newId = generateSlug(item);
+
+  // Transaction to update item and attachments atomically
+  const tx = db.transaction(['inventory', 'attachments'], 'readwrite');
+  const invStore = tx.objectStore('inventory');
+  const attStore = tx.objectStore('attachments');
+
+  // Delete old item record
+  await promisify(invStore.delete(oldId));
+
+  // Add with new slug ID
+  const updatedItem = {
+    ...item,
+    id: newId,
+    updated_at: nowISO(),
+    dirty: true
+  };
+  await promisify(invStore.add(updatedItem));
+
+  // Update all attachments to point to new ID and mark for re-sync
+  const attachmentsIndex = attStore.index('itemId');
+  const attachments = await promisify(attachmentsIndex.getAll(oldId));
+
+  for (const att of attachments) {
+    // Delete old attachment record
+    await promisify(attStore.delete(att.id));
+    // Add updated attachment with new itemId
+    const updatedAtt = {
+      ...att,
+      itemId: newId,
+      synced: false, // Re-sync to move to new folder
+      updated_at: nowISO()
+    };
+    await promisify(attStore.add(updatedAtt));
+  }
+
+  // Wait for transaction to complete
+  await new Promise((resolve, reject) => {
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+
+  return updatedItem;
+}
+
+/**
+ * Get items that need slug migration (have UUID ID but all required fields).
+ * @returns {Promise<Array>} Items that can be migrated
+ */
+export async function getItemsNeedingMigration() {
+  const items = await getAllInventory();
+  return items.filter(item => isUuidFormat(item.id) && canGenerateSlug(item));
+}
+
+/**
+ * Get items with UUID IDs that are missing required fields for slug.
+ * @returns {Promise<Array>} Items with missing fields and what's missing
+ */
+export async function getItemsMissingSlugFields() {
+  const items = await getAllInventory();
+  return items
+    .filter(item => isUuidFormat(item.id) && !canGenerateSlug(item))
+    .map(item => {
+      const missing = [];
+      if (!item.primary_colour) missing.push('colour');
+      const hasMaterial = typeof item.primary_material === 'object'
+        ? !!item.primary_material?.name
+        : !!item.primary_material;
+      if (!hasMaterial) missing.push('material');
+      if (!item.subcategory) missing.push('type');
+      return { ...item, missingFields: missing };
+    });
 }
 
 // =============================================================================

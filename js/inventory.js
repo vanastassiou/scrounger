@@ -21,6 +21,7 @@ import { queueSync } from './sync.js';
 import { generateSellingRecommendations, formatPlatformName, calculateTrendMultiplier, calculateEnhancedResaleValue } from './recommendations.js';
 import { calculatePlatformFees, round } from './fees.js';
 import { calculateSuggestedResaleValue } from './data-loaders.js';
+import { openPhotoManager, getPhotoStatusSync } from './photos.js';
 
 let inventoryData = [];
 let inventoryTableCtrl = null;
@@ -77,7 +78,14 @@ function setupInventorySubTabs() {
     },
     storageKey: 'inventorySubTab',
     htmlDataAttr: 'invSub',
-    defaultView: 'collection'
+    defaultView: 'collection',
+    onActivate: async (viewId) => {
+      // Reload pipeline data when switching to selling view
+      if (viewId === 'selling') {
+        const { loadPipeline } = await import('./selling.js');
+        await loadPipeline();
+      }
+    }
   });
 }
 
@@ -89,22 +97,29 @@ async function loadInventory() {
     !isInPipeline(item.status) && item.status !== 'sold'
   );
 
-  // Calculate prices in parallel
+  // Calculate prices and photo status in parallel
   await Promise.all(collectionItems.map(async (item) => {
     // Use existing estimated_resale_value if set
     if (item.estimated_resale_value) {
       estimatedPrices.set(item.id, item.estimated_resale_value);
-      return;
+    } else {
+      // Calculate using enhanced resale value logic
+      try {
+        const result = await calculateEnhancedResaleValue(item);
+        if (result?.value) {
+          estimatedPrices.set(item.id, result.value);
+        }
+      } catch (err) {
+        // Silently fail - price will show as '-'
+      }
     }
 
-    // Calculate using enhanced resale value logic
+    // Pre-compute photo status
     try {
-      const result = await calculateEnhancedResaleValue(item);
-      if (result?.value) {
-        estimatedPrices.set(item.id, result.value);
-      }
+      const attachments = await getAttachmentsByItem(item.id);
+      item._photoStatus = getPhotoStatusSync(item, attachments);
     } catch (err) {
-      // Silently fail - price will show as '-'
+      // Silently fail - photo indicator won't show
     }
   }));
 
@@ -153,7 +168,14 @@ function setupTableController() {
       }),
       '.start-selling-btn': (el) => openStartSellingModal(el.dataset.id),
       '.view-in-selling-btn': () => navigateToSelling(),
-      '.profit-badge': (el) => openProfitBreakdownModal(el.dataset.id)
+      '.profit-badge': (el) => openProfitBreakdownModal(el.dataset.id),
+      '.photo-btn': async (el) => {
+        await openPhotoManager(el.dataset.id, {
+          onComplete: async () => {
+            await loadInventory();
+          }
+        });
+      }
     }
   });
 
@@ -172,21 +194,33 @@ export function createInventoryRow(item, options = {}) {
     profitBadge = `<span class="profit-badge ${className}" data-id="${item.id}">${formatted}</span>`;
   }
 
+  // Photo status indicator
+  const photoStatus = item._photoStatus;
+  let photoIndicator = '';
+  if (photoStatus) {
+    if (photoStatus.complete) {
+      photoIndicator = `<button class="btn btn--sm photo-btn" data-id="${item.id}" title="Photos complete">Photos</button>`;
+    } else {
+      photoIndicator = `<button class="btn btn--sm photo-btn" data-id="${item.id}" title="Add photos">Add photos</button>`;
+    }
+  }
+
   const actionsCell = showActions
     ? `<td class="table-actions">
-        <button class="btn btn--sm btn--ghost edit-item-btn" data-id="${item.id}">Edit</button>
-        <button class="btn btn--sm btn--primary start-selling-btn" data-id="${item.id}">Sell</button>
+        <div class="table-actions-inner">
+          ${photoIndicator}
+          <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
+          <button class="btn btn--sm start-selling-btn" data-id="${item.id}">Sell</button>
+        </div>
       </td>`
     : '';
 
+  const estValueDisplay = estSalePrice ? formatCurrency(estSalePrice) : '-';
+
   return `
-    <tr data-id="${item.id}" class="collection-row">
-      <td>
-        <span class="item-title-row">
-          <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a>
-          ${profitBadge}
-        </span>
-      </td>
+    <tr data-id="${item.id}">
+      <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
+      <td data-label="Est. Value">${estValueDisplay}</td>
       ${actionsCell}
     </tr>
   `;
@@ -1340,8 +1374,12 @@ function collectCheckedValues(formData, name) {
 // VIEW ITEM MODAL
 // =============================================================================
 
+let currentViewItem = null; // Track current item for photo button
+
 const viewItemModal = createLazyModal('#view-item-dialog', {
   onOpen: (dialog, { item, photos }) => {
+    currentViewItem = item;
+
     // Update title
     const titleEl = dialog.querySelector('#view-item-title');
     if (titleEl) {
@@ -1352,7 +1390,28 @@ const viewItemModal = createLazyModal('#view-item-dialog', {
     const contentEl = dialog.querySelector('#view-item-content');
     if (contentEl) {
       contentEl.innerHTML = renderItemDetails(item, photos);
+
+      // Setup photo button click handler
+      const photoBtn = contentEl.querySelector('.add-photos-btn');
+      if (photoBtn) {
+        photoBtn.addEventListener('click', async () => {
+          const itemId = currentViewItem?.id;
+          if (itemId) {
+            viewItemModal.close();
+            await openPhotoManager(itemId, {
+              onComplete: async () => {
+                // Refresh the view
+                await openViewItemModal(itemId);
+                await loadInventory();
+              }
+            });
+          }
+        });
+      }
     }
+  },
+  onClose: () => {
+    currentViewItem = null;
   }
 });
 
@@ -1384,8 +1443,22 @@ function formatColourDisplay(item) {
   return display;
 }
 
-function renderPhotoGallerySection(photos) {
-  if (!photos.length) return null;
+function renderPhotoGallerySection(photos, item) {
+  // Calculate photo status for the button
+  const photoStatus = item ? getPhotoStatusSync(item, photos) : null;
+  const buttonLabel = !photos.length ? 'Add photos' : (photoStatus?.complete ? 'Manage photos' : 'Add photos');
+  const missingBadge = photoStatus && !photoStatus.complete && photoStatus.missing?.length
+    ? `<span class="badge badge--warning">${photoStatus.missing.length} missing</span>`
+    : '';
+
+  const buttonHtml = `<button class="btn btn--sm btn--primary add-photos-btn">${buttonLabel} ${missingBadge}</button>`;
+
+  if (!photos.length) {
+    return `<div class="photo-empty-state">
+      <p class="text-muted">No photos yet</p>
+      ${buttonHtml}
+    </div>`;
+  }
 
   const galleryHtml = photos.map(photo => {
     const url = URL.createObjectURL(photo.blob);
@@ -1397,7 +1470,8 @@ function renderPhotoGallerySection(photos) {
     </div>`;
   }).join('');
 
-  return `<div class="item-photo-gallery">${galleryHtml}</div>`;
+  return `<div class="item-photo-gallery">${galleryHtml}</div>
+    <div class="photo-actions">${buttonHtml}</div>`;
 }
 
 function renderSizingSection(item) {
@@ -1482,7 +1556,7 @@ function renderItemDetails(item, photos = []) {
 
   return renderDetailSections([
     // Photos
-    { title: 'Photos', content: renderPhotoGallerySection(photos) },
+    { title: 'Photos', content: renderPhotoGallerySection(photos, item) },
 
     // Basic Info
     { title: 'Basic info', content: [
