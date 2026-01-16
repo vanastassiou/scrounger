@@ -1159,6 +1159,54 @@
     width: auto;
   }
 
+  /* Mobile: Selling table - 4-column grid (label, value, label, value) */
+  #selling-table tbody tr {
+    display: grid;
+    grid-template-columns: auto 1fr auto 1fr;
+    gap: var(--space-xs) var(--space-sm);
+    align-items: baseline;
+  }
+
+  #selling-table tbody tr td:first-child {
+    grid-column: 1 / -1;
+    display: block;
+  }
+
+  #selling-table tbody tr td:first-child .mobile-status {
+    display: block;
+    margin-top: var(--space-xs);
+  }
+
+  #selling-table tbody tr td[data-label] {
+    display: contents;
+  }
+
+  #selling-table tbody tr td[data-label].desktop-only {
+    display: none;
+  }
+
+  #selling-table tbody tr td[data-label]::before {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    text-align: left;
+  }
+
+  #selling-table tbody tr td.table-actions {
+    grid-column: 1 / -1;
+    display: flex;
+  }
+
+  #selling-table .table-actions-inner {
+    display: inline-flex;
+    justify-content: flex-start;
+    gap: var(--space-xs);
+    width: 100%;
+  }
+
+  #selling-table .table-actions-inner .btn {
+    width: auto;
+  }
+
   /* Mobile: Clickable row touch target */
   .table-responsive tbody tr[data-store-id] {
     cursor: pointer;
@@ -1458,6 +1506,23 @@
       display: grid;
       grid-template-columns: 6em 3em 3em;
       gap: var(--space-xs);
+    }
+
+    /* Selling table - reset mobile grid, use table layout */
+    #selling-table tbody tr {
+      display: table-row;
+    }
+
+    #selling-table tbody tr td {
+      display: table-cell;
+    }
+
+    #selling-table tbody tr td .mobile-status {
+      display: none;
+    }
+
+    #selling-table tbody tr td.desktop-only {
+      display: table-cell;
     }
 
     .table-responsive tbody tr[data-store-id] {
@@ -3690,6 +3755,14 @@
   background: var(--color-bg);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
+  margin-left: var(--space-xs);
+}
+
+.photo-progress-dots {
+  display: inline-block;
+  font-size: var(--font-size-sm);
+  letter-spacing: 2px;
+  color: var(--color-text-muted);
   margin-left: var(--space-xs);
 }
 
