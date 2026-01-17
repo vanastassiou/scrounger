@@ -1754,12 +1754,6 @@
       color: var(--color-text-muted);
     }
 
-    .brand-row__type {
-      font-weight: normal;
-      color: var(--color-text-muted);
-      font-size: var(--font-size-xs);
-    }
-
     .brand-row__mult {
       font-weight: var(--font-weight-medium);
       color: var(--color-text);
