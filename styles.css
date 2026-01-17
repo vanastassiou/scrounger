@@ -374,8 +374,8 @@
     container-type: inline-size;
   }
 
-  /* Narrow content views (pricing) */
-  #ref-pricing-view {
+  /* Narrow content views */
+  .ref-view--narrow {
     max-width: 640px;
     margin-left: auto;
     margin-right: auto;
@@ -1199,10 +1199,6 @@
     background: var(--color-surface-elevated);
   }
 
-  .table tbody tr[data-store-id] {
-    cursor: pointer;
-  }
-
   .table tfoot td {
     font-weight: var(--font-weight-semibold);
     border-top: 2px solid var(--color-border);
@@ -1232,6 +1228,21 @@
     font-size: var(--font-size-sm);
   }
 
+  /* Mini table - for detail views within modals */
+  .table--mini th,
+  .table--mini td {
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  .table--mini th {
+    font-weight: var(--font-weight-medium);
+    background: transparent;
+    cursor: default;
+  }
+
+  .table--mini th:hover {
+    color: var(--color-text-muted);
+  }
 
   /* Selling & Collection tables - center all columns except first */
   #selling-table th:not(:first-child),
@@ -1994,28 +2005,6 @@
     margin-bottom: var(--space-xs);
   }
 
-  .mini-table {
-    width: 100%;
-    font-size: var(--font-size-sm);
-    border-collapse: collapse;
-  }
-
-  .mini-table th,
-  .mini-table td {
-    padding: var(--space-xs) var(--space-sm);
-    text-align: left;
-    border-bottom: 1px solid var(--color-border);
-  }
-
-  .mini-table th {
-    color: var(--color-text-muted);
-    font-weight: var(--font-weight-medium);
-  }
-
-  .mini-table tbody tr:hover {
-    background: var(--color-surface-elevated);
-  }
-
   /* Modal */
   .modal {
     position: fixed;
@@ -2111,6 +2100,8 @@
   .badge--success { --badge-bg: var(--color-success); --badge-color: var(--color-text-on-dark); }
   .badge--warning { --badge-bg: var(--color-warning); --badge-color: var(--color-text-on-light); }
   .badge--error { --badge-bg: var(--color-error); --badge-color: var(--color-text-on-dark); }
+  .badge--info { --badge-bg: var(--color-accent-blue); --badge-color: var(--color-text-on-dark); }
+  .badge--accent { --badge-bg: var(--color-accent-violet); --badge-color: var(--color-text-on-dark); }
   .badge--muted { --badge-bg: var(--color-surface-elevated); --badge-color: var(--color-text-muted); }
 
   /* ==========================================================================
@@ -2310,6 +2301,17 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* Lists */
+  .list-plain {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .list-plain li {
+    padding: var(--space-2xs) 0;
   }
 }
 
@@ -2689,22 +2691,6 @@
   gap: var(--space-sm);
 }
 
-/* Enhanced Input Styling */
-.form-input--lg,
-.form-select--lg {
-  padding: var(--space-sm) var(--space-md);
-  font-size: var(--font-size-base);
-  border-radius: var(--radius-md);
-  border: 2px solid var(--color-border);
-  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
-}
-
-.form-input--lg:focus,
-.form-select--lg:focus {
-  border-color: var(--color-primary);
-  box-shadow: var(--focus-ring);
-}
-
 /* Shipping Section */
 .sale-shipping-section {
   padding-top: var(--space-md);
@@ -2771,12 +2757,6 @@
   .sale-shipping-grid {
     grid-template-columns: 1fr;
   }
-
-  .form-input--lg,
-  .form-select--lg {
-    padding: var(--space-sm) var(--space-md);
-    font-size: var(--font-size-base);
-  }
 }
 
 .form-fieldset {
@@ -2808,7 +2788,6 @@
 }
 
 .form-fieldset--compact .form-label {
-  font-size: var(--font-size-sm);
   margin-bottom: var(--space-2xs);
 }
 
@@ -3643,29 +3622,6 @@
   color: var(--color-primary);
 }
 
-.platform-card__badge {
-  font-size: var(--font-size-2xs);
-  padding: var(--space-badge-y) var(--space-badge-x);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-elevated);
-  color: var(--color-text-muted);
-}
-
-.platform-card__badge--free {
-  background: var(--color-success);
-  color: var(--color-text-on-dark);
-}
-
-.platform-card__badge--low {
-  background: var(--color-accent-blue);
-  color: var(--color-text-on-dark);
-}
-
-.platform-card__badge--luxury {
-  background: var(--color-accent-violet);
-  color: var(--color-text-on-dark);
-}
-
 .platform-card__fees {
   background: var(--color-bg);
   border-radius: var(--radius-sm);
@@ -3704,14 +3660,6 @@
   flex-wrap: wrap;
   gap: var(--space-xs);
   margin-bottom: var(--space-sm);
-}
-
-.platform-card__tag {
-  font-size: var(--font-size-2xs);
-  padding: var(--space-badge-y) var(--space-badge-x);
-  background: var(--color-surface-elevated);
-  border-radius: var(--radius-sm);
-  color: var(--color-text-muted);
 }
 
 .platform-card__pros-cons {
@@ -3826,51 +3774,25 @@
   padding-left: calc(var(--space-md) - 3px);
 }
 
-/* Trends sources collapsible section */
-.trends-sources {
+/* Collapsible box variant - extends base .collapsible */
+.collapsible--box {
   margin-top: var(--space-lg);
   padding: var(--space-md);
   background: var(--color-surface-alt);
-  border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
 }
 
-.trends-sources__header {
-  font-weight: var(--font-weight-semibold);
+.collapsible--box > summary {
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
-  cursor: pointer;
-  user-select: none;
 }
 
-.trends-sources__header:hover {
+.collapsible--box > summary:hover {
   color: var(--color-text);
 }
 
-.trends-sources[open] .trends-sources__header {
+.collapsible--box[open] > summary {
   margin-bottom: var(--space-sm);
-}
-
-.trends-sources__list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xs);
-}
-
-.trends-sources__item {
-  font-size: var(--font-size-sm);
-}
-
-.trends-sources__item a {
-  color: var(--color-primary);
-  text-decoration: none;
-}
-
-.trends-sources__item a:hover {
-  text-decoration: underline;
 }
 
 /* Platform comparison full table */
@@ -3920,31 +3842,9 @@
   color: var(--color-primary);
 }
 
-/* Small inline badge modifier - use with .badge base class */
-.badge--small {
-  --badge-bg: var(--color-primary);
-  --badge-color: var(--color-text-on-dark);
-  font-size: var(--font-size-2xs);
-  padding: var(--space-badge-y) var(--space-badge-x-sm);
-  margin-left: var(--space-xs);
-  vertical-align: middle;
-}
-
-.trend-fit-badge {
-  font-size: var(--font-size-2xs);
-  padding: var(--space-badge-y) var(--space-badge-x-sm);
-  border-radius: var(--radius-sm);
-  background: var(--color-surface-elevated);
-  color: var(--color-text-muted);
-}
-
 /* =============================================================================
    PRICING REFERENCE TAB
    ============================================================================= */
-
-.pricing-intro {
-  margin-bottom: var(--space-lg);
-}
 
 .pricing-section {
   margin-bottom: var(--space-xl);
@@ -3962,13 +3862,6 @@
   gap: var(--space-lg);
 }
 
-.size-table-card {
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 0;
-}
-
 .size-table-card h4 {
   margin: 0 0 var(--space-sm) 0;
   font-size: var(--font-size-sm);
@@ -3978,14 +3871,6 @@
   letter-spacing: var(--letter-spacing-wide);
   padding-bottom: var(--space-xs);
   border-bottom: 1px solid var(--color-border);
-}
-
-.size-table-card .table-container {
-  margin-top: var(--space-sm);
-}
-
-.size-table-card .table {
-  margin: 0;
 }
 
 /* =============================================================================

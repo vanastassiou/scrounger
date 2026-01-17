@@ -1872,7 +1872,7 @@ async function renderPlatformComparison(recommendedPlatforms, costBasis, suggest
         ${allPlatformsData.map(p => {
           const profitClass = p.profit >= 0 ? 'text-success' : 'text-danger';
           const rowClass = p.isRecommended ? 'platform-row--recommended' : '';
-          const fitBadge = p.trendSummary ? `<span class="trend-fit-badge">${escapeHtml(p.trendSummary)}</span>` : '<span class="text-muted">—</span>';
+          const fitBadge = p.trendSummary ? `<span class="badge badge--muted">${escapeHtml(p.trendSummary)}</span>` : '<span class="text-muted">—</span>';
 
           return `
             <tr class="${rowClass}">

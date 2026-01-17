@@ -424,10 +424,8 @@
       </div>
 
       <!-- Pricing View -->
-      <div id="ref-pricing-view" class="ref-view hidden">
-        <div class="pricing-intro">
-          <p class="text-muted">Adjust base comp price based on item attributes and platform demographics</p>
-        </div>
+      <div id="ref-pricing-view" class="ref-view ref-view--narrow hidden">
+        <p class="text-muted" style="margin-bottom: var(--space-lg)">Adjust base comp price based on item attributes and platform demographics</p>
 
         <!-- Material Tiers -->
         <div class="pricing-section">
@@ -1127,11 +1125,11 @@
           <div class="sale-form-section">
             <div class="form-group">
               <label class="form-label" for="sold-date">Date *</label>
-              <input type="date" class="form-input form-input--lg" id="sold-date" name="sold_date" required>
+              <input type="date" class="form-input" id="sold-date" name="sold_date" required>
             </div>
             <div class="form-group">
               <label class="form-label" for="sold-platform">Platform *</label>
-              <select class="form-select form-select--lg" id="sold-platform" name="sold_platform" required>
+              <select class="form-select" id="sold-platform" name="sold_platform" required>
                 <option value="">Select...</option>
                 <option value="poshmark">Poshmark</option>
                 <option value="ebay">eBay</option>
@@ -1148,7 +1146,7 @@
             </div>
             <div class="form-group">
               <label class="form-label" for="shipping-cost">Shipping cost</label>
-              <input type="number" class="form-input form-input--lg" id="shipping-cost" name="shipping_cost" step="0.01" min="0" placeholder="0.00">
+              <input type="number" class="form-input" id="shipping-cost" name="shipping_cost" step="0.01" min="0" placeholder="0.00">
             </div>
           </div>
 
@@ -1156,18 +1154,18 @@
           <div class="sale-form-section">
             <div class="form-group">
               <label class="form-label" for="sold-price">Sale price *</label>
-              <input type="number" class="form-input form-input--lg" id="sold-price" name="sold_price" step="0.01" min="0" required placeholder="0.00">
+              <input type="number" class="form-input" id="sold-price" name="sold_price" step="0.01" min="0" required placeholder="0.00">
             </div>
             <div class="form-group">
               <label class="form-label" for="platform-fees">
                 Platform fees
                 <button type="button" id="reset-fees-btn" class="btn-link hidden">Reset</button>
               </label>
-              <input type="number" class="form-input form-input--lg" id="platform-fees" name="platform_fees" step="0.01" min="0" placeholder="Auto-calculated">
+              <input type="number" class="form-input" id="platform-fees" name="platform_fees" step="0.01" min="0" placeholder="Auto-calculated">
             </div>
             <div class="form-group">
               <label class="form-label" for="purchaser-username">Buyer</label>
-              <input type="text" class="form-input form-input--lg" id="purchaser-username" name="purchaser_username" placeholder="@username">
+              <input type="text" class="form-input" id="purchaser-username" name="purchaser_username" placeholder="@username">
             </div>
           </div>
         </div>

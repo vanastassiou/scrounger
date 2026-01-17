@@ -753,7 +753,7 @@ function renderPlatformCard(key, p) {
   const feesSummary = formatFeesSummary(p.fees);
   const badge = getPlatformBadge(p);
   const bestForTags = (p.best_for || []).slice(0, 4).map(tag =>
-    `<span class="platform-card__tag">${escapeHtml(formatTagName(tag))}</span>`
+    `<span class="badge badge--muted">${escapeHtml(formatTagName(tag))}</span>`
   ).join('');
 
   const prosHtml = (p.pros || []).slice(0, 3).map(pro =>
@@ -871,18 +871,18 @@ function formatFeesSummary(fees) {
 function getPlatformBadge(p) {
   // Free platforms
   if (p.fees?.commission === 0) {
-    return '<span class="platform-card__badge platform-card__badge--free">Free</span>';
+    return '<span class="badge badge--success">Free</span>';
   }
 
   // Luxury platforms
   if (p.best_for?.includes('luxury') || p.best_for?.includes('designer')) {
-    return '<span class="platform-card__badge platform-card__badge--luxury">Luxury</span>';
+    return '<span class="badge badge--accent">Luxury</span>';
   }
 
   // Low fee platforms (under 10%)
   const commission = p.fees?.commission;
   if (commission && commission < 10) {
-    return '<span class="platform-card__badge platform-card__badge--low">Low Fee</span>';
+    return '<span class="badge badge--info">Low Fee</span>';
   }
 
   return '';
@@ -1011,15 +1011,15 @@ function renderTrendsSources(sources) {
     const articlePart = citation.article_date ? `article dated ${citation.article_date}, ` : '';
     const meta = `(${escapeHtml(citation.source)}, ${articlePart}accessed ${citation.accessed_date})`;
     return `
-    <li class="trends-sources__item">
+    <li class="text-sm">
       <a href="${escapeHtml(citation.url)}" target="_blank" rel="noopener">${escapeHtml(citation.name)}</a> ${meta}
     </li>`;
   }).join('');
 
   return `
-    <details class="trends-sources">
-      <summary class="trends-sources__header">Sources</summary>
-      <ul class="trends-sources__list">
+    <details class="collapsible collapsible--box">
+      <summary>Sources</summary>
+      <ul class="list-plain">
         ${citationsHtml}
       </ul>
     </details>
