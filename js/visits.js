@@ -318,7 +318,7 @@ function showStep(stepNumber) {
 function updateStep2Header() {
   const store = state.getStore(visitWorkflow.storeId);
   const storeName = store?.name || visitWorkflow.storeId;
-  $('#visit-context-label').textContent = `${storeName} - ${formatDate(visitWorkflow.date)}`;
+  $('.visit-context-label').textContent = `${storeName} - ${formatDate(visitWorkflow.date)}`;
   $('#visit-modal-title').textContent = `Visit: ${storeName}`;
 }
 
