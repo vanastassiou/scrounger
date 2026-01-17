@@ -312,10 +312,17 @@ export function createGoogleDriveProvider(config) {
       if (!response || typeof response !== 'object') {
         return { data: null, lastModified: null };
       }
-      return {
-        data: response.data || null,
-        lastModified: response.lastModified || null
-      };
+
+      // Handle both formats for backward compatibility:
+      // - Old format: { domain, version, data: {...}, lastModified }
+      // - New format: { version, exported_at, inventory, stores, archive }
+      if (response.data && response.lastModified) {
+        // Old wrapped format
+        return { data: response.data, lastModified: response.lastModified };
+      }
+
+      // New clean format - data IS the response
+      return { data: response, lastModified: response.exported_at || null };
     } catch (err) {
       return { data: null, lastModified: null };
     }
@@ -324,18 +331,16 @@ export function createGoogleDriveProvider(config) {
   /**
    * Push data to Google Drive
    * @param {Object} syncData - Data to sync
-   * @param {*} syncData.data - Domain-specific data
+   * @param {*} syncData.data - Domain-specific data (clean format from exportAllData)
    * @param {string} syncData.lastModified - ISO timestamp
    */
   async function push(syncData) {
     const id = await getOrCreateDataFile();
 
-    const payload = {
-      domain,
-      version: syncData.version || 1,
-      data: syncData.data,
-      lastModified: syncData.lastModified || new Date().toISOString()
-    };
+    // Save the data directly in clean format (no wrapper)
+    // syncData.data contains the clean format from exportAllData():
+    // { version, exported_at, inventory, stores, archive }
+    const payload = syncData.data;
 
     const metadata = {
       mimeType: 'application/json'

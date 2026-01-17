@@ -3,7 +3,10 @@
 // =============================================================================
 
 export const DB_NAME = 'ThriftInventory';
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
+
+// Size gender options for clothing/shoes (required) and jewelry/accessories (optional)
+export const SIZE_GENDER_OPTIONS = ['women', 'men', 'unisex'];
 
 export const STORE_TIERS = ['S', 'A', 'B', 'C'];
 

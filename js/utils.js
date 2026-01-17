@@ -31,9 +31,9 @@ export function slugify(str) {
  *
  * @param {Object} item - Item data
  * @param {string} [item.brand] - Brand name (optional, uses 'unbranded')
- * @param {string} item.primary_colour - Primary colour (required for slug)
- * @param {string|Object} item.primary_material - Material name or {name, percentage}
- * @param {string} item.subcategory - Item type/subcategory
+ * @param {Object} item.colour - Colour object with primary/secondary
+ * @param {Object} item.material - Material object with primary/secondary
+ * @param {Object} item.category - Category object with primary/secondary
  * @returns {string} URL-safe slug ID
  * @throws {Error} If required fields are missing
  */
@@ -44,29 +44,32 @@ export function generateSlug(item) {
   const brand = item.brand?.trim() || 'unbranded';
   parts.push(slugify(brand));
 
-  // Colour (required)
-  if (!item.primary_colour) {
-    throw new Error('primary_colour is required for slug generation');
+  // Colour (required) - nested path
+  const primaryColour = item.colour?.primary;
+  if (!primaryColour) {
+    throw new Error('colour.primary is required for slug generation');
   }
-  parts.push(slugify(item.primary_colour));
+  parts.push(slugify(primaryColour));
 
-  // Material (handle object or string)
+  // Material (handle object or string) - nested path
+  const primaryMaterial = item.material?.primary;
   let materialName;
-  if (typeof item.primary_material === 'object' && item.primary_material?.name) {
-    materialName = item.primary_material.name;
-  } else if (typeof item.primary_material === 'string') {
-    materialName = item.primary_material;
+  if (typeof primaryMaterial === 'object' && primaryMaterial?.name) {
+    materialName = primaryMaterial.name;
+  } else if (typeof primaryMaterial === 'string') {
+    materialName = primaryMaterial;
   }
   if (!materialName) {
-    throw new Error('primary_material is required for slug generation');
+    throw new Error('material.primary is required for slug generation');
   }
   parts.push(slugify(materialName));
 
-  // Type/subcategory (required)
-  if (!item.subcategory) {
-    throw new Error('subcategory is required for slug generation');
+  // Type/subcategory (required) - nested path
+  const subcategory = item.category?.secondary;
+  if (!subcategory) {
+    throw new Error('category.secondary is required for slug generation');
   }
-  parts.push(slugify(item.subcategory));
+  parts.push(slugify(subcategory));
 
   // Short UUID suffix (8 chars for uniqueness)
   const shortUuid = crypto.randomUUID().substring(0, 8);
@@ -95,10 +98,11 @@ export function isUuidFormat(id) {
  */
 export function canGenerateSlug(item) {
   if (!item) return false;
-  const hasMaterial = typeof item.primary_material === 'object'
-    ? !!item.primary_material?.name
-    : !!item.primary_material;
-  return !!(item.primary_colour && hasMaterial && item.subcategory);
+  const primaryMaterial = item.material?.primary;
+  const hasMaterial = typeof primaryMaterial === 'object'
+    ? !!primaryMaterial?.name
+    : !!primaryMaterial;
+  return !!(item.colour?.primary && hasMaterial && item.category?.secondary);
 }
 
 /**
@@ -258,12 +262,12 @@ export function handleError(err, message, fallback) {
 export function calculateProfit(item) {
   if (!item) return { profit: 0, margin: 0, revenue: 0, totalCost: 0 };
 
-  const purchaseCost = (item.purchase_price || 0) + (item.tax_paid || 0);
-  const expenses = (item.shipping_cost || 0) + (item.platform_fees || 0);
-  const repairCosts = item.repairs_completed?.reduce((sum, r) => sum + (r.repair_cost || 0), 0) || 0;
+  const purchaseCost = (item.metadata?.acquisition?.price || 0) + (item.tax_paid || 0);
+  const expenses = (item.listing_status?.shipping_cost || 0) + (item.listing_status?.platform_fees || 0);
+  const repairCosts = item.condition?.repairs_completed?.reduce((sum, r) => sum + (r.repair_cost || 0), 0) || 0;
   const totalCost = purchaseCost + expenses + repairCosts;
 
-  const revenue = item.sold_price || 0;
+  const revenue = item.listing_status?.sold_price || 0;
   const profit = revenue - totalCost;
   const margin = revenue > 0 ? (profit / revenue) * 100 : 0;
 

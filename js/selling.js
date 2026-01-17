@@ -69,29 +69,29 @@ export function validatePipelineEntry(item) {
   if (!item.brand) {
     errors.push('Brand is required');
   }
-  if (!item.subcategory) {
+  if (!item.category?.secondary) {
     errors.push('Item type is required');
   }
-  if (!item.primary_colour) {
+  if (!item.colour?.primary) {
     errors.push('Primary colour is required');
   }
-  if (!item.overall_condition) {
+  if (!item.condition?.overall_condition) {
     errors.push('Condition is required');
   }
-  if (!item.primary_material) {
+  if (!item.material?.primary) {
     errors.push('Primary material is required');
   }
 
   // Check for sizing (labeled_size OR at least one measurement)
-  const hasMeasurements = item.measurements && Object.values(item.measurements).some(v => v && v > 0);
-  if (!item.labeled_size && !hasMeasurements) {
+  const hasMeasurements = item.size?.measurements && Object.values(item.size.measurements).some(v => v && v > 0);
+  if (!item.size?.label?.value && !hasMeasurements) {
     errors.push('Size (labeled or measurements) is required');
   }
 
   // If condition warrants flaws, require them
-  if (CONDITIONS_REQUIRING_FLAWS.includes(item.overall_condition)) {
-    if (!item.flaws || item.flaws.length === 0) {
-      errors.push(`Flaws must be documented for "${item.overall_condition}" condition`);
+  if (CONDITIONS_REQUIRING_FLAWS.includes(item.condition?.overall_condition)) {
+    if (!item.condition?.flaws || item.condition.flaws.length === 0) {
+      errors.push(`Flaws must be documented for "${item.condition.overall_condition}" condition`);
     }
   }
 
@@ -122,7 +122,7 @@ export function validatePhotosComplete(item, attachments) {
   }
 
   // Check flaw photos if item has flaws
-  if (item.flaws && item.flaws.length > 0) {
+  if (item.condition?.flaws && item.condition.flaws.length > 0) {
     if (!existingTypes.has('flaw')) {
       missing.push('flaw');
     }
@@ -225,8 +225,8 @@ export async function initSelling() {
 export async function loadPipeline() {
   const allPipelineItems = await getInventoryInPipeline();
   // Separate archived items (confirmed_received) from active pipeline
-  pipelineData = allPipelineItems.filter(item => item.status !== 'confirmed_received');
-  archiveData = allPipelineItems.filter(item => item.status === 'confirmed_received');
+  pipelineData = allPipelineItems.filter(item => item.metadata?.status !== 'confirmed_received');
+  archiveData = allPipelineItems.filter(item => item.metadata?.status === 'confirmed_received');
   nonPipelineData = await getItemsNotInPipeline();
   if (pipelineTableCtrl) {
     pipelineTableCtrl.render();
@@ -251,10 +251,10 @@ function setupTableController() {
     getData: () => pipelineData,
     filterItem: (item, filters, search) => {
       // Filter by status
-      if (filters.status && item.status !== filters.status) return false;
+      if (filters.status && item.metadata?.status !== filters.status) return false;
       // Filter by platform (only for sold items)
       if (filters.platform && filters.platform !== 'all') {
-        if (item.status !== 'sold' || item.sold_platform !== filters.platform) return false;
+        if (item.metadata?.status !== 'sold' || item.listing_status?.sold_platform !== filters.platform) return false;
       }
       // Filter by search
       if (search) {
@@ -268,13 +268,13 @@ function setupTableController() {
     getColumnValue: (item, col) => {
       switch (col) {
         case 'title': return (item.title || '').toLowerCase();
-        case 'category': return item.category || '';
-        case 'status': return getStatusSortOrder(item.status);
-        case 'purchase_price': return item.purchase_price || 0;
-        case 'sold_price': return item.sold_price || 0;
+        case 'category': return item.category?.primary || '';
+        case 'status': return getStatusSortOrder(item.metadata?.status);
+        case 'purchase_price': return item.metadata?.acquisition?.price || 0;
+        case 'sold_price': return item.listing_status?.sold_price || 0;
         case 'profit': return calculateProfit(item).profit;
-        case 'sold_platform': return item.sold_platform || '';
-        default: return item.created_at;
+        case 'sold_platform': return item.listing_status?.sold_platform || '';
+        default: return item.metadata?.created;
       }
     },
     createRow: renderPipelineRow,
@@ -344,10 +344,10 @@ function setupArchiveTableController() {
     getColumnValue: (item, col) => {
       switch (col) {
         case 'title': return (item.title || '').toLowerCase();
-        case 'sold_date': return item.sold_date || '';
-        case 'sold_platform': return item.sold_platform || '';
+        case 'sold_date': return item.listing_status?.sold_date || '';
+        case 'sold_platform': return item.listing_status?.sold_platform || '';
         case 'profit': return calculateProfit(item).profit;
-        default: return item.sold_date || item.created_at;
+        default: return item.listing_status?.sold_date || item.metadata?.created;
       }
     },
     createRow: renderArchiveRow,
@@ -378,8 +378,8 @@ function setupArchiveTableController() {
 function renderArchiveRow(item) {
   const { profit } = calculateProfit(item);
   const { formatted: profitDisplay, className: profitClass } = formatProfitDisplay(profit);
-  const soldDate = item.sold_date ? new Date(item.sold_date).toLocaleDateString() : '-';
-  const platform = item.sold_platform ? capitalize(item.sold_platform.replace('_', ' ')) : '-';
+  const soldDate = item.listing_status?.sold_date ? new Date(item.listing_status.sold_date).toLocaleDateString() : '-';
+  const platform = item.listing_status?.sold_platform ? capitalize(item.listing_status.sold_platform.replace('_', ' ')) : '-';
 
   return `
     <tr data-id="${item.id}">
@@ -401,13 +401,15 @@ function setupEventHandlers() {
     transform: (formData) => ({
       itemId: formData.get('item_id'),
       shipData: {
-        status: 'shipped',
-        recipient_address: formData.get('recipient_address'),
-        shipping_carrier: formData.get('shipping_carrier'),
-        tracking_number: formData.get('tracking_number'),
-        ship_date: formData.get('ship_date'),
-        estimated_delivery: formData.get('estimated_delivery'),
-        shipping_cost: parseFloat(formData.get('shipping_cost')) || 0
+        metadata: { status: 'shipped' },
+        listing_status: {
+          recipient_address: formData.get('recipient_address'),
+          shipping_carrier: formData.get('shipping_carrier'),
+          tracking_number: formData.get('tracking_number'),
+          ship_date: formData.get('ship_date'),
+          estimated_delivery: formData.get('estimated_delivery'),
+          shipping_cost: parseFloat(formData.get('shipping_cost')) || 0
+        }
       }
     }),
     validate: (formData) => {
@@ -439,16 +441,18 @@ function setupEventHandlers() {
     transform: (formData) => ({
       itemId: formData.get('item_id'),
       soldData: {
-        status: 'shipped',
-        sold_date: formData.get('sold_date'),
-        sold_price: parseFloat(formData.get('sold_price')),
-        sold_platform: formData.get('sold_platform'),
-        purchaser_username: formData.get('purchaser_username') || null,
-        shipping_cost: parseFloat(formData.get('shipping_cost')) || 0,
-        platform_fees: parseFloat(formData.get('platform_fees')) || 0,
-        recipient_address: formData.get('recipient_address') || null,
-        tracking_url: formData.get('tracking_url') || null,
-        ship_date: formData.get('sold_date') // Use sale date as ship date
+        metadata: { status: 'shipped' },
+        listing_status: {
+          sold_date: formData.get('sold_date'),
+          sold_price: parseFloat(formData.get('sold_price')),
+          sold_platform: formData.get('sold_platform'),
+          purchaser_username: formData.get('purchaser_username') || null,
+          shipping_cost: parseFloat(formData.get('shipping_cost')) || 0,
+          platform_fees: parseFloat(formData.get('platform_fees')) || 0,
+          recipient_address: formData.get('recipient_address') || null,
+          tracking_url: formData.get('tracking_url') || null,
+          ship_date: formData.get('sold_date') // Use sale date as ship date
+        }
       }
     }),
     onSubmit: async ({ itemId, soldData }) => {
@@ -470,11 +474,13 @@ function setupEventHandlers() {
     transform: (formData) => ({
       itemId: formData.get('item_id'),
       listingData: {
-        status: 'listed',
-        list_platform: formData.get('list_platform'),
-        list_date: formData.get('list_date'),
-        listed_price: parseFloat(formData.get('listed_price')),
-        listing_url: formData.get('listing_url') || null
+        metadata: { status: 'listed' },
+        listing_status: {
+          list_platform: formData.get('list_platform'),
+          list_date: formData.get('list_date'),
+          listed_price: parseFloat(formData.get('listed_price')),
+          listing_url: formData.get('listing_url') || null
+        }
       }
     }),
     validate: (formData) => {
@@ -622,16 +628,17 @@ function setupEventHandlers() {
 function renderPipelineRow(item) {
   const { profit, margin } = calculateProfit(item);
   const { formatted: profitDisplay, className: profitClass } = formatProfitDisplay(profit);
+  const status = item.metadata?.status;
 
-  const price = item.sold_price || item.listed_price || item.estimated_resale_value || 0;
-  const selectedPlatform = item.sold_platform || item.list_platform;
+  const price = item.listing_status?.sold_price || item.listing_status?.listed_price || item.pricing?.estimated_resale_value || 0;
+  const selectedPlatform = item.listing_status?.sold_platform || item.listing_status?.list_platform;
   const platformName = selectedPlatform ? capitalize(selectedPlatform.replace('_', ' ')) : '-';
 
   // Platform display: link to listing if URL exists, with edit option for listed items
   let platformDisplay = platformName;
-  const canEditListing = item.status === 'listed' || item.list_platform;
-  if (item.listing_url) {
-    platformDisplay = `<a href="${escapeHtml(item.listing_url)}" target="_blank" rel="noopener">${platformName}</a>`;
+  const canEditListing = status === 'listed' || item.listing_status?.list_platform;
+  if (item.listing_status?.listing_url) {
+    platformDisplay = `<a href="${escapeHtml(item.listing_status.listing_url)}" target="_blank" rel="noopener">${platformName}</a>`;
     if (canEditListing) {
       platformDisplay += ` <button class="btn-icon edit-listing-link" data-id="${item.id}" aria-label="Edit listing">✏️</button>`;
     }
@@ -641,7 +648,7 @@ function renderPipelineRow(item) {
 
   // Calculate estimated return only when platform is selected
   let estReturnHtml = '-';
-  if (item.status !== 'sold' && item.estimated_resale_value > 0 && selectedPlatform) {
+  if (status !== 'sold' && item.pricing?.estimated_resale_value > 0 && selectedPlatform) {
     const estimates = calculateEstimatedReturns(item);
     const platformEstimate = estimates.find(e => e.platformId === selectedPlatform);
     if (platformEstimate) {
@@ -657,29 +664,29 @@ function renderPipelineRow(item) {
     'listed': 'Mark sold',
     'shipped': 'Confirm receipt'
   };
-  const nextStepDisplay = nextStepLabels[item.status] || '-';
+  const nextStepDisplay = nextStepLabels[status] || '-';
 
   // Determine action button
   let actionButton = '';
-  const isInPipeline = PIPELINE_STATUSES.includes(item.status);
+  const isInPipeline = PIPELINE_STATUSES.includes(status);
 
   if (!isInPipeline) {
     actionButton = `<button class="btn btn--sm btn--cta list-for-sale-btn" data-id="${item.id}">List for sale</button>`;
-  } else if (item.status === 'listed') {
+  } else if (status === 'listed') {
     actionButton = `<button class="btn btn--sm btn--cta mark-sold-btn" data-id="${item.id}">Mark sold</button>`;
-  } else if (item.status === 'shipped') {
+  } else if (status === 'shipped') {
     actionButton = `<button class="btn btn--sm btn--cta status-next-btn" data-id="${item.id}" data-next-status="confirmed_received">Confirm receipt</button>`;
   } else {
-    const nextStatus = getNextStatus(item.status);
+    const nextStatus = getNextStatus(status);
     if (nextStatus) {
-      const label = nextStepLabels[item.status] || capitalize(nextStatus.replace('_', ' '));
+      const label = nextStepLabels[status] || capitalize(nextStatus.replace('_', ' '));
       actionButton = `<button class="btn btn--sm btn--cta status-next-btn" data-id="${item.id}" data-next-status="${nextStatus}">${label}</button>`;
     }
   }
 
   // Delist button - only for pre-sold pipeline statuses
   const delistableStatuses = ['needs_photo', 'unlisted', 'listed'];
-  const delistButton = delistableStatuses.includes(item.status)
+  const delistButton = delistableStatuses.includes(status)
     ? `<button class="btn btn--sm btn--ghost delist-btn" data-id="${item.id}">Don't sell</button>`
     : '';
 
@@ -693,7 +700,7 @@ function renderPipelineRow(item) {
       <td data-label="Price">${price > 0 ? formatCurrency(price) : '-'}</td>
       <td data-label="Est.&#10;Return">${estReturnHtml}</td>
       <td data-label="Platform">${platformDisplay}</td>
-      <td data-label="Profit"${item.status === 'sold' ? ` class="${profitClass}"` : ''}>${item.status === 'sold' ? profitDisplay : '-'}</td>
+      <td data-label="Profit"${status === 'sold' ? ` class="${profitClass}"` : ''}>${status === 'sold' ? profitDisplay : '-'}</td>
     </tr>
   `;
 }
@@ -758,10 +765,10 @@ const markSoldModal = createLazyModal('#mark-sold-dialog', {
 
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
     // Pre-populate price from listing price if available
-    if (priceInput) priceInput.value = item.listed_price || item.estimated_resale_value || '';
+    if (priceInput) priceInput.value = item.listing_status?.listed_price || item.pricing?.estimated_resale_value || '';
     // Pre-populate platform from listing platform if available
-    if (platformSelect) platformSelect.value = item.list_platform || '';
-    if (purchaserInput) purchaserInput.value = item.purchaser_username || '';
+    if (platformSelect) platformSelect.value = item.listing_status?.list_platform || '';
+    if (purchaserInput) purchaserInput.value = item.listing_status?.purchaser_username || '';
     if (shippingInput) shippingInput.value = '';
     if (feesInput) feesInput.value = '';
     if (addressInput) addressInput.value = '';
@@ -792,9 +799,9 @@ function updateProfitPreview() {
   const shippingCost = parseFloat($('#shipping-cost').value) || 0;
   const platformFees = parseFloat($('#platform-fees').value) || 0;
 
-  const purchasePrice = currentSoldItem.purchase_price || 0;
-  const taxPaid = currentSoldItem.tax_paid || 0;
-  const repairCosts = currentSoldItem.repairs_completed?.reduce((sum, r) => sum + (r.repair_cost || 0), 0) || 0;
+  const purchasePrice = currentSoldItem.metadata?.acquisition?.price || 0;
+  const taxPaid = currentSoldItem.metadata?.acquisition?.tax_paid || 0;
+  const repairCosts = currentSoldItem.condition?.repairs_completed?.reduce((sum, r) => sum + (r.repair_cost || 0), 0) || 0;
 
   // Cost includes everything you spent: purchase + tax + repairs + shipping
   const costBasis = purchasePrice + taxPaid + repairCosts + shippingCost;
@@ -848,7 +855,7 @@ function updateFeeCalculation() {
 
 async function updateItemStatus(itemId, newStatus) {
   try {
-    await updateInventoryItem(itemId, { status: newStatus });
+    await updateInventoryItem(itemId, { metadata: { status: newStatus } });
     showToast(`Status updated to ${formatStatus(newStatus)}`);
     await loadPipeline();
   } catch (err) {
@@ -878,7 +885,7 @@ const shipItemModal = createLazyModal('#ship-item-dialog', {
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
     if (carrierSelect) carrierSelect.value = '';
     if (trackingInput) trackingInput.value = '';
-    if (shippingCostInput) shippingCostInput.value = item.shipping_cost || '';
+    if (shippingCostInput) shippingCostInput.value = item.listing_status?.shipping_cost || '';
   }
 });
 
@@ -912,7 +919,7 @@ async function listItemForSale(itemId) {
     }
 
     // Enter pipeline at needs_photo status
-    await updateInventoryItem(itemId, { status: 'needs_photo' });
+    await updateInventoryItem(itemId, { metadata: { status: 'needs_photo' } });
     showToast('Item added to selling pipeline');
     await loadPipeline();
   } catch (err) {
@@ -965,7 +972,7 @@ const photoUploadModal = createLazyModal('#photo-upload-dialog', {
 
     // Determine required photo types
     const requiredTypes = [...REQUIRED_PHOTO_TYPES];
-    if (item.flaws && item.flaws.length > 0) {
+    if (item.condition?.flaws && item.condition.flaws.length > 0) {
       requiredTypes.push('flaw');
     }
 
@@ -1065,7 +1072,7 @@ async function completePhotoUpload() {
   if (!currentPhotoItem) return;
 
   try {
-    await updateInventoryItem(currentPhotoItem.id, { status: 'unlisted' });
+    await updateInventoryItem(currentPhotoItem.id, { metadata: { status: 'unlisted' } });
     showToast('Photos complete - item ready to list');
     photoUploadModal.close();
     await loadPipeline();
@@ -1160,10 +1167,10 @@ const markAsListedModal = createLazyModal('#mark-listed-dialog', {
     if (itemIdInput) itemIdInput.value = item.id;
     if (titleEl) titleEl.textContent = item.title || 'Untitled';
     // Pre-populate with existing values if editing, otherwise use defaults
-    if (dateInput) dateInput.value = item.list_date || new Date().toISOString().split('T')[0];
-    if (platformSelect) platformSelect.value = item.list_platform || '';
-    if (priceInput) priceInput.value = item.listed_price || item.estimated_resale_value || '';
-    if (urlInput) urlInput.value = item.listing_url || '';
+    if (dateInput) dateInput.value = item.listing_status?.list_date || new Date().toISOString().split('T')[0];
+    if (platformSelect) platformSelect.value = item.listing_status?.list_platform || '';
+    if (priceInput) priceInput.value = item.listing_status?.listed_price || item.pricing?.estimated_resale_value || '';
+    if (urlInput) urlInput.value = item.listing_status?.listing_url || '';
   },
   onClose: () => {
     currentListedItem = null;
@@ -1179,7 +1186,7 @@ async function openMarkAsListedModal(itemId, options = {}) {
   }
 
   // Skip validation if editing an already-listed item
-  if (!skipValidation && item.status !== 'listed') {
+  if (!skipValidation && item.metadata?.status !== 'listed') {
     // Validate photos before allowing listing
     const attachments = await getAttachmentsByItem(itemId);
     const photoValidation = validatePhotosComplete(item, attachments);
@@ -1230,10 +1237,10 @@ const confirmDeliveryModal = createLazyModal('#confirm-delivery-dialog', {
     // Show tracking URL if available
     if (trackingLinkEl) {
       // Prefer direct tracking_url, fall back to generated URL
-      const url = item.tracking_url || getTrackingUrl(item.shipping_carrier, item.tracking_number);
+      const url = item.listing_status?.tracking_url || getTrackingUrl(item.listing_status?.shipping_carrier, item.listing_status?.tracking_number);
       if (url) {
         trackingLinkEl.href = url;
-        trackingLinkEl.textContent = item.tracking_url ? 'View tracking' : `Track on ${capitalize(item.shipping_carrier || 'carrier')}`;
+        trackingLinkEl.textContent = item.listing_status?.tracking_url ? 'View tracking' : `Track on ${capitalize(item.listing_status?.shipping_carrier || 'carrier')}`;
         show(trackingLinkEl);
       } else {
         hide(trackingLinkEl);
@@ -1307,8 +1314,8 @@ async function completeDeliveryConfirmation() {
 
     // Update item status and archive
     await updateInventoryItem(currentDeliveryItem.id, {
-      status: 'confirmed_received',
-      received_date: receivedDate
+      metadata: { status: 'confirmed_received' },
+      listing_status: { received_date: receivedDate }
     });
     await archiveItem(currentDeliveryItem.id);
 
@@ -1340,9 +1347,9 @@ const delistItemModal = createLazyModal('#delist-item-dialog', {
     if (titleEl) titleEl.textContent = item.title || 'Untitled';
 
     // Show warning if item is currently listed on a platform
-    if (item.status === 'listed' && item.list_platform) {
+    if (item.metadata?.status === 'listed' && item.listing_status?.list_platform) {
       if (warningEl) warningEl.hidden = false;
-      if (platformEl) platformEl.textContent = capitalize(item.list_platform.replace(/_/g, ' '));
+      if (platformEl) platformEl.textContent = capitalize(item.listing_status.list_platform.replace(/_/g, ' '));
     } else {
       if (warningEl) warningEl.hidden = true;
     }
@@ -1361,7 +1368,7 @@ async function openDelistItemModal(itemId) {
 
   // Validate item can be delisted
   const delistableStatuses = ['needs_photo', 'unlisted', 'listed'];
-  if (!delistableStatuses.includes(item.status)) {
+  if (!delistableStatuses.includes(item.metadata?.status)) {
     showToast('Item cannot be delisted from current status');
     return;
   }
@@ -1375,7 +1382,7 @@ async function delistItem() {
   try {
     // Only update status - preserve all listing data
     await updateInventoryItem(currentDelistItem.id, {
-      status: 'in_collection'
+      metadata: { status: 'in_collection' }
     });
 
     showToast('Item returned to collection');

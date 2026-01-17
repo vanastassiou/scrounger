@@ -1,943 +1,4674 @@
 {
-  "meta": {
-    "version": "1.1",
-    "created": "2026-01-12",
-    "document_type": "inventory_data",
-    "item_count": 47,
-    "note": "v1.1: Added stable IDs for sync compatibility"
-  },
   "items": [
     {
       "id": "07be4243-7b4fe9-7fe42-fbe4-0000000005fd",
-      "title": "Jonathan Simkhai mustard cashmere sweater",
-      "category": "clothing",
-      "subcategory": "sweater",
       "brand": "Jonathan Simkhai",
-      "store_id": "vv_boutique_downtown",
-      "acquisition_date": "2025-11-17",
-      "purchase_price": 7.49,
-      "labeled_size": "M",
-      "primary_colour": "mustard",
-      "primary_material": {
-        "name": "cashmere",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "sweater"
       },
-      "status": "unlisted",
+      "colour": {
+        "primary": "mustard",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "cashmere",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "M"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Mustard yellow sweater",
-      "packaging": "poly_mailer"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Jonathan Simkhai mustard cashmere sweater",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2025-11-17",
+          "price": 7.49,
+          "store_id": "vv_boutique_downtown",
+          "packaging": "poly_mailer"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "98fdb03d-98f70ce-98bdb0-90fdb-0000000098c0",
-      "title": "Lord & Taylor black cashmere sweater",
-      "category": "clothing",
-      "subcategory": "sweater",
       "brand": "Lord & Taylor",
-      "store_id": "vv_boutique_downtown",
-      "acquisition_date": "2025-11-17",
-      "purchase_price": 10,
-      "labeled_size": "XXL",
-      "primary_colour": "black",
-      "primary_material": {
-        "name": "cashmere",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "sweater"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "cashmere",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "XXL"
+        },
+        "measurements": null
       },
       "country_of_manufacture": "Bangladesh",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Black turtleneck sweater",
-      "packaging": "poly_mailer_large"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Lord & Taylor black cashmere sweater",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2025-11-17",
+          "price": 10,
+          "store_id": "vv_boutique_downtown",
+          "packaging": "poly_mailer_large"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "3153e81a-315954c-3113e8-3953e-000000003949",
-      "title": "Ellen Tracy aubergine merino wool sweater",
-      "category": "clothing",
-      "subcategory": "sweater",
       "brand": "Ellen Tracy",
-      "store_id": "vv_boutique_downtown",
-      "acquisition_date": "2025-11-17",
-      "purchase_price": 10,
-      "labeled_size": "L",
-      "primary_colour": "aubergine",
-      "primary_material": {
-        "name": "merino_wool",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "sweater"
+      },
+      "colour": {
+        "primary": "aubergine",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "merino_wool",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "L"
+        },
+        "measurements": null
       },
       "country_of_manufacture": "Cambodia",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Aubergine sweater with button collar detail",
-      "packaging": "poly_mailer"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Ellen Tracy aubergine merino wool sweater",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2025-11-17",
+          "price": 10,
+          "store_id": "vv_boutique_downtown",
+          "packaging": "poly_mailer"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "7bf10c0f-7bfbb0d-7bb10c-73f10-0000000077fe",
-      "title": "Renee Tener for Jeanne Pierre magenta lambswool sweater",
-      "category": "clothing",
-      "subcategory": "sweater",
       "brand": "Renee Tener for Jeanne Pierre",
-      "store_id": "vv_boutique_downtown",
-      "acquisition_date": "2025-11-17",
-      "purchase_price": 10,
-      "labeled_size": "L",
-      "primary_colour": "magenta",
-      "primary_material": {
-        "name": "lambswool",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "sweater"
+      },
+      "colour": {
+        "primary": "magenta",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "lambswool",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "L"
+        },
+        "measurements": null
       },
       "country_of_manufacture": "Hong Kong",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Magenta cardigan",
-      "packaging": "poly_mailer"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Renee Tener for Jeanne Pierre magenta lambswool sweater",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2025-11-17",
+          "price": 10,
+          "store_id": "vv_boutique_downtown",
+          "packaging": "poly_mailer"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "cc6036b9-cc6a8a6-cc2036-c4603-00000000cad9",
-      "title": "Anne Klein 2 cream silk jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Anne Klein 2",
-      "store_id": "vv_queensborough",
-      "acquisition_date": "2025-12-18",
-      "purchase_price": 12,
-      "labeled_size": "8",
-      "primary_colour": "cream",
-      "primary_material": {
-        "name": "silk",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
       },
-      "status": "unlisted",
+      "colour": {
+        "primary": "cream",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "silk",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "8"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Cream collarless blazer",
-      "packaging": "poly_mailer"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Anne Klein 2 cream silk jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2025-12-18",
+          "price": 12,
+          "store_id": "vv_queensborough",
+          "packaging": "poly_mailer"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "c46a1d85-c460a15-c42a1d-cc6a1-00000000c9ef",
-      "title": "Aquascutum cream wool jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Aquascutum",
-      "store_id": "vv_queensborough",
-      "acquisition_date": "2025-12-18",
-      "purchase_price": 20,
-      "labeled_size": "Unspecified",
-      "primary_colour": "cream",
-      "primary_material": {
-        "name": "wool",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
       },
-      "status": "unlisted",
+      "colour": {
+        "primary": "cream",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "wool",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "Unspecified"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Cream wool blazer",
-      "packaging": "poly_mailer"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Aquascutum cream wool jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2025-12-18",
+          "price": 20,
+          "store_id": "vv_queensborough",
+          "packaging": "poly_mailer"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "8d041934-8d0ea5e-8d4419-85041-000000008430",
-      "title": "Holt Renfrew black velvet jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Holt Renfrew",
-      "store_id": "vv_queensborough",
-      "acquisition_date": "2025-12-18",
-      "purchase_price": 10,
-      "labeled_size": "M",
-      "primary_colour": "black",
-      "primary_material": {
-        "name": "velvet",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
       },
-      "status": "unlisted",
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "velvet",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "M"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Black velvet jacket with satin seam bindings and toggle closures",
-      "packaging": "box_12x10x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Holt Renfrew black velvet jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2025-12-18",
+          "price": 10,
+          "store_id": "vv_queensborough",
+          "packaging": "box_12x10x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "975ef165-97544db-971ef1-9f5ef-00000000963b",
-      "title": "The Alpaca Experience by Du Store Alpaca aubergine alpaca sweater",
-      "category": "clothing",
-      "subcategory": "sweater",
       "brand": "The Alpaca Experience by Du Store Alpaca",
-      "store_id": "mcc_abbotsford_centre",
-      "acquisition_date": "2025-12-20",
-      "purchase_price": 4.5,
-      "labeled_size": "XS",
-      "primary_colour": "aubergine",
-      "primary_material": {
-        "name": "alpaca",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "sweater"
       },
-      "status": "unlisted",
+      "colour": {
+        "primary": "aubergine",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "alpaca",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "XS"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Aubergine ribbed cardigan",
-      "packaging": "poly_mailer"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "The Alpaca Experience by Du Store Alpaca aubergine alpaca sweater",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2025-12-20",
+          "price": 4.5,
+          "store_id": "mcc_abbotsford_centre",
+          "packaging": "poly_mailer"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "052008a8-52ab47-56008-d200-000000000d88",
-      "title": "Jones New York Separates aubergine merino wool sweater",
-      "category": "clothing",
-      "subcategory": "sweater",
       "brand": "Jones New York Separates",
-      "store_id": "mcc_abbotsford_centre",
-      "acquisition_date": "2025-12-20",
-      "purchase_price": 12,
-      "primary_colour": "aubergine",
-      "primary_material": {
-        "name": "merino_wool",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "sweater"
+      },
+      "colour": {
+        "primary": "aubergine",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "merino_wool",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": null
+        },
+        "measurements": null
       },
       "country_of_manufacture": "China",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Aubergine ribbed turtleneck",
-      "packaging": "poly_mailer"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Jones New York Separates aubergine merino wool sweater",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2025-12-20",
+          "price": 12,
+          "store_id": "mcc_abbotsford_centre",
+          "packaging": "poly_mailer"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "b23cd4de-b236680-b27cd4-ba3cd-00000000b6e2",
-      "title": "Noelle Rouine Paris burgundy cashmere/wool sweater",
-      "category": "clothing",
-      "subcategory": "sweater",
       "brand": "Noelle Rouine Paris",
-      "store_id": "private_sale",
-      "acquisition_date": "2025-12-26",
-      "purchase_price": 5,
-      "primary_colour": "burgundy",
-      "primary_material": {
-        "name": "cashmere",
-        "percentage": 20
+      "category": {
+        "primary": "clothing",
+        "secondary": "sweater"
       },
-      "secondary_materials": [
-        {
-          "name": "wool",
-          "percentage": 80
-        }
-      ],
+      "colour": {
+        "primary": "burgundy",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "cashmere",
+          "percentage": 20
+        },
+        "secondary": [
+          {
+            "name": "wool",
+            "percentage": 80
+          }
+        ]
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": null
+        },
+        "measurements": null
+      },
       "country_of_manufacture": "Hong Kong",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Peur Specifique sweater in burgundy",
-      "packaging": "poly_mailer"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Noelle Rouine Paris burgundy cashmere/wool sweater",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2025-12-26",
+          "price": 5,
+          "store_id": "private_sale",
+          "packaging": "poly_mailer"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "ef524ebe-ef58f26-ef124e-e7524-00000000e1ec",
-      "title": "Russ Signature wool sweater",
-      "category": "clothing",
-      "subcategory": "sweater",
       "brand": "Russ Signature",
-      "store_id": "private_sale",
-      "acquisition_date": "2025-12-26",
-      "purchase_price": 5,
-      "labeled_size": "2X",
-      "primary_material": {
-        "name": "wool",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "sweater"
+      },
+      "colour": {
+        "primary": null,
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "wool",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "2X"
+        },
+        "measurements": null
       },
       "country_of_manufacture": "Hong Kong",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Wool cardigan; possibly felted/shrunken",
-      "packaging": "poly_mailer_large"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Russ Signature wool sweater",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2025-12-26",
+          "price": 5,
+          "store_id": "private_sale",
+          "packaging": "poly_mailer_large"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "946d5442-9467e89-942d54-9c6d5-00000000902f",
-      "title": "Ellen Tracy aubergine merino wool sweater",
-      "category": "clothing",
-      "subcategory": "sweater",
       "brand": "Ellen Tracy",
-      "store_id": "private_sale",
-      "acquisition_date": "2025-12-26",
-      "purchase_price": 10,
-      "labeled_size": "L",
-      "primary_colour": "aubergine",
-      "primary_material": {
-        "name": "merino_wool",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "sweater"
+      },
+      "colour": {
+        "primary": "aubergine",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "merino_wool",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "L"
+        },
+        "measurements": null
       },
       "country_of_manufacture": "Cambodia",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Aubergine sweater with button collar detail",
-      "packaging": "poly_mailer"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Ellen Tracy aubergine merino wool sweater",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2025-12-26",
+          "price": 10,
+          "store_id": "private_sale",
+          "packaging": "poly_mailer"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "40cc3c60-40c680b-408c3c-48cc3-000000004cac",
-      "title": "Melanie Lyne red wool/cashmere jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Melanie Lyne",
-      "store_id": "sa_edmonton",
-      "acquisition_date": "2025-12-27",
-      "purchase_price": 20,
-      "labeled_size": "16",
-      "primary_colour": "red",
-      "primary_material": {
-        "name": "wool",
-        "percentage": 50
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
       },
-      "secondary_materials": [
-        {
-          "name": "cashmere",
+      "colour": {
+        "primary": "red",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "wool",
           "percentage": 50
-        }
-      ],
-      "status": "unlisted",
+        },
+        "secondary": [
+          {
+            "name": "cashmere",
+            "percentage": 50
+          }
+        ]
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "16"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Bright red coat with black buttons",
-      "packaging": "box_16x12x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Melanie Lyne red wool/cashmere jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2025-12-27",
+          "price": 20,
+          "store_id": "sa_edmonton",
+          "packaging": "box_16x12x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "8f86cefa-8f8c722-8fc6ce-8786c-00000000817c",
-      "title": "Danier red leather jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Danier",
-      "store_id": "sa_coquitlam",
-      "acquisition_date": "2026-01-02",
-      "purchase_price": 20,
-      "labeled_size": "M",
-      "primary_colour": "red",
-      "primary_material": {
-        "name": "leather",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
+      },
+      "colour": {
+        "primary": "red",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "leather",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "M"
+        },
+        "measurements": null
       },
       "country_of_manufacture": "Canada",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Red leather blazer",
-      "packaging": "box_14x10x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Danier red leather jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-02",
+          "price": 20,
+          "store_id": "sa_coquitlam",
+          "packaging": "box_14x10x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "273c6b6f-2736d7b-277c6b-2f3c6-000000002c53",
-      "title": "Giannini Fashion Collection tan cashmere/wool jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Giannini Fashion Collection",
-      "store_id": "vv_queensborough",
-      "acquisition_date": "2026-01-08",
-      "purchase_price": 27,
-      "labeled_size": "S",
-      "primary_colour": "tan",
-      "primary_material": {
-        "name": "cashmere",
-        "percentage": 75
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
       },
-      "secondary_materials": [
-        {
-          "name": "wool",
-          "percentage": 25
-        }
-      ],
-      "status": "unlisted",
+      "colour": {
+        "primary": "tan",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "cashmere",
+          "percentage": 75
+        },
+        "secondary": [
+          {
+            "name": "wool",
+            "percentage": 25
+          }
+        ]
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "S"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Tan coat",
-      "packaging": "box_16x12x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Giannini Fashion Collection tan cashmere/wool jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-08",
+          "price": 27,
+          "store_id": "vv_queensborough",
+          "packaging": "box_16x12x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "05608420-56a38f-52084-d608-000000000140",
-      "title": "Gloverall tan jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Gloverall",
-      "store_id": "vv_queensborough",
-      "acquisition_date": "2026-01-08",
-      "purchase_price": 21,
-      "labeled_size": "British 34",
-      "primary_colour": "tan",
-      "status": "unlisted",
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
+      },
+      "colour": {
+        "primary": "tan",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "British 34"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Tan overcoat with hood and wooden toggle buttons",
-      "packaging": "box_16x14x6"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Gloverall tan jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-08",
+          "price": 21,
+          "store_id": "vv_queensborough",
+          "packaging": "box_16x14x6"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "0352d884-358645-312d8-b52d-000000000bd6",
-      "title": "Pat Perkins Original cream wool jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Pat Perkins Original",
-      "store_id": "vv_queensborough",
-      "acquisition_date": "2026-01-08",
-      "purchase_price": 10.49,
-      "labeled_size": "S",
-      "primary_colour": "cream",
-      "primary_material": {
-        "name": "wool",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
+      },
+      "colour": {
+        "primary": "cream",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "wool",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "S"
+        },
+        "measurements": null
       },
       "country_of_manufacture": "England",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Cream long overcoat with red/green tartan detail and scarf",
-      "packaging": "box_16x12x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Pat Perkins Original cream wool jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-08",
+          "price": 10.49,
+          "store_id": "vv_queensborough",
+          "packaging": "box_16x12x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "e43227ea-e4389b3-e47227-ec322-00000000e3d8",
-      "title": "Opera black leather jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Opera",
-      "store_id": "vv_queensborough",
-      "acquisition_date": "2026-01-08",
-      "purchase_price": 20,
-      "labeled_size": "Korean 15",
-      "primary_colour": "black",
-      "primary_material": {
-        "name": "leather",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "leather",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "Korean 15"
+        },
+        "measurements": null
       },
       "country_of_manufacture": "Korea",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Black leather jacket",
-      "packaging": "box_14x10x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Opera black leather jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-08",
+          "price": 20,
+          "store_id": "vv_queensborough",
+          "packaging": "box_14x10x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "1143a75f-11491b8-1103a7-1943a-00000000161c",
-      "title": "Lucian Matis black poly/rayon dress",
-      "category": "clothing",
-      "subcategory": "dress",
       "brand": "Lucian Matis",
-      "store_id": "vv_queensborough",
-      "acquisition_date": "2026-01-08",
-      "purchase_price": 28,
-      "primary_colour": "black",
-      "primary_material": {
-        "name": "polyester",
-        "percentage": 50
+      "category": {
+        "primary": "clothing",
+        "secondary": "dress"
       },
-      "secondary_materials": [
-        {
-          "name": "rayon",
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "polyester",
           "percentage": 50
-        }
-      ],
-      "status": "unlisted",
+        },
+        "secondary": [
+          {
+            "name": "rayon",
+            "percentage": 50
+          }
+        ]
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": null
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Black cocktail dress with beaded collar and cuff detail",
-      "packaging": "box_12x10x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Lucian Matis black poly/rayon dress",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-08",
+          "price": 28,
+          "store_id": "vv_queensborough",
+          "packaging": "box_12x10x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "5619b3e5-56130f3-5659b3-5e19b-0000000055fc",
-      "title": "Moiselle aubergine silk dress",
-      "category": "clothing",
-      "subcategory": "dress",
       "brand": "Moiselle",
-      "store_id": "vv_queensborough",
-      "acquisition_date": "2026-01-08",
-      "purchase_price": 23,
-      "labeled_size": "38",
-      "primary_colour": "aubergine",
-      "primary_material": {
-        "name": "silk",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "dress"
       },
-      "status": "unlisted",
+      "colour": {
+        "primary": "aubergine",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "silk",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "38"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Aubergine silk dress with polyester sequin detail",
-      "packaging": "box_12x10x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Moiselle aubergine silk dress",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-08",
+          "price": 23,
+          "store_id": "vv_queensborough",
+          "packaging": "box_12x10x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "9893855e-9899398-98d385-90938-000000009dcd",
-      "title": "Bardot black lace dress",
-      "category": "clothing",
-      "subcategory": "dress",
       "brand": "Bardot",
-      "store_id": "vv_queensborough",
-      "acquisition_date": "2026-01-08",
-      "purchase_price": 20.49,
-      "labeled_size": "UK 16",
-      "primary_colour": "black",
-      "primary_material": {
-        "name": "lace",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "dress"
       },
-      "status": "unlisted",
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "lace",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "UK 16"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Black lace over nude sleeveless cocktail dress",
-      "packaging": "poly_mailer"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Bardot black lace dress",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-08",
+          "price": 20.49,
+          "store_id": "vv_queensborough",
+          "packaging": "poly_mailer"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "dd497900-dd43c5d-dd0979-d5497-00000000d449",
-      "title": "Aidan Mattox black lace dress",
-      "category": "clothing",
-      "subcategory": "dress",
       "brand": "Aidan Mattox",
-      "store_id": "vv_queensborough",
-      "acquisition_date": "2026-01-08",
-      "purchase_price": 23,
-      "labeled_size": "EU 32",
-      "primary_colour": "black",
-      "primary_material": {
-        "name": "lace",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "dress"
       },
-      "status": "unlisted",
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "lace",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "EU 32"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Black lace cocktail dress",
-      "packaging": "poly_mailer"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Aidan Mattox black lace dress",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-08",
+          "price": 23,
+          "store_id": "vv_queensborough",
+          "packaging": "poly_mailer"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "83535fe9-8359e33-83135f-8b535-000000008cba",
-      "title": "Eileen Fisher red silk/cotton sweater",
-      "category": "clothing",
-      "subcategory": "sweater",
       "brand": "Eileen Fisher",
-      "store_id": "vv_queensborough",
-      "acquisition_date": "2026-01-08",
-      "purchase_price": 11.79,
-      "labeled_size": "XL",
-      "primary_colour": "red",
-      "primary_material": {
-        "name": "silk",
-        "percentage": 80
+      "category": {
+        "primary": "clothing",
+        "secondary": "sweater"
       },
-      "secondary_materials": [
-        {
-          "name": "cotton",
-          "percentage": 20
-        }
-      ],
-      "status": "unlisted",
+      "colour": {
+        "primary": "red",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "silk",
+          "percentage": 80
+        },
+        "secondary": [
+          {
+            "name": "cotton",
+            "percentage": 20
+          }
+        ]
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "XL"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Red oversized sweater",
-      "packaging": "poly_mailer_large"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Eileen Fisher red silk/cotton sweater",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-08",
+          "price": 11.79,
+          "store_id": "vv_queensborough",
+          "packaging": "poly_mailer_large"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "4e463bdc-4e4c870-4e063b-46463-00000000459a",
-      "title": "Episode by Carolyn Freeman brown wool/cashmere sweater",
-      "category": "clothing",
-      "subcategory": "sweater",
       "brand": "Episode by Carolyn Freeman",
-      "store_id": "vv_queensborough",
-      "acquisition_date": "2026-01-08",
-      "purchase_price": 16.49,
-      "labeled_size": "M",
-      "primary_colour": "brown",
-      "primary_material": {
-        "name": "wool",
-        "percentage": 70
+      "category": {
+        "primary": "clothing",
+        "secondary": "sweater"
       },
-      "secondary_materials": [
-        {
-          "name": "cashmere",
-          "percentage": 30
-        }
-      ],
+      "colour": {
+        "primary": "brown",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "wool",
+          "percentage": 70
+        },
+        "secondary": [
+          {
+            "name": "cashmere",
+            "percentage": 30
+          }
+        ]
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "M"
+        },
+        "measurements": null
+      },
       "country_of_manufacture": "Hong Kong",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Chocolate brown cardigan",
-      "packaging": "poly_mailer"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Episode by Carolyn Freeman brown wool/cashmere sweater",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-08",
+          "price": 16.49,
+          "store_id": "vv_queensborough",
+          "packaging": "poly_mailer"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "48bd7e46-48b7c29-48fd7e-40bd7-0000000046fb",
-      "title": "Fly London beige pumps",
-      "category": "shoes",
-      "subcategory": "pumps",
       "brand": "Fly London",
-      "store_id": "rch_auxiliary",
-      "acquisition_date": "2026-01-09",
-      "purchase_price": 25,
-      "labeled_size": "EU 38",
-      "primary_colour": "beige",
+      "category": {
+        "primary": "shoes",
+        "secondary": "pumps"
+      },
+      "colour": {
+        "primary": "beige",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "EU 38"
+        },
+        "measurements": null
+      },
       "country_of_manufacture": "Portugal",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Beige pumps",
-      "packaging": "box_12x8x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Fly London beige pumps",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-09",
+          "price": 25,
+          "store_id": "rch_auxiliary",
+          "packaging": "box_12x8x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "71287aa7-7122c67-71687a-79287-000000007b8f",
-      "title": "Frye cognac leather boots",
-      "category": "shoes",
-      "subcategory": "boots",
       "brand": "Frye",
-      "store_id": "rch_auxiliary",
-      "acquisition_date": "2026-01-09",
-      "purchase_price": 37.5,
-      "labeled_size": "~10",
-      "primary_colour": "cognac",
-      "primary_material": {
-        "name": "leather",
-        "percentage": 100
+      "category": {
+        "primary": "shoes",
+        "secondary": "boots"
       },
-      "status": "unlisted",
+      "colour": {
+        "primary": "cognac",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "leather",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "~10"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Cognac knee-high heeled boots",
-      "packaging": "box_16x8x6_boot"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Frye cognac leather boots",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-09",
+          "price": 37.5,
+          "store_id": "rch_auxiliary",
+          "packaging": "box_16x8x6_boot"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "2379cfaa-2373737-2339cf-2b79c-000000002cd3",
-      "title": "Ingledews grey oxfords",
-      "category": "shoes",
-      "subcategory": "oxfords",
       "brand": "Ingledews",
-      "store_id": "rch_auxiliary",
-      "acquisition_date": "2026-01-09",
-      "purchase_price": 8,
-      "labeled_size": "EU 39",
-      "primary_colour": "grey",
-      "secondary_colour": "black",
+      "category": {
+        "primary": "shoes",
+        "secondary": "oxfords"
+      },
+      "colour": {
+        "primary": "grey",
+        "secondary": "black"
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "EU 39"
+        },
+        "measurements": null
+      },
       "country_of_manufacture": "Italy",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Gray/black wingtip high-cut Oxfords",
-      "packaging": "box_12x8x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Ingledews grey oxfords",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-09",
+          "price": 8,
+          "store_id": "rch_auxiliary",
+          "packaging": "box_12x8x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "ae5c4ce8-ae56f03-ae1c4c-a65c4-00000000a2b4",
-      "title": "Ingledews gunmetal booties",
-      "category": "shoes",
-      "subcategory": "booties",
       "brand": "Ingledews",
-      "store_id": "rch_auxiliary",
-      "acquisition_date": "2026-01-09",
-      "purchase_price": 6,
-      "labeled_size": "EU 39",
-      "primary_colour": "gunmetal",
+      "category": {
+        "primary": "shoes",
+        "secondary": "booties"
+      },
+      "colour": {
+        "primary": "gunmetal",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "EU 39"
+        },
+        "measurements": null
+      },
       "country_of_manufacture": "Italy",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Distressed gunmetal heeled booties",
-      "packaging": "box_12x8x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Ingledews gunmetal booties",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-09",
+          "price": 6,
+          "store_id": "rch_auxiliary",
+          "packaging": "box_12x8x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "65e4ff38-65ee43e-65a4ff-6de4f-000000006adc",
-      "title": "Miz Mooz boots",
-      "category": "shoes",
-      "subcategory": "boots",
       "brand": "Miz Mooz",
-      "store_id": "rch_auxiliary",
-      "acquisition_date": "2026-01-09",
-      "purchase_price": 12,
-      "labeled_size": "9",
-      "status": "unlisted",
+      "category": {
+        "primary": "shoes",
+        "secondary": "boots"
+      },
+      "colour": {
+        "primary": null,
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "9"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Zip-up ankle boots with eyelet detail",
-      "packaging": "box_12x8x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Miz Mooz boots",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-09",
+          "price": 12,
+          "store_id": "rch_auxiliary",
+          "packaging": "box_12x8x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "ea4d2b1c-ea4797c-ea0d2b-e24d2-00000000e151",
-      "title": "Carlo Rosetti burgundy oxfords",
-      "category": "shoes",
-      "subcategory": "oxfords",
       "brand": "Carlo Rosetti",
-      "store_id": "st_barnabas",
-      "acquisition_date": "2026-01-10",
-      "purchase_price": 15,
-      "labeled_size": "6.5",
-      "primary_colour": "burgundy",
-      "secondary_colour": "purple",
+      "category": {
+        "primary": "shoes",
+        "secondary": "oxfords"
+      },
+      "colour": {
+        "primary": "burgundy",
+        "secondary": "purple"
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "6.5"
+        },
+        "measurements": null
+      },
       "country_of_manufacture": "Mexico",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Burgundy/purple lace-up Oxford heels",
-      "packaging": "box_12x8x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Carlo Rosetti burgundy oxfords",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-10",
+          "price": 15,
+          "store_id": "st_barnabas",
+          "packaging": "box_12x8x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "ce94acd5-ce9e100-ced4ac-c694a-00000000c241",
-      "title": "Think! oxblood boots",
-      "category": "shoes",
-      "subcategory": "boots",
       "brand": "Think!",
-      "store_id": "raps_granville",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 4,
-      "labeled_size": "35",
-      "primary_colour": "oxblood",
+      "category": {
+        "primary": "shoes",
+        "secondary": "boots"
+      },
+      "colour": {
+        "primary": "oxblood",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "35"
+        },
+        "measurements": null
+      },
       "country_of_manufacture": "Italy",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Oxblood heeled ankle boots with eyelet detail",
-      "packaging": "box_12x8x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Think! oxblood boots",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 4,
+          "store_id": "raps_granville",
+          "packaging": "box_12x8x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "9bb6dd2e-9bbc61f-9bf6dd-93b6d-000000009698",
-      "title": "Wonders black booties",
-      "category": "shoes",
-      "subcategory": "booties",
       "brand": "Wonders",
-      "store_id": "raps_granville",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 4,
-      "labeled_size": "40",
-      "primary_colour": "black",
+      "category": {
+        "primary": "shoes",
+        "secondary": "booties"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "40"
+        },
+        "measurements": null
+      },
       "country_of_manufacture": "Spain",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Black heeled shooties",
-      "packaging": "box_12x8x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Wonders black booties",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 4,
+          "store_id": "raps_granville",
+          "packaging": "box_12x8x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "510c25a8-5106997-514c25-590c2-0000000054a4",
-      "title": "Chie Mihara black mary janes",
-      "category": "shoes",
-      "subcategory": "mary_janes",
       "brand": "Chie Mihara",
-      "store_id": "raps_granville",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 4,
-      "labeled_size": "38",
-      "primary_colour": "black",
+      "category": {
+        "primary": "shoes",
+        "secondary": "mary_janes"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "38"
+        },
+        "measurements": null
+      },
       "country_of_manufacture": "Spain",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Black Mary Janes with suede floral detail",
-      "packaging": "box_12x8x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Chie Mihara black mary janes",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 4,
+          "store_id": "raps_granville",
+          "packaging": "box_12x8x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "3ab7617f-3abddda-3af761-32b76-000000003bc8",
-      "title": "Marc Aurel green wool/cotton/angora/silk/linen/viscose jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Marc Aurel",
-      "store_id": "raps_granville",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 12,
-      "labeled_size": "36",
-      "primary_colour": "green",
-      "primary_material": {
-        "name": "wool",
-        "percentage": 30
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
       },
-      "secondary_materials": [
-        {
-          "name": "cotton",
-          "percentage": 20
+      "colour": {
+        "primary": "green",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "wool",
+          "percentage": 30
         },
-        {
-          "name": "angora",
-          "percentage": 15
+        "secondary": [
+          {
+            "name": "cotton",
+            "percentage": 20
+          },
+          {
+            "name": "angora",
+            "percentage": 15
+          },
+          {
+            "name": "silk",
+            "percentage": 15
+          },
+          {
+            "name": "linen",
+            "percentage": 10
+          },
+          {
+            "name": "viscose",
+            "percentage": 10
+          }
+        ]
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "36"
         },
-        {
-          "name": "silk",
-          "percentage": 15
-        },
-        {
-          "name": "linen",
-          "percentage": 10
-        },
-        {
-          "name": "viscose",
-          "percentage": 10
-        }
-      ],
+        "measurements": null
+      },
       "country_of_manufacture": "Germany",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Bright spring green boucle coat",
-      "packaging": "box_16x12x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Marc Aurel green wool/cotton/angora/silk/linen/viscose jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 12,
+          "store_id": "raps_granville",
+          "packaging": "box_16x12x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "f3977de0-f39dc13-f3d77d-fb977-00000000fe77",
-      "title": "Sesto Golf by Sherry cognac leather golf shoes",
-      "category": "shoes",
-      "subcategory": "golf_shoes",
       "brand": "Sesto Golf by Sherry",
-      "store_id": "steveston_treasure",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 30,
-      "labeled_size": "Men's 9.5",
-      "primary_colour": "cognac",
-      "primary_material": {
-        "name": "leather",
-        "percentage": 100
+      "category": {
+        "primary": "shoes",
+        "secondary": "golf_shoes"
+      },
+      "colour": {
+        "primary": "cognac",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "leather",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "Men's 9.5"
+        },
+        "measurements": null
       },
       "country_of_manufacture": "Italy",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Cognac golf shoes with woven detail",
-      "packaging": "box_14x10x5"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Sesto Golf by Sherry cognac leather golf shoes",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 30,
+          "store_id": "steveston_treasure",
+          "packaging": "box_14x10x5"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "eaf4186a-eafea4b-eab418-e2f41-00000000e29e",
-      "title": "John Fluevog black leather boots",
-      "category": "shoes",
-      "subcategory": "boots",
       "brand": "John Fluevog",
-      "store_id": "steveston_treasure",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 20,
-      "labeled_size": "5",
-      "primary_colour": "black",
-      "primary_material": {
-        "name": "leather",
-        "percentage": 100
+      "category": {
+        "primary": "shoes",
+        "secondary": "boots"
       },
-      "status": "unlisted",
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "leather",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "5"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Dalai ankle boots with gray laced-up detail",
-      "packaging": "box_12x8x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "John Fluevog black leather boots",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 20,
+          "store_id": "steveston_treasure",
+          "packaging": "box_12x8x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.988Z",
+        "updated": "2026-01-17T00:26:28.988Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "fd55f734-fd5f4be-fd15f7-f555f-00000000fa61",
-      "title": "Danier black leather jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Danier",
-      "store_id": "richmond_hospital_aux",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 12,
-      "labeled_size": "XS",
-      "primary_colour": "black",
-      "primary_material": {
-        "name": "leather",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
       },
-      "status": "unlisted",
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "leather",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "XS"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Black leather jacket with gray zippers and lining",
-      "packaging": "box_14x10x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Danier black leather jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 12,
+          "store_id": "richmond_hospital_aux",
+          "packaging": "box_14x10x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "d829c5a8-d823797-d869c5-d029c-00000000dd81",
-      "title": "black leather boots",
-      "category": "shoes",
-      "subcategory": "boots",
       "brand": null,
-      "store_id": "richmond_hospital_aux",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 12,
-      "labeled_size": "37",
-      "primary_colour": "black",
-      "primary_material": {
-        "name": "leather",
-        "percentage": 100
+      "category": {
+        "primary": "shoes",
+        "secondary": "boots"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "leather",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "37"
+        },
+        "measurements": null
       },
       "country_of_manufacture": "Italy",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Black riding boots",
-      "packaging": "box_16x8x6_boot"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "black leather boots",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 12,
+          "store_id": "richmond_hospital_aux",
+          "packaging": "box_16x8x6_boot"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "88b0e615-88ba5ac-88f0e6-80b0e-000000008ea5",
-      "title": "Evan Picone black pumps",
-      "category": "shoes",
-      "subcategory": "pumps",
       "brand": "Evan Picone",
-      "store_id": "richmond_hospital_aux",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 6,
-      "labeled_size": "7.5 narrow",
-      "primary_colour": "black",
+      "category": {
+        "primary": "shoes",
+        "secondary": "pumps"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "7.5 narrow"
+        },
+        "measurements": null
+      },
       "country_of_manufacture": "Spain",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Black pumps with square toe",
-      "packaging": "box_12x8x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Evan Picone black pumps",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 6,
+          "store_id": "richmond_hospital_aux",
+          "packaging": "box_12x8x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "f717264a-f71d9a9-f75726-ff172-00000000f15d",
-      "title": "Fera Giacomo black pumps",
-      "category": "shoes",
-      "subcategory": "pumps",
       "brand": "Fera Giacomo",
-      "store_id": "richmond_hospital_aux",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 18,
-      "labeled_size": "38",
-      "primary_colour": "black",
+      "category": {
+        "primary": "shoes",
+        "secondary": "pumps"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "38"
+        },
+        "measurements": null
+      },
       "country_of_manufacture": "Italy",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Black pumps with triple Mary Jane strap detail",
-      "packaging": "box_12x8x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Fera Giacomo black pumps",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 18,
+          "store_id": "richmond_hospital_aux",
+          "packaging": "box_12x8x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "cbaf3b87-cba5875-cbef3b-c3af3-00000000c028",
-      "title": "Roots black boots",
-      "category": "shoes",
-      "subcategory": "boots",
       "brand": "Roots",
-      "store_id": "vv_richmond",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 35,
-      "labeled_size": "6.5",
-      "primary_colour": "black",
-      "status": "unlisted",
+      "category": {
+        "primary": "shoes",
+        "secondary": "boots"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "6.5"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Tuff ankle boots",
-      "packaging": "box_12x8x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Roots black boots",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 35,
+          "store_id": "vv_richmond",
+          "packaging": "box_12x8x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "82abc0e4-82a17c3-82ebc0-8aabc-00000000824f",
-      "title": "Babaton camel wool jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Babaton",
-      "store_id": "vv_richmond",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 38.49,
-      "labeled_size": "S",
-      "primary_colour": "camel",
-      "primary_material": {
-        "name": "wool",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
       },
-      "status": "unlisted",
+      "colour": {
+        "primary": "camel",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "wool",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "S"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "The Connor coat in camel",
-      "packaging": "box_16x12x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Babaton camel wool jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 38.49,
+          "store_id": "vv_richmond",
+          "packaging": "box_16x12x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "0f9868b3-f92d46-fd868-7986-00000000072b",
-      "title": "Escada by Margaretha Ley red cashmere jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Escada by Margaretha Ley",
-      "store_id": "vv_richmond",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 18,
-      "labeled_size": "40",
-      "primary_colour": "red",
-      "primary_material": {
-        "name": "cashmere",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
+      },
+      "colour": {
+        "primary": "red",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "cashmere",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "40"
+        },
+        "measurements": null
       },
       "country_of_manufacture": "Germany",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Red blazer with black buttons",
-      "packaging": "box_14x10x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Escada by Margaretha Ley red cashmere jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 18,
+          "store_id": "vv_richmond",
+          "packaging": "box_14x10x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "06f9f249-6f34e9-6b9f2-ef9f-0000000004b0",
-      "title": "Escada by Margaretha Ley aubergine wool/elastane jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Escada by Margaretha Ley",
-      "store_id": "vv_richmond",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 18,
-      "labeled_size": "38",
-      "primary_colour": "aubergine",
-      "primary_material": {
-        "name": "wool",
-        "percentage": 98
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
       },
-      "secondary_materials": [
-        {
-          "name": "elastane",
-          "percentage": 2
-        }
-      ],
+      "colour": {
+        "primary": "aubergine",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "wool",
+          "percentage": 98
+        },
+        "secondary": [
+          {
+            "name": "elastane",
+            "percentage": 2
+          }
+        ]
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "38"
+        },
+        "measurements": null
+      },
       "country_of_manufacture": "Germany",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Aubergine blazer with black velvet collar and epaulette details",
-      "packaging": "box_14x10x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Escada by Margaretha Ley aubergine wool/elastane jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 18,
+          "store_id": "vv_richmond",
+          "packaging": "box_14x10x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "d209115e-d203ad8-d24911-da091-00000000d357",
-      "title": "Nanette Lepore olive wool jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Nanette Lepore",
-      "store_id": "vv_richmond",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 45,
-      "labeled_size": "10",
-      "primary_colour": "olive",
-      "primary_material": {
-        "name": "wool",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
       },
-      "status": "unlisted",
+      "colour": {
+        "primary": "olive",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "wool",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "10"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
       "description": "Olive green wool frock coat. New with tags",
-      "packaging": "box_16x12x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Nanette Lepore olive wool jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 45,
+          "store_id": "vv_richmond",
+          "packaging": "box_16x12x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "66efeb09-66e557d-66afeb-6eefe-000000006de6",
-      "title": "UB Leather Collection cream wool jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "UB Leather Collection",
-      "store_id": "vv_richmond",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 35,
-      "labeled_size": "S",
-      "primary_colour": "cream",
-      "primary_material": {
-        "name": "wool",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
+      },
+      "colour": {
+        "primary": "cream",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "wool",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "S"
+        },
+        "measurements": null
       },
       "country_of_manufacture": "China",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Cream wool coat",
-      "packaging": "box_16x12x4"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "UB Leather Collection cream wool jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 35,
+          "store_id": "vv_richmond",
+          "packaging": "box_16x12x4"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     },
     {
       "id": "a71723c8-a71d9f1-a75723-af172-00000000a4df",
-      "title": "Highland Queen wool jacket",
-      "category": "clothing",
-      "subcategory": "jacket",
       "brand": "Highland Queen",
-      "store_id": "vv_richmond",
-      "acquisition_date": "2026-01-11",
-      "purchase_price": 15,
-      "labeled_size": "M",
-      "primary_material": {
-        "name": "wool",
-        "percentage": 100
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
+      },
+      "colour": {
+        "primary": null,
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "wool",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "M"
+        },
+        "measurements": null
       },
       "country_of_manufacture": "Canada",
-      "status": "unlisted",
+      "era": null,
+      "notes": null,
       "description": "Pure wool blazer",
-      "packaging": "poly_mailer"
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Highland Queen wool jacket",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-11",
+          "price": 15,
+          "store_id": "vv_richmond",
+          "packaging": "poly_mailer"
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "b8c3d4e5-b8c9a0f-b8e3d4-b0c3d-00000000b1a2",
+      "brand": "Torrid",
+      "category": {
+        "primary": "clothing",
+        "secondary": "chemise"
+      },
+      "colour": {
+        "primary": "red",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "1"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Red chemise",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Torrid red chemise",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2025-10-15",
+          "price": 80,
+          "store_id": "ebay",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "c9d4e5f6-c9da1b0-c9f4e5-c1d4e-00000000c2b3",
+      "brand": "Paris Hilton",
+      "category": {
+        "primary": "shoes",
+        "secondary": "pumps"
+      },
+      "colour": {
+        "primary": "red",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "patent_leather",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "8"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Red T-strap patent leather pumps",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Paris Hilton red T-strap patent leather pumps",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 14.99,
+          "store_id": "hospice_peace_arch",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "dae5f607-dae1b2c-daf5e6-d2e5f-00000000d3c4",
+      "brand": "Naot",
+      "category": {
+        "primary": "shoes",
+        "secondary": "boots"
+      },
+      "colour": {
+        "primary": "beige",
+        "secondary": "gold"
+      },
+      "material": {
+        "primary": {
+          "name": "leather",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "40"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Beige and gold leather ankle boots",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Naot beige/gold leather ankle boots",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 24.99,
+          "store_id": "hospice_peace_arch",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "ebf60718-ebf2c3d-eb060f-e3f60-00000000e4d5",
+      "brand": "Rockport",
+      "category": {
+        "primary": "shoes",
+        "secondary": "mary_janes"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": "burgundy"
+      },
+      "material": {
+        "primary": {
+          "name": "leather",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "11"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Black, burgundy and bronze T-strap leather Mary Janes",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Rockport black/burgundy/bronze T-strap leather mary janes",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 14.99,
+          "store_id": "hospice_peace_arch",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "fc071829-fc03d4e-fc1718-f4071-00000000f5e6",
+      "brand": "Franco Sarto",
+      "category": {
+        "primary": "shoes",
+        "secondary": "boots"
+      },
+      "colour": {
+        "primary": "burgundy",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "7.5"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Burgundy ankle boots",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Franco Sarto burgundy ankle boots",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 14.99,
+          "store_id": "hospice_peace_arch",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "0d18293a-0d14e5f-0d2829-05182-0000000006f7",
+      "brand": "Jeffrey Campbell",
+      "category": {
+        "primary": "shoes",
+        "secondary": "booties"
+      },
+      "colour": {
+        "primary": "tan",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "suede",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "8"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Tan suede shooties",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Jeffrey Campbell tan suede shooties",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 24.99,
+          "store_id": "hospice_peace_arch",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "1e293a4b-1e25f60-1e3930-16293-00000000a708",
+      "brand": "Adrianna Papell",
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
+      },
+      "colour": {
+        "primary": "pink",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "boucle",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "L"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Pink bouclé blazer",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Adrianna Papell pink bouclé blazer",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 16,
+          "store_id": "wilder_white_rock",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "2f3a4b5c-2f36071-2f4a4b-273a4-00000000b819",
+      "brand": "Lafayette 148 New York",
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
+      },
+      "colour": {
+        "primary": "mustard_yellow",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "0"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Mustard yellow blazer",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Lafayette 148 New York mustard yellow blazer",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 7,
+          "store_id": "wilder_white_rock",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "3a4b5c6d-3a47182-3a5b5c-383b5-00000000c92a",
+      "brand": "Banana Republic",
+      "category": {
+        "primary": "clothing",
+        "secondary": "pants"
+      },
+      "colour": {
+        "primary": "off-white",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "linen",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "12"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Off-white linen pants",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Banana Republic off-white linen pants",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 5,
+          "store_id": "wilder_white_rock",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "4b5c6d7e-4b58293-4b6c6d-494c6-00000000da3b",
+      "brand": "Banana Republic",
+      "category": {
+        "primary": "clothing",
+        "secondary": "skirt"
+      },
+      "colour": {
+        "primary": "salmon_pink",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "cotton",
+          "percentage": 50
+        },
+        "secondary": [
+          {
+            "name": "polyester",
+            "percentage": 50
+          }
+        ]
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "4"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Salmon pink cotton polyester skirt",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Banana Republic salmon pink cotton polyester skirt",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 4,
+          "store_id": "wilder_white_rock",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "5c6d7e8f-5c693a4-5c7d7e-5a5d7-00000000eb4c",
+      "brand": "Blue Industry",
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
+      },
+      "colour": {
+        "primary": "gray",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "M"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Gray textured blazer",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Blue Industry gray textured blazer",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 5,
+          "store_id": "wilder_white_rock",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "6d7e8f90-6d7a4b5-6d8e8f-6b6e8-00000000fc5d",
+      "brand": "Adrianna Papell",
+      "category": {
+        "primary": "clothing",
+        "secondary": "dress"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "6"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Black cocktail dress",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Adrianna Papell black cocktail dress",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 6,
+          "store_id": "wilder_white_rock",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "7e8f90a1-7e8b5c6-7e9f90-7c7f9-000000000d6e",
+      "brand": "Wonders",
+      "category": {
+        "primary": "shoes",
+        "secondary": "heels"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "leather",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "42"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Black leather wedge heels",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Wonders black leather wedge heels",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 12,
+          "store_id": "wilder_white_rock",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "8f90a1b2-8f9c6d7-8fa0a1-8d809-000000001e7f",
+      "brand": "Barneys New York",
+      "category": {
+        "primary": "shoes",
+        "secondary": "heels"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "patent_leather",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "37.5"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Black patent leather heels",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null
+      },
+      "photos": null,
+      "title": "Barneys New York black patent leather heels",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 8,
+          "store_id": "aux_peace_arch",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "90a1b2c3-90ad7e8-90b1b2-9e91a-000000002f80",
+      "brand": "Banana Republic",
+      "category": {
+        "primary": "clothing",
+        "secondary": "skirt"
+      },
+      "colour": {
+        "primary": "gray",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "wool",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "2"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Gray herringbone wool mini skirt",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Banana Republic gray herringbone wool mini skirt",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 10,
+          "store_id": "aux_peace_arch",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "a1b2c3d4-a1be8f9-a1c2c3-afa2b-00000000a091",
+      "brand": "Banana Republic",
+      "category": {
+        "primary": "clothing",
+        "secondary": "skirt"
+      },
+      "colour": {
+        "primary": "gray",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "wool",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "4"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Gray wool pencil skirt",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Banana Republic gray wool pencil skirt",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 10,
+          "store_id": "aux_peace_arch",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "b2c3d4e5-b2cf90a-b2d3d4-b0b3c-00000000b1a2",
+      "brand": "Joseph Ribkoff",
+      "category": {
+        "primary": "clothing",
+        "secondary": "jacket"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": {
+          "name": "silk",
+          "percentage": 100
+        },
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": "M"
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": null,
+      "description": "Black beaded silk blazer",
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": null,
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Joseph Ribkoff black beaded silk blazer",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-13",
+          "price": 12,
+          "store_id": "aux_peace_arch",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-17T00:26:28.989Z",
+        "updated": "2026-01-17T00:26:28.989Z",
+        "sync": {
+          "unsynced": false,
+          "synced_at": null
+        }
+      }
     }
-  ]
+  ],
+  "meta": {
+    "created": "2026-01-12",
+    "document_type": "inventory_data",
+    "item_count": 64,
+    "note": "v2.0: Migrated to nested schema matching db.js:migrateItemToNestedSchema()",
+    "version": "2.0",
+    "migrated_at": "2026-01-17T00:26:28.989Z"
+  }
 }

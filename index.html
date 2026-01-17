@@ -202,7 +202,7 @@
       </div>
 
       <!-- Selling View -->
-      <div id="inv-selling-view" class="inv-view hidden">
+      <div id="inv-selling-view" class="inv-view">
         <div class="table-toolbar">
           <select class="filter-select" id="status-filter" aria-label="Filter by status">
             <option value="all">All pipeline</option>
@@ -254,7 +254,7 @@
       </div>
 
       <!-- Archive View -->
-      <div id="inv-archive-view" class="inv-view hidden">
+      <div id="inv-archive-view" class="inv-view">
         <div class="table-toolbar">
           <input type="text" class="form-input" id="archive-search" placeholder="Search archived items...">
         </div>
@@ -1230,7 +1230,7 @@
   </dialog>
 
   <!-- Start Selling Dialog -->
-  <dialog id="start-selling-dialog" class="modal">
+  <dialog id="start-selling-dialog" class="modal modal--narrow">
     <div class="modal-content">
       <div class="modal-header">
         <h2>Start selling</h2>
@@ -1696,7 +1696,7 @@
             </span>
           </button>
           <button class="btn btn--block option-btn" id="export-drive" disabled>
-            <span class="option-icon">☁️</span>
+            <span class="option-icon">☁</span>
             <span class="option-text">
               <strong>Save to Google Drive</strong>
               <small id="export-drive-status">Connect Google Drive first</small>
@@ -1721,11 +1721,11 @@
             <span class="option-icon">📁</span>
             <span class="option-text">
               <strong id="import-local-title">Select backup file</strong>
-              <small id="import-local-description">Choose a JSON backup file from your computer</small>
+              <small id="import-local-description">Upload a JSON backup file</small>
             </span>
           </button>
           <button class="btn btn--block option-btn" id="import-drive" disabled>
-            <span class="option-icon">☁️</span>
+            <span class="option-icon">☁</span>
             <span class="option-text">
               <strong id="import-drive-title">Google Drive backup</strong>
               <small id="import-drive-status">Connect Google Drive first</small>

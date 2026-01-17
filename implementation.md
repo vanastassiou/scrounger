@@ -11,7 +11,7 @@ Mobile-first web app for tracking personal thrifting inventory. Part of the Sene
 - **Primary store:** IndexedDB (via Dexie.js or similar) for instant reads/writes
 - **Sync target:** Single JSON file in Seneschal-managed Google Drive folder
 - **Conflict strategy:** Last-write-wins (single user, phone-primary use case)
-- **Sync pattern:** Sync-on-open + sync-on-change with local dirty flag
+- **Sync pattern:** Sync-on-open + sync-on-change with local unsynced flag
 
 ### Why Not Google Sheets Direct
 
@@ -48,9 +48,9 @@ Mobile-first web app for tracking personal thrifting inventory. Part of the Sene
 
 ## Sync Service Behavior
 
-1. **On app open:** Pull latest JSON from Drive, merge with local (Drive wins if local isn't dirty)
-2. **On local change:** Mark dirty, write to IndexedDB immediately, queue background sync
-3. **Background sync:** Push local state to Drive, clear dirty flag on success
+1. **On app open:** Pull latest JSON from Drive, merge with local (Drive wins if local isn't unsynced)
+2. **On local change:** Mark unsynced, write to IndexedDB immediately, queue background sync
+3. **Background sync:** Push local state to Drive, clear unsynced flag on success
 4. **Offline:** Continue working locally, sync when back online
 
 ## Out of Scope

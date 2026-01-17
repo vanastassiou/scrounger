@@ -228,15 +228,15 @@ function calculateTheRealRealFees(salePrice, fees) {
  * @returns {object[]} Sorted array of platform returns (highest profit first)
  */
 export function calculateEstimatedReturns(item, platforms = null) {
-  if (!item?.estimated_resale_value) return [];
+  if (!item?.pricing?.estimated_resale_value) return [];
 
   const defaultPlatforms = ['poshmark', 'ebay', 'etsy', 'depop', 'grailed', 'starluv'];
   const platformList = platforms || defaultPlatforms;
-  const resaleValue = item.estimated_resale_value;
+  const resaleValue = item.pricing.estimated_resale_value;
 
   // Calculate cost basis
-  const purchaseCost = (item.purchase_price || 0) + (item.tax_paid || 0);
-  const repairCosts = item.repairs_completed?.reduce((sum, r) => sum + (r.repair_cost || 0), 0) || 0;
+  const purchaseCost = (item.metadata?.acquisition?.price || 0) + (item.metadata?.acquisition?.tax_paid || 0);
+  const repairCosts = item.condition?.repairs_completed?.reduce((sum, r) => sum + (r.repair_cost || 0), 0) || 0;
   const costBasis = purchaseCost + repairCosts;
 
   const results = [];

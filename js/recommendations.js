@@ -101,25 +101,33 @@ export async function getBasePriceRange(item) {
   const data = await loadBrandsDataFull();
   const baseRanges = data?.meta?.pricing_notes?.base_resale_ranges_cad;
 
-  if (!baseRanges && item.category !== 'jewelry') {
+  // TODO: Remove old format handling after migration complete
+  // Handle both old format (string) and new format (object)
+  const primaryCategory = typeof item.category === 'string'
+    ? item.category.toLowerCase()
+    : item.category?.primary?.toLowerCase();
+  const secondaryCategory = typeof item.category === 'string'
+    ? item.subcategory?.toLowerCase()
+    : item.category?.secondary?.toLowerCase();
+
+  if (!baseRanges && primaryCategory !== 'jewelry') {
     return null;
   }
 
   // Map subcategory to base category
-  const subcategory = item.subcategory?.toLowerCase();
-  let baseCategory = SUBCATEGORY_TO_BASE_CATEGORY[subcategory];
+  let baseCategory = SUBCATEGORY_TO_BASE_CATEGORY[secondaryCategory];
 
   // Fallback to category-based defaults
   if (!baseCategory) {
-    if (item.category === 'clothing') baseCategory = 'dress'; // Default
-    else if (item.category === 'shoes') baseCategory = 'shoes';
-    else if (item.category === 'jewelry') baseCategory = 'jewelry';
+    if (primaryCategory === 'clothing') baseCategory = 'dress'; // Default
+    else if (primaryCategory === 'shoes') baseCategory = 'shoes';
+    else if (primaryCategory === 'jewelry') baseCategory = 'jewelry';
     else return null;
   }
 
   // Handle jewelry separately
   if (baseCategory === 'jewelry') {
-    const metalType = item.metal_type || 'costume';
+    const metalType = item.jewelry_specific?.metal_type || 'costume';
     let jewelryTier = 'costume';
     if (metalType.includes('gold') && !metalType.includes('plated') && !metalType.includes('filled')) {
       jewelryTier = 'gold';
@@ -153,12 +161,12 @@ export async function calculateMaterialMultiplier(item) {
   const materials = [];
 
   // Primary material
-  if (item.primary_material?.name) {
-    const pct = item.primary_material.percentage || 100;
-    const mult = await getMaterialTierMultiplier(item.primary_material.name);
-    const tier = await getMaterialValueTier(item.primary_material.name);
+  if (item.material?.primary?.name) {
+    const pct = item.material.primary.percentage || 100;
+    const mult = await getMaterialTierMultiplier(item.material.primary.name);
+    const tier = await getMaterialValueTier(item.material.primary.name);
     materials.push({
-      name: item.primary_material.name,
+      name: item.material.primary.name,
       percentage: pct,
       multiplier: mult,
       tier: tier || 'medium'
@@ -166,8 +174,8 @@ export async function calculateMaterialMultiplier(item) {
   }
 
   // Secondary materials
-  if (item.secondary_materials?.length > 0) {
-    for (const mat of item.secondary_materials) {
+  if (item.material?.secondary?.length > 0) {
+    for (const mat of item.material.secondary) {
       if (mat.name) {
         const mult = await getMaterialTierMultiplier(mat.name);
         const tier = await getMaterialValueTier(mat.name);
@@ -273,7 +281,7 @@ export function getJewelrySizeMultiplier(item) {
   const { adjustable, ring_premium, ring_standard, ring_narrow, necklace_premium, necklace_standard } = JEWELRY_SIZE_RULES;
 
   // Check for adjustable closure
-  if (item.closure_type && adjustable.closures.includes(item.closure_type)) {
+  if (item.jewelry_specific?.closure_type && adjustable.closures.includes(item.jewelry_specific.closure_type)) {
     return { multiplier: adjustable.multiplier, tier: 'adjustable' };
   }
 
@@ -283,8 +291,9 @@ export function getJewelrySizeMultiplier(item) {
   }
 
   // Ring sizing
-  if (item.subcategory === 'ring' && item.ring_size) {
-    const size = item.ring_size.toString();
+  const ringSize = item.size?.measurements?.ring_size;
+  if (item.category?.secondary === 'ring' && ringSize) {
+    const size = ringSize.toString();
     if (ring_premium.sizes.includes(size)) {
       return { multiplier: ring_premium.multiplier, tier: 'ring_premium' };
     }
@@ -295,9 +304,10 @@ export function getJewelrySizeMultiplier(item) {
   }
 
   // Necklace/pendant chain length
-  if ((item.subcategory === 'necklace' || item.subcategory === 'pendant') &&
-      item.measurements?.chain_length_inches) {
-    const length = item.measurements.chain_length_inches;
+  const subcategory = item.category?.secondary;
+  if ((subcategory === 'necklace' || subcategory === 'pendant') &&
+      item.size?.measurements?.chain_length) {
+    const length = item.size.measurements.chain_length;
     if (necklace_premium.lengths.includes(length)) {
       return { multiplier: necklace_premium.multiplier, tier: 'necklace_premium' };
     }
@@ -316,13 +326,14 @@ export function getJewelrySizeMultiplier(item) {
  */
 export function getSizeMultiplier(item) {
   let result;
+  const category = item.category?.primary;
 
-  switch (item.category) {
+  switch (category) {
     case 'clothing':
-      result = getClothingSizeMultiplier(item.labeled_size);
+      result = getClothingSizeMultiplier(item.size?.label?.value);
       break;
     case 'shoes':
-      result = getShoeSizeMultiplier(item.labeled_size, item.width);
+      result = getShoeSizeMultiplier(item.size?.label?.value, item.shoes_specific?.width);
       break;
     case 'jewelry':
       result = getJewelrySizeMultiplier(item);
@@ -331,7 +342,7 @@ export function getSizeMultiplier(item) {
       result = { multiplier: 1.0, tier: 'n/a' };
   }
 
-  return { ...result, category: item.category || 'unknown' };
+  return { ...result, category: category || 'unknown' };
 }
 
 // =============================================================================
@@ -492,7 +503,7 @@ async function matchItemToColorTrends(item, monthKey) {
   }
 
   const monthData = data.months[monthKey];
-  const itemColors = [item.primary_colour, item.secondary_colour]
+  const itemColors = [item.colour?.primary, item.colour?.secondary]
     .filter(Boolean)
     .map(c => normalizeColor(c));
 
@@ -569,7 +580,7 @@ async function matchItemToColorTrends(item, monthKey) {
  * @returns {string[]} Array of detected cuts
  */
 function inferCutsFromItem(item) {
-  const text = `${item.description || ''} ${item.title || ''} ${item.subcategory || ''}`.toLowerCase();
+  const text = `${item.description || ''} ${item.title || ''} ${item.category?.secondary || ''}`.toLowerCase();
   const detectedCuts = [];
 
   for (const [cut, keywords] of Object.entries(CUT_KEYWORDS)) {
@@ -824,10 +835,10 @@ export async function calculateAdjustedPrice(baseListingPrice, item, platformId)
   const sizeResult = getSizeMultiplier(item);
 
   // 3. Condition multiplier (existing)
-  const conditionMultiplier = CONDITION_MULTIPLIERS[item.overall_condition] || 0.85;
+  const conditionMultiplier = CONDITION_MULTIPLIERS[item.condition?.overall_condition] || 0.85;
 
   // 4. Flaw adjustment
-  const flawResult = calculateFlawAdjustment(item.flaws);
+  const flawResult = calculateFlawAdjustment(item.condition?.flaws);
   const flawMultiplier = 1.0 + flawResult.adjustment;
 
   // 5. Platform fit modifier
@@ -867,7 +878,7 @@ export async function calculateAdjustedPrice(baseListingPrice, item, platformId)
       },
       condition: {
         multiplier: conditionMultiplier,
-        level: item.overall_condition
+        level: item.condition?.overall_condition
       },
       flaws: {
         multiplier: flawMultiplier,
@@ -911,7 +922,7 @@ export async function calculateEnhancedResaleValue(item, compPrice = null) {
   if (!baseRange && !compPrice) return null;
 
   // Condition and era factors
-  const conditionFactor = CONDITION_MULTIPLIERS[item.overall_condition] || 0.85;
+  const conditionFactor = CONDITION_MULTIPLIERS[item.condition?.overall_condition] || 0.85;
   const eraBonus = ERA_BONUSES[item.era] || 1.0;
 
   // Calculate base price:
@@ -1063,7 +1074,7 @@ export function rankPlatformsForItem(item, suggestedPrice, brandMultiplier) {
   }
 
   // 3. Category scoring
-  if (item.category === 'jewelry') {
+  if (item.category?.primary === 'jewelry') {
     scores.etsy += 25;
     scores.ebay += 20;
     reasons.etsy.push('Jewelry performs well');
@@ -1076,7 +1087,7 @@ export function rankPlatformsForItem(item, suggestedPrice, brandMultiplier) {
   }
 
   // 4. Menswear detection
-  if (MENSWEAR_SUBCATEGORIES.includes(item.subcategory)) {
+  if (MENSWEAR_SUBCATEGORIES.includes(item.category?.secondary)) {
     scores.grailed += 25;
     scores.ebay += 10;
     reasons.grailed.push("Men's fashion specialist");
@@ -1136,8 +1147,8 @@ export async function generateSellingRecommendations(item, compPrice = null) {
   const rankedPlatforms = rankPlatformsForItem(item, suggestedPrice, brandMultiplier);
 
   // Calculate fees and profit for each recommended platform
-  const costBasis = (item.purchase_price || 0) + (item.tax_paid || 0);
-  const repairCosts = item.repairs_completed?.reduce((sum, r) => sum + (r.repair_cost || 0), 0) || 0;
+  const costBasis = (item.metadata?.acquisition?.price || 0) + (item.metadata?.acquisition?.tax_paid || 0);
+  const repairCosts = item.condition?.repairs_completed?.reduce((sum, r) => sum + (r.repair_cost || 0), 0) || 0;
   const totalCost = costBasis + repairCosts;
 
   const platformsWithFees = rankedPlatforms.map(p => {

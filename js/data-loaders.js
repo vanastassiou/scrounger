@@ -123,16 +123,16 @@ export async function getBrandMultiplier(brand) {
 
 /**
  * Calculate suggested resale value based on purchase price and brand multiplier.
- * @param {object} item - Inventory item with purchase_price, tax_paid, brand
+ * @param {object} item - Inventory item with metadata.acquisition.price, metadata.acquisition.tax_paid, brand
  * @returns {Promise<{value: number, multiplier: number, tips: string|null}|null>}
  */
 export async function calculateSuggestedResaleValue(item) {
-  if (!item.purchase_price) return null;
+  if (!item.metadata?.acquisition?.price) return null;
 
   const brandInfo = await getBrandMultiplier(item.brand);
   if (!brandInfo) return null;
 
-  const purchaseCost = (item.purchase_price || 0) + (item.tax_paid || 0);
+  const purchaseCost = (item.metadata?.acquisition?.price || 0) + (item.metadata?.acquisition?.tax_paid || 0);
   const suggestedValue = round(purchaseCost * brandInfo.multiplier);
 
   return {

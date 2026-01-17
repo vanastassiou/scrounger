@@ -669,20 +669,20 @@ core/oauth.js        ← Token management
 ### Sync Flow
 
 1. **On app open:** Pull from Drive, merge with local
-2. **On local change:** Mark dirty, write to IndexedDB, queue sync
+2. **On local change:** Mark unsynced, write to IndexedDB, queue sync
 3. **Background sync:** Push to Drive after 30s debounce
 4. **Offline:** Queue changes, sync when online
 
 ### Conflict Resolution
 
-Uses **last-write-wins** with a dirty flag:
-- If local data is dirty (modified since last sync), local wins
+Uses **last-write-wins** with an unsynced flag:
+- If local data is unsynced (modified since last sync), local wins
 - If local data is clean, Drive version wins
 
 ### Using Sync in Code
 
 ```javascript
-import { isConnected, syncOnOpen, markDirty } from './sync.js';
+import { isConnected, syncOnOpen, markUnsynced } from './sync.js';
 
 // Check connection
 if (isConnected()) {
@@ -691,7 +691,7 @@ if (isConnected()) {
 
 // After modifying data
 await updateItem(item);
-markDirty('inventory');  // Queue for sync
+markUnsynced('inventory');  // Queue for sync
 ```
 
 ---
