@@ -264,12 +264,6 @@
           },
           "required": true,
           "type": "enum"
-        },
-        "title": {
-          "max_length": 100,
-          "notes": "Brief descriptive title for listing",
-          "required": true,
-          "type": "string"
         }
       }
     },

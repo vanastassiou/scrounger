@@ -121,10 +121,10 @@ function scoreItem(item, currentMonth, nextMonth, seasonalColours, leadTimeDays)
   let score = 0;
   const reasons = [];
 
-  const itemSubcategory = item.subcategory?.toLowerCase();
-  const itemCategory = item.category?.toLowerCase();
-  const itemMaterials = normalizeMaterials(item.materials || item.primary_material);
-  const itemColours = normalizeColours(item.colours || item.primary_colour);
+  const itemSubcategory = item.category?.secondary?.toLowerCase();
+  const itemCategory = item.category?.primary?.toLowerCase();
+  const itemMaterials = normalizeMaterials(item.material?.primary?.name || item.material?.primary);
+  const itemColours = normalizeColours([item.colour?.primary, item.colour?.secondary].filter(Boolean));
 
   // Check current month hot categories
   if (currentMonth?.hot_categories) {
@@ -239,7 +239,7 @@ export function getSeasonalOpportunities(items) {
   // - Early pipeline items (needs_photo, unlisted)
   const listableStatuses = ['in_collection', 'needs_photo', 'unlisted'];
   const listable = items.filter(i =>
-    listableStatuses.includes(i.status) && i.intent !== 'personal_keep'
+    listableStatuses.includes(i.metadata?.status) && i.intent?.intent !== 'personal_keep'
   );
 
   return matchItemsToSeason(listable);

@@ -38,6 +38,165 @@ export async function clearAllData() {
   }
 }
 
+/**
+ * Migrate an item from old flat schema to new nested schema (v4 → v5).
+ * Transforms flat fields into nested objects.
+ */
+function migrateItemToNestedSchema(item) {
+  // Skip if already migrated (has metadata object)
+  if (item.metadata) return item;
+
+  const migrated = {
+    id: item.id,
+    brand: item.brand || null,
+    category: {
+      primary: item.category?.primary ?? item.category ?? null,
+      secondary: item.category?.secondary ?? item.subcategory ?? null
+    },
+    colour: {
+      primary: item.primary_colour || null,
+      secondary: item.secondary_colour || null
+    },
+    material: {
+      primary: item.primary_material || null,
+      secondary: item.secondary_materials || null
+    },
+    size: {
+      label: {
+        gender: null, // New field - will be null for existing items
+        value: item.labeled_size || null
+      },
+      measurements: item.measurements || null
+    },
+    country_of_manufacture: item.country_of_manufacture || null,
+    era: item.era || null,
+    notes: item.notes || null,
+    description: item.description || null,
+    condition: {
+      overall_condition: item.overall_condition || null,
+      flaws: item.flaws || null,
+      repairs_completed: item.repairs_completed || null,
+      repairs_needed: item.repairs_needed || null,
+      condition_notes: item.condition_notes || null
+    },
+    intent: item.intent ? {
+      intent: item.intent,
+      resale_platform_target: item.resale_platform_target || null
+    } : null,
+    pricing: {
+      estimated_resale_value: item.estimated_resale_value || null,
+      minimum_acceptable_price: item.minimum_acceptable_price || null,
+      brand_premium_multiplier: item.brand_premium_multiplier || null
+    },
+    listing_status: {
+      listing_date: item.listing_date || null,
+      sold_date: item.sold_date || null,
+      sold_price: item.sold_price || null,
+      sold_platform: item.sold_platform || null,
+      shipping_cost: item.shipping_cost || null,
+      platform_fees: item.platform_fees || null
+    },
+    jewelry_specific: item.category?.primary === 'jewelry' ? {
+      metal_type: item.metal_type || null,
+      closure_type: item.closure_type || null,
+      hallmarks: item.hallmarks || null,
+      stones: item.stones || null,
+      tested_with: item.tested_with || null,
+      ring_size: item.ring_size || null
+    } : null,
+    shoes_specific: item.category?.primary === 'shoes' ? {
+      width: item.width || null
+    } : null,
+    photos: item.photos || null,
+    title: item.title || null,
+    source: item.source || null,
+    tax_paid: item.tax_paid || null,
+    metadata: {
+      acquisition: {
+        date: item.acquisition_date || null,
+        price: item.purchase_price || null,
+        store_id: item.store_id || null,
+        packaging: item.packaging || null
+      },
+      status: item.status || 'in_collection',
+      created: item.created_at || new Date().toISOString(),
+      updated: item.updated_at || new Date().toISOString(),
+      sync: {
+        unsynced: item.unsynced ?? false,
+        synced_at: item.synced_at || null
+      }
+    }
+  };
+
+  // Clean up null nested objects
+  if (!migrated.intent?.intent) migrated.intent = null;
+  if (!migrated.jewelry_specific?.metal_type && !migrated.jewelry_specific?.closure_type) {
+    migrated.jewelry_specific = null;
+  }
+  if (!migrated.shoes_specific?.width) migrated.shoes_specific = null;
+
+  return migrated;
+}
+
+/**
+ * Migrate items with old flat category format to nested format.
+ * Converts: { category: "shoes", subcategory: "boots" }
+ * To: { category: { primary: "shoes", secondary: "boots" } }
+ * @returns {Promise<{migrated: number, total: number}>}
+ */
+export async function migrateCategoryFormat() {
+  const db = await openDB();
+  const tx = db.transaction('inventory', 'readwrite');
+  const store = tx.objectStore('inventory');
+
+  return new Promise((resolve, reject) => {
+    const items = [];
+    const request = store.openCursor();
+
+    request.onsuccess = (event) => {
+      const cursor = event.target.result;
+      if (cursor) {
+        items.push(cursor.value);
+        cursor.continue();
+      } else {
+        // All items collected, now migrate
+        let migrated = 0;
+        const updates = [];
+
+        for (const item of items) {
+          if (typeof item.category === 'string') {
+            const newCategory = {
+              primary: item.category.toLowerCase(),
+              secondary: item.subcategory?.toLowerCase() || null
+            };
+            item.category = newCategory;
+            delete item.subcategory;
+            item.metadata = item.metadata || {};
+            item.metadata.updated = new Date().toISOString();
+            updates.push(store.put(item));
+            migrated++;
+          }
+        }
+
+        if (updates.length === 0) {
+          resolve({ migrated: 0, total: items.length });
+          return;
+        }
+
+        // Wait for all updates
+        Promise.all(updates.map(req => new Promise((res, rej) => {
+          req.onsuccess = res;
+          req.onerror = () => rej(req.error);
+        }))).then(() => {
+          resolve({ migrated, total: items.length });
+        }).catch(reject);
+      }
+    };
+
+    request.onerror = () => reject(request.error);
+  });
+}
+
 export function openDB() {
   if (dbInstance) return Promise.resolve(dbInstance);
 
@@ -50,15 +209,19 @@ export function openDB() {
       resolve(dbInstance);
     };
 
-    request.onupgradeneeded = () => {
+    request.onupgradeneeded = (event) => {
       const db = request.result;
+      const transaction = request.transaction;
+      const oldVersion = event.oldVersion;
 
+      // Create stores if they don't exist (fresh install)
       if (!db.objectStoreNames.contains('inventory')) {
         const inventoryStore = db.createObjectStore('inventory', { keyPath: 'id' });
-        inventoryStore.createIndex('category', 'category', { unique: false });
-        inventoryStore.createIndex('status', 'status', { unique: false });
-        inventoryStore.createIndex('store_id', 'store_id', { unique: false });
-        inventoryStore.createIndex('acquisition_date', 'acquisition_date', { unique: false });
+        // New nested indexes for v5 schema
+        inventoryStore.createIndex('category.primary', 'category.primary', { unique: false });
+        inventoryStore.createIndex('metadata.status', 'metadata.status', { unique: false });
+        inventoryStore.createIndex('metadata.acquisition.store_id', 'metadata.acquisition.store_id', { unique: false });
+        inventoryStore.createIndex('metadata.acquisition.date', 'metadata.acquisition.date', { unique: false });
       }
 
       if (!db.objectStoreNames.contains('visits')) {
@@ -85,6 +248,54 @@ export function openDB() {
 
       if (!db.objectStoreNames.contains('archive')) {
         db.createObjectStore('archive', { keyPath: 'id' });
+      }
+
+      // Migrate from v4 to v5: Update indexes and migrate items
+      if (oldVersion > 0 && oldVersion < 5) {
+        const inventoryStore = transaction.objectStore('inventory');
+
+        // Delete old indexes if they exist
+        if (inventoryStore.indexNames.contains('category')) {
+          inventoryStore.deleteIndex('category');
+        }
+        if (inventoryStore.indexNames.contains('status')) {
+          inventoryStore.deleteIndex('status');
+        }
+        if (inventoryStore.indexNames.contains('store_id')) {
+          inventoryStore.deleteIndex('store_id');
+        }
+        if (inventoryStore.indexNames.contains('acquisition_date')) {
+          inventoryStore.deleteIndex('acquisition_date');
+        }
+
+        // Create new nested indexes
+        if (!inventoryStore.indexNames.contains('category.primary')) {
+          inventoryStore.createIndex('category.primary', 'category.primary', { unique: false });
+        }
+        if (!inventoryStore.indexNames.contains('metadata.status')) {
+          inventoryStore.createIndex('metadata.status', 'metadata.status', { unique: false });
+        }
+        if (!inventoryStore.indexNames.contains('metadata.acquisition.store_id')) {
+          inventoryStore.createIndex('metadata.acquisition.store_id', 'metadata.acquisition.store_id', { unique: false });
+        }
+        if (!inventoryStore.indexNames.contains('metadata.acquisition.date')) {
+          inventoryStore.createIndex('metadata.acquisition.date', 'metadata.acquisition.date', { unique: false });
+        }
+
+        // Migrate all items to new schema using cursor
+        const cursorRequest = inventoryStore.openCursor();
+        cursorRequest.onsuccess = (e) => {
+          const cursor = e.target.result;
+          if (cursor) {
+            const item = cursor.value;
+            // Only migrate if not already in new format
+            if (!item.metadata) {
+              const migrated = migrateItemToNestedSchema(item);
+              cursor.update(migrated);
+            }
+            cursor.continue();
+          }
+        };
       }
     };
   });
@@ -195,7 +406,7 @@ export async function importBaselineInventory(items, version) {
         ...item,
         created_at: now,
         updated_at: now,
-        dirty: false
+        unsynced: false
       };
       await addRecord('inventory', record);
       imported++;
@@ -218,13 +429,15 @@ export async function computeVisitsFromInventory() {
     const visitsMap = new Map();
 
     for (const item of items) {
-      if (!item.store_id || !item.acquisition_date) continue;
+      const storeId = item.metadata?.acquisition?.store_id;
+      const acqDate = item.metadata?.acquisition?.date;
+      if (!storeId || !acqDate) continue;
 
-      const key = `${item.store_id}__${item.acquisition_date}`;
+      const key = `${storeId}__${acqDate}`;
       if (!visitsMap.has(key)) {
         visitsMap.set(key, {
-          store_id: item.store_id,
-          date: item.acquisition_date,
+          store_id: storeId,
+          date: acqDate,
           purchases_count: 0,
           total_spent: 0,
           items: []
@@ -233,12 +446,12 @@ export async function computeVisitsFromInventory() {
 
       const visit = visitsMap.get(key);
       visit.purchases_count++;
-      visit.total_spent += (item.purchase_price || 0) + (item.tax_paid || 0);
+      visit.total_spent += (item.metadata?.acquisition?.price || 0) + (item.tax_paid || 0);
       visit.items.push({
         id: item.id,
         title: item.title,
-        purchase_price: item.purchase_price,
-        category: item.category
+        purchase_price: item.metadata?.acquisition?.price,
+        category: item.category?.primary
       });
     }
 
@@ -270,13 +483,18 @@ export async function createInventoryItem(data) {
       id = generateId();
     }
 
+    // Ensure metadata structure exists with proper defaults
+    const metadata = data.metadata || {};
+    metadata.created = metadata.created || now;
+    metadata.updated = now;
+    metadata.sync = metadata.sync || { unsynced: true, synced_at: null };
+    metadata.sync.unsynced = true;
+
     const item = {
       ...data,
       id,
       source: data.source || 'user',
-      created_at: now,
-      updated_at: now,
-      dirty: true
+      metadata
     };
     await addRecord('inventory', item);
     return item;
@@ -293,11 +511,57 @@ export async function updateInventoryItem(id, updates) {
     const existing = await promisify(store.get(id));
     if (!existing) throw new Error('Item not found');
 
+    // Deep merge metadata if present in updates
+    let mergedMetadata = existing.metadata || {};
+    if (updates.metadata) {
+      mergedMetadata = {
+        ...mergedMetadata,
+        ...updates.metadata,
+        acquisition: { ...mergedMetadata.acquisition, ...updates.metadata.acquisition },
+        sync: { ...mergedMetadata.sync, ...updates.metadata.sync }
+      };
+    }
+    mergedMetadata.updated = nowISO();
+    mergedMetadata.sync = mergedMetadata.sync || {};
+    mergedMetadata.sync.unsynced = true;
+
+    // Deep merge listing_status if present in updates
+    let mergedListingStatus = existing.listing_status || {};
+    if (updates.listing_status) {
+      mergedListingStatus = { ...mergedListingStatus, ...updates.listing_status };
+    }
+
+    // Deep merge condition if present in updates
+    let mergedCondition = existing.condition || {};
+    if (updates.condition) {
+      mergedCondition = { ...mergedCondition, ...updates.condition };
+    }
+
+    // Deep merge pricing if present in updates
+    let mergedPricing = existing.pricing || {};
+    if (updates.pricing) {
+      mergedPricing = { ...mergedPricing, ...updates.pricing };
+    }
+
+    // Deep merge size if present in updates
+    let mergedSize = existing.size || {};
+    if (updates.size) {
+      mergedSize = {
+        ...mergedSize,
+        ...updates.size,
+        label: { ...mergedSize.label, ...updates.size?.label },
+        measurements: { ...mergedSize.measurements, ...updates.size?.measurements }
+      };
+    }
+
     const updated = {
       ...existing,
       ...updates,
-      updated_at: nowISO(),
-      dirty: true
+      metadata: mergedMetadata,
+      listing_status: mergedListingStatus,
+      condition: mergedCondition,
+      pricing: mergedPricing,
+      size: mergedSize
     };
     await promisify(store.put(updated));
     return updated;
@@ -329,7 +593,7 @@ export async function getInventoryItem(id) {
 export async function getAllInventory() {
   try {
     const items = await getAllFromStore('inventory');
-    return items.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    return items.sort((a, b) => (b.metadata?.created || '').localeCompare(a.metadata?.created || ''));
   } catch (err) {
     return handleError(err, 'Failed to get inventory', []);
   }
@@ -338,7 +602,7 @@ export async function getAllInventory() {
 export async function getInventoryByCategory(category) {
   try {
     const store = await getStore('inventory');
-    const index = store.index('category');
+    const index = store.index('category.primary');
     return promisify(index.getAll(category));
   } catch (err) {
     return handleError(err, `Failed to get inventory by category ${category}`, []);
@@ -348,7 +612,7 @@ export async function getInventoryByCategory(category) {
 export async function getInventoryByStatus(status) {
   try {
     const store = await getStore('inventory');
-    const index = store.index('status');
+    const index = store.index('metadata.status');
     return promisify(index.getAll(status));
   } catch (err) {
     return handleError(err, `Failed to get inventory by status ${status}`, []);
@@ -368,13 +632,15 @@ export async function getInventoryStats() {
     };
 
     for (const item of items) {
-      if (stats.byCategory[item.category] !== undefined) {
-        stats.byCategory[item.category]++;
+      const category = item.category?.primary;
+      const status = item.metadata?.status;
+      if (stats.byCategory[category] !== undefined) {
+        stats.byCategory[category]++;
       }
-      stats.byStatus[item.status] = (stats.byStatus[item.status] || 0) + 1;
-      stats.totalInvested += (item.purchase_price || 0) + (item.tax_paid || 0);
-      if (item.status === 'sold' && item.sold_price) {
-        stats.totalSold += item.sold_price;
+      stats.byStatus[status] = (stats.byStatus[status] || 0) + 1;
+      stats.totalInvested += (item.metadata?.acquisition?.price || 0) + (item.tax_paid || 0);
+      if (status === 'sold' && item.listing_status?.sold_price) {
+        stats.totalSold += item.listing_status.sold_price;
       }
     }
 
@@ -401,8 +667,8 @@ export async function getInventoryInPipeline() {
       'needs_photo', 'unlisted', 'listed', 'sold', 'packaged', 'shipped', 'confirmed_received'
     ];
 
-    return items.filter(item => pipelineStatuses.includes(item.status))
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return items.filter(item => pipelineStatuses.includes(item.metadata?.status))
+      .sort((a, b) => new Date(b.metadata?.created || 0) - new Date(a.metadata?.created || 0));
   } catch (err) {
     return handleError(err, 'Failed to get pipeline inventory', []);
   }
@@ -415,8 +681,8 @@ export async function getItemsNotInPipeline() {
       'needs_photo', 'unlisted', 'listed', 'sold', 'packaged', 'shipped', 'confirmed_received'
     ];
 
-    return items.filter(item => !pipelineStatuses.includes(item.status))
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    return items.filter(item => !pipelineStatuses.includes(item.metadata?.status))
+      .sort((a, b) => new Date(b.metadata?.created || 0) - new Date(a.metadata?.created || 0));
   } catch (err) {
     return handleError(err, 'Failed to get non-pipeline inventory', []);
   }
@@ -425,7 +691,7 @@ export async function getItemsNotInPipeline() {
 export async function getSellingAnalytics(dateRange = null) {
   try {
     const store = await getStore('inventory');
-    const statusIndex = store.index('status');
+    const statusIndex = store.index('metadata.status');
     const soldItems = await promisify(statusIndex.getAll('sold'));
 
     // Apply date filter if provided
@@ -433,18 +699,19 @@ export async function getSellingAnalytics(dateRange = null) {
     if (dateRange) {
       const { startDate, endDate } = dateRange;
       filtered = soldItems.filter(item => {
-        if (!item.sold_date) return false;
-        const date = new Date(item.sold_date);
+        const soldDate = item.listing_status?.sold_date;
+        if (!soldDate) return false;
+        const date = new Date(soldDate);
         return date >= startDate && date <= endDate;
       });
     }
 
     // Calculate metrics
-    const revenue = filtered.reduce((sum, item) => sum + (item.sold_price || 0), 0);
+    const revenue = filtered.reduce((sum, item) => sum + (item.listing_status?.sold_price || 0), 0);
     const cost = filtered.reduce((sum, item) => {
-      const purchaseCost = (item.purchase_price || 0) + (item.tax_paid || 0);
-      const expenses = (item.shipping_cost || 0) + (item.platform_fees || 0);
-      const repairCosts = item.repairs_completed?.reduce((s, r) => s + (r.repair_cost || 0), 0) || 0;
+      const purchaseCost = (item.metadata?.acquisition?.price || 0) + (item.tax_paid || 0);
+      const expenses = (item.listing_status?.shipping_cost || 0) + (item.listing_status?.platform_fees || 0);
+      const repairCosts = item.condition?.repairs_completed?.reduce((s, r) => s + (r.repair_cost || 0), 0) || 0;
       return sum + purchaseCost + expenses + repairCosts;
     }, 0);
 
@@ -454,23 +721,23 @@ export async function getSellingAnalytics(dateRange = null) {
     // Platform breakdown
     const platformBreakdown = {};
     filtered.forEach(item => {
-      const platform = item.sold_platform || 'unknown';
+      const platform = item.listing_status?.sold_platform || 'unknown';
       if (!platformBreakdown[platform]) {
         platformBreakdown[platform] = { count: 0, revenue: 0, profit: 0 };
       }
       platformBreakdown[platform].count++;
-      platformBreakdown[platform].revenue += item.sold_price || 0;
+      platformBreakdown[platform].revenue += item.listing_status?.sold_price || 0;
     });
 
     // Category breakdown
     const categoryBreakdown = {};
     filtered.forEach(item => {
-      const cat = item.category || 'unknown';
+      const cat = item.category?.primary || 'unknown';
       if (!categoryBreakdown[cat]) {
         categoryBreakdown[cat] = { count: 0, revenue: 0, profit: 0 };
       }
       categoryBreakdown[cat].count++;
-      categoryBreakdown[cat].revenue += item.sold_price || 0;
+      categoryBreakdown[cat].revenue += item.listing_status?.sold_price || 0;
     });
 
     return {
@@ -502,14 +769,23 @@ export async function getSellingAnalytics(dateRange = null) {
 export async function markItemAsSold(itemId, soldData) {
   try {
     const { sold_date, sold_price, sold_platform, shipping_cost, platform_fees } = soldData;
+    const item = await getInventoryItem(itemId);
+    if (!item) throw new Error('Item not found');
 
+    // Update nested structures
     return await updateInventoryItem(itemId, {
-      status: 'sold',
-      sold_date,
-      sold_price,
-      sold_platform,
-      shipping_cost: shipping_cost || 0,
-      platform_fees: platform_fees || 0
+      metadata: {
+        ...item.metadata,
+        status: 'sold'
+      },
+      listing_status: {
+        ...item.listing_status,
+        sold_date,
+        sold_price,
+        sold_platform,
+        shipping_cost: shipping_cost || 0,
+        platform_fees: platform_fees || 0
+      }
     });
   } catch (err) {
     return handleError(err, `Failed to mark item ${itemId} as sold`, null);
@@ -520,7 +796,7 @@ export async function getInventoryByPlatform(platform) {
   try {
     const items = await getAllFromStore('inventory');
     return items.filter(item =>
-      item.status === 'sold' && item.sold_platform === platform
+      item.metadata?.status === 'sold' && item.listing_status?.sold_platform === platform
     );
   } catch (err) {
     return handleError(err, `Failed to get inventory by platform ${platform}`, []);
@@ -531,7 +807,7 @@ export async function getInventoryForVisit(storeId, date) {
   try {
     const items = await getAllFromStore('inventory');
     return items.filter(item =>
-      item.store_id === storeId && item.acquisition_date === date
+      item.metadata?.acquisition?.store_id === storeId && item.metadata?.acquisition?.date === date
     );
   } catch (err) {
     return handleError(err, `Failed to get inventory for visit`, []);
@@ -541,7 +817,7 @@ export async function getInventoryForVisit(storeId, date) {
 export async function getInventoryByStore(storeId) {
   try {
     const store = await getStore('inventory');
-    const index = store.index('store_id');
+    const index = store.index('metadata.acquisition.store_id');
     return promisify(index.getAll(storeId));
   } catch (err) {
     return handleError(err, `Failed to get inventory by store ${storeId}`, []);
@@ -583,7 +859,7 @@ export async function migrateItemToSlug(oldId) {
     ...item,
     id: newId,
     updated_at: nowISO(),
-    dirty: true
+    unsynced: true
   };
   await promisify(invStore.add(updatedItem));
 
@@ -632,12 +908,13 @@ export async function getItemsMissingSlugFields() {
     .filter(item => isUuidFormat(item.id) && !canGenerateSlug(item))
     .map(item => {
       const missing = [];
-      if (!item.primary_colour) missing.push('colour');
-      const hasMaterial = typeof item.primary_material === 'object'
-        ? !!item.primary_material?.name
-        : !!item.primary_material;
+      if (!item.colour?.primary) missing.push('colour');
+      const primaryMaterial = item.material?.primary;
+      const hasMaterial = typeof primaryMaterial === 'object'
+        ? !!primaryMaterial?.name
+        : !!primaryMaterial;
       if (!hasMaterial) missing.push('material');
-      if (!item.subcategory) missing.push('type');
+      if (!item.category?.secondary) missing.push('type');
       return { ...item, missingFields: missing };
     });
 }
@@ -654,7 +931,7 @@ export async function createVisit(data) {
       id: generateId(),
       created_at: now,
       updated_at: now,
-      dirty: true
+      unsynced: true
     };
     await addRecord('visits', visit);
     return visit;
@@ -675,7 +952,7 @@ export async function updateVisit(id, updates) {
       ...existing,
       ...updates,
       updated_at: nowISO(),
-      dirty: true
+      unsynced: true
     };
     await promisify(store.put(updated));
     return updated;
@@ -798,7 +1075,7 @@ export async function createUserStore(data) {
       created_at: now,
       updated_at: now,
       user_created: true,
-      dirty: true
+      unsynced: true
     };
     await addRecord('stores', store);
     return store;
@@ -819,7 +1096,7 @@ export async function updateUserStore(id, updates) {
       ...existing,
       ...updates,
       updated_at: nowISO(),
-      dirty: true
+      unsynced: true
     };
     await promisify(store.put(updated));
     return updated;
@@ -856,7 +1133,6 @@ export async function getAllUserStores() {
 export async function exportAllData() {
   try {
     const inventory = await getAllFromStore('inventory');
-    const visits = await getAllFromStore('visits');
     const stores = await getAllFromStore('stores');
     const archive = await getAllFromStore('archive');
 
@@ -864,7 +1140,6 @@ export async function exportAllData() {
       version: 2,
       exported_at: nowISO(),
       inventory,
-      visits,
       stores,
       archive
     };
@@ -922,17 +1197,17 @@ export async function importData(data, merge = false) {
 }
 
 // =============================================================================
-// DIRTY TRACKING (for sync)
+// UNSYNCED TRACKING (for sync)
 // =============================================================================
 
-export async function getDirtyInventory() {
+export async function getUnsyncedInventory() {
   const items = await getAllFromStore('inventory');
-  return items.filter(i => i.dirty);
+  return items.filter(i => i.metadata?.sync?.unsynced);
 }
 
-export async function getDirtyVisits() {
+export async function getUnsyncedVisits() {
   const visits = await getAllFromStore('visits');
-  return visits.filter(v => v.dirty);
+  return visits.filter(v => v.unsynced);
 }
 
 export async function markInventorySynced(ids) {
@@ -943,8 +1218,12 @@ export async function markInventorySynced(ids) {
   for (const id of ids) {
     const item = await promisify(store.get(id));
     if (item) {
-      item.dirty = false;
-      item.synced_at = nowISO();
+      // Update nested sync structure
+      if (!item.metadata) item.metadata = {};
+      if (!item.metadata.sync) item.metadata.sync = {};
+      item.metadata.sync.unsynced = false;
+      item.metadata.sync.synced_at = nowISO();
+      item.metadata.updated = nowISO();
       store.put(item);
     }
   }
@@ -963,7 +1242,7 @@ export async function markVisitsSynced(ids) {
   for (const id of ids) {
     const visit = await promisify(store.get(id));
     if (visit) {
-      visit.dirty = false;
+      visit.unsynced = false;
       visit.synced_at = nowISO();
       store.put(visit);
     }
@@ -1080,7 +1359,7 @@ export async function archiveItem(itemId) {
     if (!item) {
       throw new Error('Item not found');
     }
-    if (item.status !== 'sold') {
+    if (item.metadata?.status !== 'sold') {
       throw new Error('Item must be sold before archiving');
     }
 

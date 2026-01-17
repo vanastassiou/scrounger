@@ -19,7 +19,7 @@ import {
 } from './config.js';
 import { queueSync } from './sync.js';
 import { generateSellingRecommendations, formatPlatformName, calculateTrendMultiplier, calculateEnhancedResaleValue } from './recommendations.js';
-import { calculatePlatformFees, calculateEstimatedReturns, round } from './fees.js';
+import { initFees, calculatePlatformFees, calculateEstimatedReturns, round } from './fees.js';
 import { calculateSuggestedResaleValue } from './data-loaders.js';
 import { openPhotoManager, getPhotoStatusSync } from './photos.js';
 
@@ -59,6 +59,7 @@ function navigateToSelling() {
 // =============================================================================
 
 export async function initInventory() {
+  await initFees(); // Ensure platforms data is loaded before calculating returns
   setupTableController();
   await loadInventory();
   setupEventHandlers();
@@ -95,14 +96,13 @@ async function loadInventory() {
 
   // Pre-calculate estimated sell prices for collection items
   const collectionItems = inventoryData.filter(item =>
-    !isInPipeline(item.status) && item.status !== 'sold'
+    !isInPipeline(item.metadata?.status) && item.metadata?.status !== 'sold'
   );
-
   // Calculate prices and photo status in parallel
   await Promise.all(collectionItems.map(async (item) => {
     // Use existing estimated_resale_value if set
-    if (item.estimated_resale_value) {
-      estimatedPrices.set(item.id, item.estimated_resale_value);
+    if (item.pricing?.estimated_resale_value) {
+      estimatedPrices.set(item.id, item.pricing.estimated_resale_value);
     } else {
       // Calculate using enhanced resale value logic
       try {
@@ -136,8 +136,8 @@ function setupTableController() {
     getData: () => inventoryData,
     filterItem: (item, filters, search) => {
       // Hide items in selling pipeline or sold
-      if (isInPipeline(item.status) || item.status === 'sold') return false;
-      if (filters.category && item.category !== filters.category) return false;
+      if (isInPipeline(item.metadata?.status) || item.metadata?.status === 'sold') return false;
+      if (filters.category && item.category?.primary !== filters.category) return false;
       if (search) {
         const inTitle = item.title?.toLowerCase().includes(search);
         const inBrand = item.brand?.toLowerCase().includes(search);
@@ -183,14 +183,14 @@ export function createInventoryRow(item, options = {}) {
   const { showActions = true } = options;
 
   // Get estimated price from cache (may be calculated if not on item)
-  const estPrice = estimatedPrices.get(item.id) || item.estimated_resale_value || 0;
+  const estPrice = estimatedPrices.get(item.id) || item.pricing?.estimated_resale_value || 0;
 
   // Calculate estimated return range across platforms
   let estReturnHtml = '-';
   let estReturnValue = 0;
   if (estPrice > 0) {
-    // Create temp item with cached price for calculation
-    const itemWithPrice = { ...item, estimated_resale_value: estPrice };
+    // Create temp item with cached price for calculation (nested under pricing)
+    const itemWithPrice = { ...item, pricing: { ...item.pricing, estimated_resale_value: estPrice } };
     const estimates = calculateEstimatedReturns(itemWithPrice);
     if (estimates.length > 0) {
       const profits = estimates.map(e => e.profit);
@@ -214,7 +214,7 @@ export function createInventoryRow(item, options = {}) {
       <td>
         <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a>
       </td>
-      <td data-label="Est. Return">${estReturnHtml}</td>
+      <td data-label="Est. Return" class="col-numeric">${estReturnHtml}</td>
       <td class="table-actions">
         <button class="btn btn--sm btn--ghost edit-item-btn" data-id="${item.id}">Edit</button>
         <button class="btn btn--sm btn--primary start-selling-btn" data-id="${item.id}">Sell</button>
@@ -926,7 +926,10 @@ export async function openEditItemModal(itemId, context = null) {
 
   // Hide store/date if editing from visit workflow
   if (context?.lockStoreDate) {
-    visitContext = { storeId: item.store_id, date: item.acquisition_date };
+    visitContext = {
+      storeId: item.metadata?.acquisition?.store_id,
+      date: item.metadata?.acquisition?.date
+    };
 
     const storeGroup = $('#store-field-group');
     const dateGroup = $('#date-field-group');
@@ -953,31 +956,32 @@ export async function openEditItemModal(itemId, context = null) {
 function populateFormWithItem(item) {
   // Basic info
   setValue('#item-title', item.title);
-  setValue('#item-category', item.category);
+  setValue('#item-category', item.category?.primary);
   setValue('#item-brand', item.brand);
   setValue('#item-country', item.country_of_manufacture);
   setValue('#item-era', item.era);
 
-  // Colours
-  setValue('#item-primary-colour', item.primary_colour);
-  setValue('#item-secondary-colour', item.secondary_colour);
+  // Colours (nested)
+  setValue('#item-primary-colour', item.colour?.primary);
+  setValue('#item-secondary-colour', item.colour?.secondary);
 
   // Trigger category change to populate subcategory options
-  if (item.category) {
-    handleCategoryChange({ target: { value: item.category } });
+  if (item.category?.primary) {
+    handleCategoryChange({ target: { value: item.category.primary } });
     // After subcategory options are populated, set the value
     setTimeout(() => {
-      setValue('#item-subcategory', item.subcategory);
+      setValue('#item-subcategory', item.category?.secondary);
       // Trigger subcategory change for ring size
-      if (item.subcategory) {
-        handleSubcategoryChange({ target: { value: item.subcategory } });
+      if (item.category?.secondary) {
+        handleSubcategoryChange({ target: { value: item.category.secondary } });
       }
     }, 0);
   }
 
-  // Acquisition - set chain first, then location
-  if (item.store_id) {
-    const store = state.getStore(item.store_id);
+  // Acquisition - set chain first, then location (nested under metadata)
+  const storeId = item.metadata?.acquisition?.store_id;
+  if (storeId) {
+    const store = state.getStore(storeId);
     if (store?.chain) {
       setValue('#item-chain', store.chain);
       // Trigger change to populate locations
@@ -985,72 +989,75 @@ function populateFormWithItem(item) {
       if (chainSelect) {
         chainSelect.dispatchEvent(new Event('change'));
         // Set location after dropdown is populated
-        setTimeout(() => setValue('#item-store', item.store_id), 0);
+        setTimeout(() => setValue('#item-store', storeId), 0);
       }
     } else {
-      setValue('#item-store', item.store_id);
+      setValue('#item-store', storeId);
     }
   }
-  setValue('#item-acquisition-date', item.acquisition_date);
-  setValue('#item-price', item.purchase_price);
+  setValue('#item-acquisition-date', item.metadata?.acquisition?.date);
+  setValue('#item-price', item.metadata?.acquisition?.price);
   setValue('#item-tax', item.tax_paid);
 
-  // Sizing
-  setValue('#item-labeled-size', item.labeled_size);
-  setValue('#item-width', item.width);
-  setValue('#item-ring-size', item.ring_size);
+  // Sizing (nested under size)
+  setValue('#item-labeled-size', item.size?.label?.value);
+  setValue('#item-size-gender', item.size?.label?.gender);
+  setValue('#item-width', item.shoes_specific?.width);
+  setValue('#item-ring-size', item.jewelry_specific?.ring_size);
 
   // Populate measurements
-  if (item.measurements && item.category) {
-    const fields = MEASUREMENT_FIELDS[item.category] || [];
+  const category = item.category?.primary;
+  if (item.size?.measurements && category) {
+    const fields = MEASUREMENT_FIELDS[category] || [];
     fields.forEach(field => {
-      if (item.measurements[field.key]) {
-        setValue(`#item-${field.key}`, item.measurements[field.key]);
+      if (item.size.measurements[field.key]) {
+        setValue(`#item-${field.key}`, item.size.measurements[field.key]);
       }
     });
   }
 
-  // Materials (handle both new structured format and legacy string format)
-  if (item.primary_material && typeof item.primary_material === 'object') {
-    setValue('#item-primary-material', item.primary_material.name);
-    setValue('#item-primary-material-pct', item.primary_material.percentage);
-  } else if (typeof item.primary_material === 'string') {
+  // Materials (nested under material)
+  const primaryMaterial = item.material?.primary;
+  if (primaryMaterial && typeof primaryMaterial === 'object') {
+    setValue('#item-primary-material', primaryMaterial.name);
+    setValue('#item-primary-material-pct', primaryMaterial.percentage);
+  } else if (typeof primaryMaterial === 'string') {
     // Legacy: try to find matching material option
-    const materialLower = item.primary_material.toLowerCase().replace(/\s+/g, '_');
+    const materialLower = primaryMaterial.toLowerCase().replace(/\s+/g, '_');
     if (MATERIAL_OPTIONS.includes(materialLower)) {
       setValue('#item-primary-material', materialLower);
     }
   }
 
-  // Secondary materials (array of structured objects)
-  if (Array.isArray(item.secondary_materials)) {
-    currentSecondaryMaterials = item.secondary_materials.map(m => ({ ...m }));
+  // Secondary materials (nested under material.secondary)
+  if (Array.isArray(item.material?.secondary)) {
+    currentSecondaryMaterials = item.material.secondary.map(m => ({ ...m }));
   } else {
     currentSecondaryMaterials = [];
   }
   renderSecondaryMaterialsList();
 
-  // Condition
-  setValue('#item-condition', item.overall_condition);
-  setValue('#item-condition-notes', item.condition_notes);
+  // Condition (nested)
+  setValue('#item-condition', item.condition?.overall_condition);
+  setValue('#item-condition-notes', item.condition?.condition_notes);
 
-  // Flaws
-  currentFlaws = item.flaws ? [...item.flaws] : [];
+  // Flaws (nested under condition)
+  currentFlaws = item.condition?.flaws ? [...item.condition.flaws] : [];
   renderFlawsList();
 
-  // Pricing
-  setValue('#item-status', item.status);
-  setValue('#item-estimated-value', item.estimated_resale_value);
-  setValue('#item-min-price', item.minimum_acceptable_price);
-  setValue('#item-brand-multiplier', item.brand_premium_multiplier || 1.0);
+  // Status and pricing (nested)
+  setValue('#item-status', item.metadata?.status);
+  setValue('#item-estimated-value', item.pricing?.estimated_resale_value);
+  setValue('#item-min-price', item.pricing?.minimum_acceptable_price);
+  setValue('#item-brand-multiplier', item.pricing?.brand_premium_multiplier || 1.0);
 
-  // Jewelry-specific
-  if (item.category === 'jewelry') {
-    setValue('#item-metal-type', item.metal_type);
-    setValue('#item-closure-type', item.closure_type);
-    setValue('#item-hallmarks', item.hallmarks);
-    setValue('#item-stones', item.stones);
-    setCheckboxGroup('tested_with[]', item.tested_with);
+  // Jewelry-specific (nested)
+  if (category === 'jewelry') {
+    setValue('#item-metal-type', item.jewelry_specific?.metal_type);
+    setValue('#item-closure-type', item.jewelry_specific?.closure_type);
+    setValue('#item-hallmarks', item.jewelry_specific?.hallmarks);
+    setValue('#item-stones', item.jewelry_specific?.stones);
+    setCheckboxGroup('tested_with[]', item.jewelry_specific?.tested_with);
   }
 
   // Description
@@ -1176,11 +1183,11 @@ async function handleItemSubmit(e) {
 
   const form = e.target;
   const formData = new FormData(form);
-  const category = formData.get('category');
-  const subcategory = formData.get('subcategory')?.trim() || null;
+  const categoryPrimary = formData.get('category');
+  const categorySecondary = formData.get('subcategory')?.trim() || null;
   const brand = formData.get('brand')?.trim() || null;
 
-  // Get new colour and material fields
+  // Get colour fields
   const primaryColour = formData.get('primary_colour') || null;
   const secondaryColour = formData.get('secondary_colour') || null;
   const primaryMaterialName = formData.get('primary_material_name') || null;
@@ -1195,92 +1202,122 @@ async function handleItemSubmit(e) {
   secondaryMaterials.forEach(m => { if (m.name) allMaterials.push(m.name); });
 
   // Get size for title
-  const labeledSize = formData.get('labeled_size')?.trim() || null;
+  const labeledSizeValue = formData.get('labeled_size')?.trim() || null;
+  const sizeGender = formData.get('size_gender') || null;
 
   // Auto-generate title from components
-  const title = generateItemTitle(brand, primaryColour, allMaterials, subcategory, labeledSize);
+  const title = generateItemTitle(brand, primaryColour, allMaterials, categorySecondary, labeledSizeValue);
 
-  // Build item object
+  // Build item object with new nested schema
   const item = {
     // Basic info (title is auto-generated)
     title: title,
-    category: category,
-    subcategory: subcategory,
     brand: brand,
     country_of_manufacture: formData.get('country_of_manufacture')?.trim() || null,
     era: formData.get('era') || null,
-
-    // Colours
-    primary_colour: primaryColour,
-    secondary_colour: secondaryColour,
-
-    // Acquisition
-    store_id: visitContext?.storeId || formData.get('store_id'),
-    acquisition_date: visitContext?.date || formData.get('acquisition_date') || new Date().toISOString().split('T')[0],
-    purchase_price: parseFloat(formData.get('purchase_price')) || 0,
+    description: formData.get('description')?.trim() || null,
     tax_paid: parseFloat(formData.get('tax_paid')) || 0,
 
-    // Sizing
-    labeled_size: labeledSize,
-    measurements: collectMeasurements(formData, category),
+    // Category (nested)
+    category: {
+      primary: categoryPrimary,
+      secondary: categorySecondary
+    },
 
-    // Materials (structured)
-    primary_material: primaryMaterialName ? {
-      name: primaryMaterialName,
-      percentage: primaryMaterialPct
-    } : null,
-    secondary_materials: secondaryMaterials.length > 0 ? secondaryMaterials : null,
+    // Colours (nested)
+    colour: {
+      primary: primaryColour,
+      secondary: secondaryColour
+    },
 
-    // Condition
-    overall_condition: formData.get('condition') || null,
-    condition_notes: formData.get('condition_notes')?.trim() || null,
-    flaws: currentFlaws.length > 0 ? [...currentFlaws] : null,
+    // Materials (nested)
+    material: {
+      primary: primaryMaterialName ? {
+        name: primaryMaterialName,
+        percentage: primaryMaterialPct
+      } : null,
+      secondary: secondaryMaterials.length > 0 ? secondaryMaterials : null
+    },
 
-    // Pricing
-    estimated_resale_value: parseFloat(formData.get('estimated_resale_value')) || null,
-    minimum_acceptable_price: parseFloat(formData.get('minimum_acceptable_price')) || null,
-    brand_premium_multiplier: parseFloat(formData.get('brand_premium_multiplier')) || 1.0,
+    // Size (nested)
+    size: {
+      label: {
+        gender: sizeGender,
+        value: labeledSizeValue
+      },
+      measurements: collectMeasurements(formData, categoryPrimary)
+    },
 
-    // Status (auto-set to in_collection for new items)
-    status: formData.get('status') || 'in_collection',
+    // Condition (nested)
+    condition: {
+      overall_condition: formData.get('condition') || null,
+      condition_notes: formData.get('condition_notes')?.trim() || null,
+      flaws: currentFlaws.length > 0 ? [...currentFlaws] : null,
+      repairs_completed: null,
+      repairs_needed: null
+    },
 
-    // Description
-    description: formData.get('description')?.trim() || null
+    // Pricing (nested)
+    pricing: {
+      estimated_resale_value: parseFloat(formData.get('estimated_resale_value')) || null,
+      minimum_acceptable_price: parseFloat(formData.get('minimum_acceptable_price')) || null,
+      brand_premium_multiplier: parseFloat(formData.get('brand_premium_multiplier')) || 1.0
+    },
+
+    // Metadata (nested)
+    metadata: {
+      acquisition: {
+        store_id: visitContext?.storeId || formData.get('store_id'),
+        date: visitContext?.date || formData.get('acquisition_date') || new Date().toISOString().split('T')[0],
+        price: parseFloat(formData.get('purchase_price')) || 0,
+        packaging: formData.get('packaging') || null
+      },
+      status: formData.get('status') || 'in_collection'
+    }
   };
 
   // Add category-specific fields
-  if (category === 'jewelry') {
-    item.metal_type = formData.get('metal_type') || null;
-    item.closure_type = formData.get('closure_type') || null;
-    item.hallmarks = formData.get('hallmarks')?.trim() || null;
-    item.stones = formData.get('stones')?.trim() || null;
-    item.tested_with = collectCheckedValues(formData, 'tested_with[]');
-    item.ring_size = formData.get('ring_size')?.trim() || null;
+  if (categoryPrimary === 'jewelry') {
+    item.jewelry_specific = {
+      metal_type: formData.get('metal_type') || null,
+      closure_type: formData.get('closure_type') || null,
+      hallmarks: formData.get('hallmarks')?.trim() || null,
+      stones: formData.get('stones')?.trim() || null,
+      tested_with: collectCheckedValues(formData, 'tested_with[]'),
+      ring_size: formData.get('ring_size')?.trim() || null
+    };
   }
 
-  if (category === 'shoes') {
-    item.width = formData.get('width') || null;
+  if (categoryPrimary === 'shoes') {
+    item.shoes_specific = {
+      width: formData.get('width') || null
+    };
   }
 
   // Validation
-  if (!item.category) {
+  if (!item.category.primary) {
     showToast('Category is required');
     return;
   }
-  if (!item.subcategory) {
+  if (!item.category.secondary) {
     showToast('Type is required');
     return;
   }
-  if (!item.primary_colour) {
+  if (!item.colour.primary) {
     showToast('Primary colour is required');
     return;
   }
-  if (!item.primary_material) {
+  if (!item.material.primary) {
     showToast('Primary material is required');
     return;
   }
-  if (!item.store_id) {
+  if (!item.metadata.acquisition.store_id) {
     showToast('Store is required');
+    return;
+  }
+  // Gender required for clothing and shoes
+  if (['clothing', 'shoes'].includes(item.category.primary) && !item.size.label.gender) {
+    showToast('Size gender is required for clothing and shoes');
     return;
   }
 
@@ -1428,15 +1465,17 @@ export async function openViewItemModal(itemId) {
 // =============================================================================
 
 function formatCategoryDisplay(item) {
-  return item.subcategory
-    ? `${capitalize(item.category)} (${formatStatus(item.subcategory)})`
-    : capitalize(item.category);
+  const primary = item.category?.primary;
+  const secondary = item.category?.secondary;
+  return secondary
+    ? `${capitalize(primary)} (${formatStatus(secondary)})`
+    : capitalize(primary);
 }
 
 function formatColourDisplay(item) {
-  if (!item.primary_colour) return null;
-  let display = `${formatColour(item.primary_colour)} (primary)`;
-  if (item.secondary_colour) display += `, ${formatColour(item.secondary_colour)}`;
+  if (!item.colour?.primary) return null;
+  let display = `${formatColour(item.colour.primary)} (primary)`;
+  if (item.colour?.secondary) display += `, ${formatColour(item.colour.secondary)}`;
   return display;
 }
 
@@ -1472,20 +1511,22 @@ function renderPhotoGallerySection(photos, item) {
 }
 
 function renderSizingSection(item) {
-  if (!item.labeled_size && !item.measurements) return null;
+  if (!item.size?.label?.value && !item.size?.measurements) return null;
 
   const fields = [
-    { dt: 'Labeled size', dd: item.labeled_size ? escapeHtml(item.labeled_size) : null },
-    { dt: 'Width', dd: item.width ? capitalize(item.width) : null },
-    { dt: 'Ring size', dd: item.ring_size ? escapeHtml(item.ring_size) : null }
+    { dt: 'Labeled size', dd: item.size?.label?.value ? escapeHtml(item.size.label.value) : null },
+    { dt: 'Gender', dd: item.size?.label?.gender ? capitalize(item.size.label.gender) : null },
+    { dt: 'Width', dd: item.shoes_specific?.width ? capitalize(item.shoes_specific.width) : null },
+    { dt: 'Ring size', dd: item.jewelry_specific?.ring_size ? escapeHtml(item.jewelry_specific.ring_size) : null }
   ];
 
   // Add dynamic measurement fields
-  if (item.measurements) {
-    const measurementFields = MEASUREMENT_FIELDS[item.category] || [];
+  if (item.size?.measurements) {
+    const category = item.category?.primary;
+    const measurementFields = MEASUREMENT_FIELDS[category] || [];
     for (const field of measurementFields) {
-      if (item.measurements[field.key]) {
-        fields.push({ dt: field.label, dd: `${item.measurements[field.key]}${field.unit}` });
+      if (item.size.measurements[field.key]) {
+        fields.push({ dt: field.label, dd: `${item.size.measurements[field.key]}${field.unit}` });
       }
     }
   }
@@ -1494,51 +1535,55 @@ function renderSizingSection(item) {
 }
 
 function renderMaterialsSection(item) {
-  if (!item.primary_material && !item.metal_type) return null;
+  const primaryMaterial = item.material?.primary;
+  const metalType = item.jewelry_specific?.metal_type;
+  if (!primaryMaterial && !metalType) return null;
 
   const materialsList = [];
 
   // Handle primary material (object vs string format)
-  if (item.primary_material) {
-    if (typeof item.primary_material === 'object') {
-      const pct = item.primary_material.percentage || 100;
-      materialsList.push(`${formatMaterial(item.primary_material.name)} (${pct}%)`);
+  if (primaryMaterial) {
+    if (typeof primaryMaterial === 'object') {
+      const pct = primaryMaterial.percentage || 100;
+      materialsList.push(`${formatMaterial(primaryMaterial.name)} (${pct}%)`);
     } else {
-      materialsList.push(formatMaterialString(item.primary_material));
+      materialsList.push(formatMaterialString(primaryMaterial));
     }
   }
 
-  // Handle secondary materials (array vs string)
-  if (item.secondary_materials) {
-    if (Array.isArray(item.secondary_materials)) {
-      item.secondary_materials.forEach(m => {
+  // Handle secondary materials (array vs string) - nested under material.secondary
+  const secondaryMaterials = item.material?.secondary;
+  if (secondaryMaterials) {
+    if (Array.isArray(secondaryMaterials)) {
+      secondaryMaterials.forEach(m => {
         const pct = m.percentage ? ` (${m.percentage}%)` : '';
         materialsList.push(`${formatMaterial(m.name)}${pct}`);
       });
     } else {
-      materialsList.push(formatMaterialString(item.secondary_materials));
+      materialsList.push(formatMaterialString(secondaryMaterials));
     }
   }
 
   return { title: 'Materials', content: [
     { dt: 'Materials', dd: materialsList.length > 0 ? materialsList.join(', ') : null },
-    { dt: 'Metal type', dd: item.metal_type ? formatMetalType(item.metal_type) : null }
+    { dt: 'Metal type', dd: metalType ? formatMetalType(metalType) : null }
   ]};
 }
 
 function renderConditionSection(item) {
-  if (!item.overall_condition && !item.flaws?.length) return null;
+  const condition = item.condition;
+  if (!condition?.overall_condition && !condition?.flaws?.length) return null;
 
   // Build dl content
   let html = '<dl class="detail-grid">';
-  if (item.overall_condition) html += `<dt>Condition</dt><dd>${formatStatus(item.overall_condition)}</dd>`;
-  if (item.condition_notes) html += `<dt>Notes</dt><dd>${escapeHtml(item.condition_notes)}</dd>`;
+  if (condition?.overall_condition) html += `<dt>Condition</dt><dd>${formatStatus(condition.overall_condition)}</dd>`;
+  if (condition?.condition_notes) html += `<dt>Notes</dt><dd>${escapeHtml(condition.condition_notes)}</dd>`;
   html += '</dl>';
 
   // Add flaws list if present
-  if (item.flaws?.length) {
+  if (condition?.flaws?.length) {
     html += '<div class="flaws-summary"><strong>Flaws:</strong><ul>' +
-      item.flaws.map(flaw =>
+      condition.flaws.map(flaw =>
         `<li>${formatStatus(flaw.type)} (${flaw.severity})${flaw.location ? ` - ${flaw.location}` : ''}${flaw.repairable ? ' [repairable]' : ''}</li>`
       ).join('') + '</ul></div>';
   }
@@ -1547,9 +1592,14 @@ function renderConditionSection(item) {
 }
 
 function renderItemDetails(item, photos = []) {
-  const store = state.getStore(item.store_id);
+  const storeId = item.metadata?.acquisition?.store_id;
+  const store = storeId ? state.getStore(storeId) : null;
   const storeName = store?.name || '-';
-  const totalCost = (item.purchase_price || 0) + (item.tax_paid || 0);
+  const purchasePrice = item.metadata?.acquisition?.price || 0;
+  const totalCost = purchasePrice + (item.tax_paid || 0);
+  const status = item.metadata?.status;
+  const category = item.category?.primary;
+  const jewelrySpec = item.jewelry_specific;
 
   return renderDetailSections([
     // Photos
@@ -1562,14 +1612,14 @@ function renderItemDetails(item, photos = []) {
       { dt: 'Country', dd: item.country_of_manufacture ? escapeHtml(item.country_of_manufacture) : null },
       { dt: 'Colours', dd: formatColourDisplay(item) },
       { dt: 'Era', dd: item.era ? formatEra(item.era) : null },
-      { dt: 'Status', dd: `<span class="status status--${item.status}">${formatStatus(item.status)}</span>` }
+      { dt: 'Status', dd: `<span class="status status--${status}">${formatStatus(status)}</span>` }
     ]},
 
     // Acquisition
     { title: 'Acquisition', content: [
       { dt: 'Store', dd: escapeHtml(storeName) },
-      { dt: 'Date', dd: formatDate(item.acquisition_date) },
-      { dt: 'Price', dd: formatCurrency(item.purchase_price || 0) },
+      { dt: 'Date', dd: item.metadata?.acquisition?.date ? formatDate(item.metadata.acquisition.date) : '-' },
+      { dt: 'Price', dd: formatCurrency(purchasePrice) },
       { dt: 'Tax', dd: item.tax_paid ? formatCurrency(item.tax_paid) : null },
       { dt: 'Total cost', dd: `<strong>${formatCurrency(totalCost)}</strong>` }
     ]},
@@ -1581,12 +1631,12 @@ function renderItemDetails(item, photos = []) {
     renderMaterialsSection(item),
 
     // Jewelry details (conditional)
-    item.category === 'jewelry' && (item.hallmarks || item.stones || item.closure_type || item.tested_with)
+    category === 'jewelry' && (jewelrySpec?.hallmarks || jewelrySpec?.stones || jewelrySpec?.closure_type || jewelrySpec?.tested_with)
       ? { title: 'Jewelry details', content: [
-          { dt: 'Closure', dd: item.closure_type ? formatStatus(item.closure_type) : null },
-          { dt: 'Hallmarks', dd: item.hallmarks ? escapeHtml(item.hallmarks) : null },
-          { dt: 'Stones', dd: item.stones ? escapeHtml(item.stones) : null },
-          { dt: 'Tested with', dd: item.tested_with?.length ? item.tested_with.map(formatStatus).join(', ') : null }
+          { dt: 'Closure', dd: jewelrySpec?.closure_type ? formatStatus(jewelrySpec.closure_type) : null },
+          { dt: 'Hallmarks', dd: jewelrySpec?.hallmarks ? escapeHtml(jewelrySpec.hallmarks) : null },
+          { dt: 'Stones', dd: jewelrySpec?.stones ? escapeHtml(jewelrySpec.stones) : null },
+          { dt: 'Tested with', dd: jewelrySpec?.tested_with?.length ? jewelrySpec.tested_with.map(formatStatus).join(', ') : null }
         ]}
       : null,
 
@@ -1594,15 +1644,15 @@ function renderItemDetails(item, photos = []) {
     renderConditionSection(item),
 
     // Pricing
-    (item.estimated_resale_value || item.minimum_acceptable_price)
+    (item.pricing?.estimated_resale_value || item.pricing?.minimum_acceptable_price)
       ? { title: 'Pricing', content: [
-          { dt: 'Est. value', dd: item.estimated_resale_value ? formatCurrency(item.estimated_resale_value) : null },
-          { dt: 'Min. price', dd: item.minimum_acceptable_price ? formatCurrency(item.minimum_acceptable_price) : null }
+          { dt: 'Est. value', dd: item.pricing?.estimated_resale_value ? formatCurrency(item.pricing.estimated_resale_value) : null },
+          { dt: 'Min. price', dd: item.pricing?.minimum_acceptable_price ? formatCurrency(item.pricing.minimum_acceptable_price) : null }
         ]}
       : null,
 
     // Packaging
-    item.packaging ? { title: 'Packaging', content: `<p>${formatPackaging(item.packaging)}</p>` } : null,
+    item.metadata?.acquisition?.packaging ? { title: 'Packaging', content: `<p>${formatPackaging(item.metadata.acquisition.packaging)}</p>` } : null,
 
     // Description
     item.description ? { title: 'Description', content: `<p class="item-description">${escapeHtml(item.description)}</p>` } : null
@@ -1649,12 +1699,12 @@ const startSellingModal = createLazyModal('#start-selling-dialog', {
     if (itemMetaEl) {
       const parts = [];
       if (item.brand) parts.push(item.brand);
-      if (item.category) parts.push(capitalize(item.category));
+      if (item.category?.primary) parts.push(capitalize(item.category.primary));
       itemMetaEl.textContent = parts.join(' · ') || '';
     }
 
     // Set initial listing price from estimated value or suggestion
-    const initialPrice = item.estimated_resale_value || recommendations?.suggestedPrice || fallbackSuggestion?.value || '';
+    const initialPrice = item.pricing?.estimated_resale_value || recommendations?.suggestedPrice || fallbackSuggestion?.value || '';
     if (listingPriceInput) listingPriceInput.value = initialPrice;
     if (estValueInput) estValueInput.value = initialPrice;
 
@@ -1719,11 +1769,11 @@ async function handleListingPriceChange(e) {
  * Render recommendations in the Start Selling modal.
  */
 function renderRecommendations(rec, item, basePrice) {
-  const purchasePrice = item.purchase_price || 0;
+  const purchasePrice = item.metadata?.acquisition?.price || 0;
   const taxPaid = item.tax_paid || 0;
-  const repairCosts = item.repairs_completed?.reduce((sum, r) => sum + (r.repair_cost || 0), 0) || 0;
+  const repairCosts = item.condition?.repairs_completed?.reduce((sum, r) => sum + (r.repair_cost || 0), 0) || 0;
   const costBasis = purchasePrice + taxPaid + repairCosts;
-  const priceToUse = basePrice || rec?.suggestedPrice || item.estimated_resale_value || 0;
+  const priceToUse = basePrice || rec?.suggestedPrice || item.pricing?.estimated_resale_value || 0;
 
   // Recommended platform
   const platformEl = $('#recommended-platform');

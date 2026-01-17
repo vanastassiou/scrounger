@@ -432,7 +432,7 @@ function renderModalContent() {
   // Meta
   const metaEl = dialog.querySelector('#photo-manager-meta');
   if (metaEl) {
-    metaEl.textContent = `${currentItem.brand || ''} ${currentItem.category || ''}`.trim() || '';
+    metaEl.textContent = `${currentItem.brand || ''} ${currentItem.category?.primary || ''}`.trim() || '';
   }
 
   // Progress bar

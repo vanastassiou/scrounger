@@ -235,14 +235,14 @@ function renderVisitItemsDetails(store, items) {
     ]);
   }
 
-  const total = items.reduce((sum, item) => sum + (item.purchase_price || 0), 0);
+  const total = items.reduce((sum, item) => sum + (item.metadata?.acquisition?.price || 0), 0);
   let itemsHtml = '<div class="table-container"><table class="table table-responsive table--compact"><thead><tr><th>Item</th><th>Category</th><th>Brand</th><th>Cost</th></tr></thead><tbody>';
 
   for (const item of items) {
     const title = item.title || 'Untitled item';
-    const category = capitalize(item.category);
+    const category = capitalize(item.category?.primary);
     const brand = item.brand || '-';
-    const price = formatCurrency(item.purchase_price || 0);
+    const price = formatCurrency(item.metadata?.acquisition?.price || 0);
     itemsHtml += `<tr><td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(title)}</a></td><td data-label="Category">${category}</td><td data-label="Brand">${escapeHtml(brand)}</td><td data-label="Cost">${price}</td></tr>`;
   }
 
@@ -379,9 +379,9 @@ function renderSpreadsheet() {
   tbody.innerHTML = visitWorkflow.items.map(item => `
     <tr data-item-id="${item.id}">
       <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
-      <td data-label="Category">${capitalize(item.category)}</td>
+      <td data-label="Category">${capitalize(item.category?.primary)}</td>
       <td data-label="Brand">${escapeHtml(item.brand || '-')}</td>
-      <td data-label="Cost">${formatCurrency(item.purchase_price || 0)}</td>
+      <td data-label="Cost">${formatCurrency(item.metadata?.acquisition?.price || 0)}</td>
       <td class="table-actions">
         <div class="table-actions-inner">
           <button class="btn btn--sm edit-item-btn" data-id="${item.id}">Edit</button>
@@ -392,7 +392,7 @@ function renderSpreadsheet() {
   `).join('');
 
   // Update total
-  const total = visitWorkflow.items.reduce((sum, i) => sum + (i.purchase_price || 0), 0);
+  const total = visitWorkflow.items.reduce((sum, i) => sum + (i.metadata?.acquisition?.price || 0), 0);
   const totalEl = $('#visit-spreadsheet-total');
   if (totalEl) {
     totalEl.innerHTML = `<strong>${formatCurrency(total)}</strong>`;

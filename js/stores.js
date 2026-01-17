@@ -253,14 +253,14 @@ function renderStoreDetails(store, stats, items) {
   // Inventory section
   if (items.length > 0) {
     const sortedItems = [...items].sort((a, b) =>
-      (b.acquisition_date || '').localeCompare(a.acquisition_date || '')
+      (b.metadata?.acquisition?.date || '').localeCompare(a.metadata?.acquisition?.date || '')
     );
 
     let itemsHtml = '<table class="table table--mini"><thead><tr><th>Item</th><th>Date</th><th>Price</th></tr></thead><tbody>';
     for (const item of sortedItems) {
       const title = item.title || 'Untitled item';
-      const date = item.acquisition_date ? formatDate(item.acquisition_date) : '-';
-      const price = item.purchase_price != null ? formatCurrency(item.purchase_price) : '-';
+      const date = item.metadata?.acquisition?.date ? formatDate(item.metadata.acquisition.date) : '-';
+      const price = item.metadata?.acquisition?.price != null ? formatCurrency(item.metadata.acquisition.price) : '-';
       itemsHtml += `<tr><td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(title)}</a></td><td>${date}</td><td>${price}</td></tr>`;
     }
     itemsHtml += '</tbody></table>';

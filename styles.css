@@ -1365,11 +1365,11 @@
     grid-column: 1 / -1;
   }
 
-  #inventory-table tbody tr td[data-label="Est. Value"] {
+  #inventory-table tbody tr td[data-label="Est. Return"] {
     grid-column: 1;
   }
 
-  #inventory-table tbody tr td[data-label="Est. Value"]::before {
+  #inventory-table tbody tr td[data-label="Est. Return"]::before {
     display: none;
   }
 
@@ -2008,6 +2008,10 @@
 
   .modal-close:hover {
     color: var(--color-text);
+  }
+
+  .modal--narrow {
+    max-width: 420px;
   }
 
   /* ==========================================================================
@@ -2990,11 +2994,16 @@
 .option-icon {
   font-size: var(--font-size-2xl);
   flex-shrink: 0;
+  width: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .option-text {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-2xs);
 }
 
