@@ -416,7 +416,7 @@ function renderTable() {
   }
 
   tbody.innerHTML = filtered.map(brand => {
-    const tierClass = `tier-badge tier-badge--${brand.tier.toLowerCase()}`;
+    const tierClass = `badge badge--tier-${brand.tier.toLowerCase()}`;
     const categoryLabel = brand.category.charAt(0).toUpperCase() + brand.category.slice(1);
     const altText = brand.alt?.length ? ` (${brand.alt.join(', ')})` : '';
     const multText = brand.multiplier != null ? `${brand.multiplier}x` : '';

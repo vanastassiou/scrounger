@@ -134,7 +134,7 @@ function createStoreRow(store, stats) {
           <div class="store-row__title">
             <a href="#" class="store-row__name table-link">${escapeHtml(store.name)}</a>
             <div class="store-row__meta">
-              <span class="tier tier--${store.tier}">${store.tier}</span>
+              <span class="badge badge--compact badge--tier-${store.tier.toLowerCase()}">${store.tier}</span>
               ${addressHtml}
             </div>
           </div>
@@ -148,7 +148,7 @@ function createStoreRow(store, stats) {
           ${addressHtml}
         </div>
       </td>
-      <td data-label="Tier"><span class="tier tier--${store.tier}">${store.tier}</span></td>
+      <td data-label="Tier"><span class="badge badge--compact badge--tier-${store.tier.toLowerCase()}">${store.tier}</span></td>
       <td data-label="Visits">${visitCount}</td>
       <td data-label="Hit Rate">${hitRate}</td>
     </tr>
@@ -229,7 +229,7 @@ function renderStoreDetails(store, stats, items) {
     title: 'Store Info',
     content: [
       { dt: 'Address', dd: addressHtml },
-      { dt: 'Tier', dd: `<span class="tier tier--${store.tier}">${store.tier}</span>` },
+      { dt: 'Tier', dd: `<span class="badge badge--compact badge--tier-${store.tier.toLowerCase()}">${store.tier}</span>` },
       { dt: 'Phone', dd: store.phone ? escapeHtml(store.phone) : null },
       { dt: 'Chain', dd: store.chain ? escapeHtml(formatChainName(store.chain)) : null },
       { dt: 'Notes', dd: store.notes ? escapeHtml(store.notes) : null }
