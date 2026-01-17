@@ -22,7 +22,8 @@ import {
   selectFolder,
   syncOnOpen
 } from './sync.js';
-import { getItemsNotInPipeline } from './db.js';
+import { getItemsNotInPipeline, migrateRemoveTitle } from './db.js';
+import { getItemTitle } from './utils.js';
 
 // =============================================================================
 // INITIALIZATION
@@ -31,6 +32,12 @@ import { getItemsNotInPipeline } from './db.js';
 async function init() {
   // Initialize sync module first (needed to check setup status)
   await initSync();
+
+  // Run data migrations (removes deprecated title field)
+  const migration = await migrateRemoveTitle();
+  if (migration.migrated > 0) {
+    console.log(`Migrated ${migration.migrated}/${migration.total} items (removed deprecated title field)`);
+  }
 
   // Check if Google Drive setup is complete
   const needsSetup = !isSyncEnabled() || !isConnected() || !isFolderConfigured();
@@ -272,7 +279,7 @@ function renderItemPickerList(searchTerm) {
 
   if (searchTerm) {
     filtered = selectItemData.filter(item => {
-      const title = (item.title || '').toLowerCase();
+      const title = getItemTitle(item).toLowerCase();
       const brand = (item.brand || '').toLowerCase();
       return title.includes(searchTerm) || brand.includes(searchTerm);
     });

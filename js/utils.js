@@ -26,16 +26,17 @@ export function slugify(str) {
 
 /**
  * Generate a human-readable slug ID for an item.
- * Format: {brand}-{colour}-{material}-{type}-{short_uuid}
- * Example: pendleton-red-wool-sweater-a7b3c9d2
+ * Format: {brand}-{colour.primary}-[{material.primary}-]{category.secondary}-{short_uuid}
+ * Example: gucci-red-leather-jacket-a7b3c (with material)
+ * Example: gucci-red-jacket-a7b3c (without material)
  *
  * @param {Object} item - Item data
  * @param {string} [item.brand] - Brand name (optional, uses 'unbranded')
- * @param {Object} item.colour - Colour object with primary/secondary
- * @param {Object} item.material - Material object with primary/secondary
- * @param {Object} item.category - Category object with primary/secondary
+ * @param {Object} item.colour - Colour object with primary/secondary (required)
+ * @param {Object} [item.material] - Material object with primary/secondary (optional)
+ * @param {Object} item.category - Category object with primary/secondary (required)
  * @returns {string} URL-safe slug ID
- * @throws {Error} If required fields are missing
+ * @throws {Error} If required fields (colour.primary, category.secondary) are missing
  */
 export function generateSlug(item) {
   const parts = [];
@@ -44,14 +45,14 @@ export function generateSlug(item) {
   const brand = item.brand?.trim() || 'unbranded';
   parts.push(slugify(brand));
 
-  // Colour (required) - nested path
+  // Colour (required)
   const primaryColour = item.colour?.primary;
   if (!primaryColour) {
     throw new Error('colour.primary is required for slug generation');
   }
   parts.push(slugify(primaryColour));
 
-  // Material (handle object or string) - nested path
+  // Material (optional) - handle object or string
   const primaryMaterial = item.material?.primary;
   let materialName;
   if (typeof primaryMaterial === 'object' && primaryMaterial?.name) {
@@ -59,21 +60,19 @@ export function generateSlug(item) {
   } else if (typeof primaryMaterial === 'string') {
     materialName = primaryMaterial;
   }
-  if (!materialName) {
-    throw new Error('material.primary is required for slug generation');
+  if (materialName) {
+    parts.push(slugify(materialName));
   }
-  parts.push(slugify(materialName));
 
-  // Type/subcategory (required) - nested path
+  // Category secondary (required)
   const subcategory = item.category?.secondary;
   if (!subcategory) {
     throw new Error('category.secondary is required for slug generation');
   }
   parts.push(slugify(subcategory));
 
-  // Short UUID suffix (8 chars for uniqueness)
-  const shortUuid = crypto.randomUUID().substring(0, 8);
-  parts.push(shortUuid);
+  // Short UUID suffix (5 chars for uniqueness)
+  parts.push(crypto.randomUUID().substring(0, 5));
 
   return parts.join('-');
 }
@@ -93,16 +92,14 @@ export function isUuidFormat(id) {
 
 /**
  * Check if an item has all required fields for slug generation.
+ * Required: colour.primary, category.secondary
+ * Optional: material.primary (included in slug if present)
  * @param {Object} item - Item object
  * @returns {boolean} True if slug can be generated
  */
 export function canGenerateSlug(item) {
   if (!item) return false;
-  const primaryMaterial = item.material?.primary;
-  const hasMaterial = typeof primaryMaterial === 'object'
-    ? !!primaryMaterial?.name
-    : !!primaryMaterial;
-  return !!(item.colour?.primary && hasMaterial && item.category?.secondary);
+  return !!(item.colour?.primary && item.category?.secondary);
 }
 
 /**
@@ -189,6 +186,85 @@ export function formatRelativeTime(dateStr) {
 export function capitalize(str) {
   if (!str) return '';
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
+ * Format colour for display.
+ * @param {string} colour
+ * @returns {string}
+ */
+export function formatColour(colour) {
+  if (!colour) return '';
+  const map = {
+    'royal_blue': 'Royal Blue',
+    'powder_blue': 'Powder Blue',
+    'multicolour': 'Multicolour'
+  };
+  return map[colour] || capitalize(colour);
+}
+
+/**
+ * Format material name for display.
+ * @param {string} material
+ * @returns {string}
+ */
+export function formatMaterial(material) {
+  if (!material) return '';
+  const map = {
+    'merino_wool': 'Merino Wool',
+    'patent_leather': 'Patent Leather',
+    'pony_hair': 'Pony Hair'
+  };
+  return map[material] || material.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+/**
+ * Compute display title for an inventory item from its properties.
+ * Generates title from: brand, colour, materials, subcategory, size.
+ * @param {Object} item - Inventory item with nested schema
+ * @returns {string} Computed title or 'Untitled item'
+ */
+export function getItemTitle(item) {
+  if (!item) return 'Untitled item';
+
+  const parts = [];
+
+  // Brand
+  if (item.brand) parts.push(item.brand);
+
+  // Colour (primary only)
+  if (item.colour?.primary) {
+    parts.push(formatColour(item.colour.primary).toLowerCase());
+  }
+
+  // Materials (primary + secondary names)
+  const materials = [];
+  if (item.material?.primary?.name) {
+    materials.push(item.material.primary.name);
+  } else if (typeof item.material?.primary === 'string') {
+    materials.push(item.material.primary);
+  }
+  if (item.material?.secondary?.length) {
+    item.material.secondary.forEach(m => {
+      if (m.name) materials.push(m.name);
+    });
+  }
+  if (materials.length > 0) {
+    const formatted = materials.map(m => formatMaterial(m).toLowerCase());
+    parts.push(formatted.join('/'));
+  }
+
+  // Subcategory
+  if (item.category?.secondary) {
+    parts.push(formatStatus(item.category.secondary).toLowerCase());
+  }
+
+  // Size
+  if (item.sizing?.labeled_size) {
+    parts.push(item.sizing.labeled_size);
+  }
+
+  return parts.join(' ') || 'Untitled item';
 }
 
 /**

@@ -21,6 +21,7 @@ import {
   syncNow,
   exportToDrive,
   listDriveBackups,
+  listDriveFiles,
   importFromDrive
 } from './sync.js';
 import { clearAllData, exportAllData, importData } from './db.js';
@@ -36,6 +37,7 @@ let exportModal = null;
 let importModal = null;
 let importConfirmModal = null;
 let createFolderModal = null;
+let drivePickerModal = null;
 
 // Pending import data
 let pendingImportData = null;
@@ -109,6 +111,15 @@ function initModals() {
     });
     document.getElementById('btn-pick-parent')?.addEventListener('click', handlePickParent);
     document.getElementById('btn-create-folder')?.addEventListener('click', handleCreateFolder);
+  }
+
+  // Drive file picker modal
+  const drivePickerDialog = document.getElementById('drive-file-picker-dialog');
+  if (drivePickerDialog) {
+    drivePickerModal = createModalController(drivePickerDialog);
+    document.getElementById('drive-picker-cancel')?.addEventListener('click', () => {
+      drivePickerModal.close();
+    });
   }
 }
 
@@ -483,6 +494,58 @@ function handleImportLocal() {
 }
 
 /**
+ * Validate if data matches a known backup/import schema.
+ * @param {object} data - Parsed JSON data
+ * @param {string} mode - 'restore' (backup only) or 'merge' (all formats)
+ * @returns {boolean} True if the data is valid for the given mode
+ */
+function isValidImportSchema(data, mode) {
+  if (!data || typeof data !== 'object') {
+    return false;
+  }
+
+  // Standard backup format: { version, inventory, stores }
+  // Valid for both restore and merge
+  if (data.version !== undefined && data.inventory) {
+    return Array.isArray(data.inventory);
+  }
+
+  // For restore mode, only standard backups are valid
+  if (mode === 'restore') {
+    return false;
+  }
+
+  // Below formats are only valid for merge mode
+
+  // inventory.json format: { meta: {...}, items: [...] }
+  if (data.items && Array.isArray(data.items)) {
+    return true;
+  }
+
+  // stores.json format: { stores: [...] } without inventory
+  if (data.stores && Array.isArray(data.stores) && !data.inventory) {
+    return true;
+  }
+
+  // Raw array format - check if looks like inventory or stores
+  if (Array.isArray(data) && data.length > 0) {
+    const sample = data[0];
+    if (sample && typeof sample === 'object') {
+      // Looks like inventory items (title deprecated, check other fields)
+      if (sample.brand || sample.category || sample.purchase_price !== undefined) {
+        return true;
+      }
+      // Looks like stores
+      if (sample.tier || sample.address || sample.chain) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
  * Normalize various JSON formats into standard import format.
  * Supports:
  * - inventory.json: { meta: {...}, items: [...] }
@@ -526,8 +589,8 @@ function normalizeImportData(parsedFiles) {
       // Check first item to guess type
       const sample = data[0];
       if (sample) {
-        if (sample.title || sample.brand || sample.purchase_price !== undefined) {
-          // Looks like inventory items
+        if (sample.brand || sample.category || sample.purchase_price !== undefined) {
+          // Looks like inventory items (title deprecated)
           result.inventory.push(...data);
         } else if (sample.tier || sample.address || sample.chain) {
           // Looks like stores
@@ -546,24 +609,133 @@ function normalizeImportData(parsedFiles) {
 async function handleImportDrive() {
   if (importModal) importModal.close();
 
-  try {
-    const backups = await listDriveBackups();
+  // Update picker title based on mode
+  const titleEl = document.getElementById('drive-picker-title');
+  const descEl = document.getElementById('drive-picker-description');
 
-    if (backups.length === 0) {
-      showToast('No backups found in Google Drive');
+  if (importMode === 'restore') {
+    if (titleEl) titleEl.textContent = 'Select backup to restore';
+    if (descEl) descEl.textContent = 'Choose a backup file from Google Drive:';
+  } else {
+    if (titleEl) titleEl.textContent = 'Select file to import';
+    if (descEl) descEl.textContent = 'Choose a file to import from Google Drive:';
+  }
+
+  // Show loading state
+  const loadingEl = document.getElementById('drive-picker-loading');
+  const listEl = document.getElementById('drive-picker-list');
+  const emptyEl = document.getElementById('drive-picker-empty');
+
+  if (loadingEl) loadingEl.style.display = 'block';
+  if (listEl) {
+    listEl.style.display = 'none';
+    listEl.innerHTML = '';
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  if (drivePickerModal) drivePickerModal.open();
+
+  try {
+    // Fetch both backups and root files
+    const [backups, rootFiles] = await Promise.all([
+      listDriveBackups(),
+      listDriveFiles()
+    ]);
+
+    // Combine and categorize files
+    const allFiles = [
+      ...backups.map(f => ({ ...f, category: 'backup' })),
+      ...rootFiles.map(f => ({ ...f, category: 'root' }))
+    ];
+
+    if (allFiles.length === 0) {
+      if (loadingEl) loadingEl.style.display = 'none';
+      if (emptyEl) emptyEl.style.display = 'block';
       return;
     }
 
-    // For now, use the most recent backup
-    // TODO: Could add a picker to select from multiple backups
-    const latestBackup = backups[0];
+    // Download and validate each file's content
+    const validationResults = await Promise.all(
+      allFiles.map(async (file) => {
+        try {
+          const data = await importFromDrive(file.id);
+          return { file, valid: isValidImportSchema(data, importMode) };
+        } catch {
+          return { file, valid: false };
+        }
+      })
+    );
 
-    const data = await importFromDrive(latestBackup.id);
-    showImportConfirm(data, latestBackup.name);
+    // Filter to only valid files
+    const validFiles = validationResults
+      .filter(r => r.valid)
+      .map(r => r.file);
+
+    if (loadingEl) loadingEl.style.display = 'none';
+
+    if (validFiles.length === 0) {
+      if (emptyEl) {
+        emptyEl.textContent = importMode === 'restore'
+          ? 'No backup files found.'
+          : 'No valid files found.';
+        emptyEl.style.display = 'block';
+      }
+      return;
+    }
+
+    // Render file list
+    if (listEl) {
+      listEl.innerHTML = validFiles.map(file => {
+        const icon = file.category === 'backup' ? '💾' : '📄';
+        const date = file.createdTime ? new Date(file.createdTime).toLocaleDateString() : '';
+        const size = file.size ? formatFileSize(parseInt(file.size, 10)) : '';
+        const meta = [date, size].filter(Boolean).join(' · ');
+
+        return `
+          <li class="file-list-item" data-file-id="${file.id}" data-file-name="${file.name}">
+            <span class="file-list-item__icon">${icon}</span>
+            <div class="file-list-item__info">
+              <div class="file-list-item__name">${file.name}</div>
+              <div class="file-list-item__meta">${meta}</div>
+            </div>
+          </li>
+        `;
+      }).join('');
+
+      // Add click handlers
+      listEl.querySelectorAll('.file-list-item').forEach(item => {
+        item.addEventListener('click', () => handleDriveFileSelect(item.dataset.fileId, item.dataset.fileName));
+      });
+
+      listEl.style.display = 'block';
+    }
+  } catch (err) {
+    console.error('Failed to list Drive files:', err);
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (emptyEl) {
+      emptyEl.textContent = 'Failed to load files from Google Drive.';
+      emptyEl.style.display = 'block';
+    }
+  }
+}
+
+async function handleDriveFileSelect(fileId, fileName) {
+  if (drivePickerModal) drivePickerModal.close();
+
+  try {
+    const data = await importFromDrive(fileId);
+    const normalized = normalizeImportData([{ name: fileName, data }]);
+    showImportConfirm(normalized, fileName);
   } catch (err) {
     console.error('Import from Drive failed:', err);
     showToast('Import from Drive failed: ' + err.message);
   }
+}
+
+function formatFileSize(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function showImportConfirm(data, sourceName = 'local file') {

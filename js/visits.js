@@ -7,7 +7,7 @@ import { computeVisitsFromInventory, getInventoryForVisit, deleteInventoryItem }
 import { showToast } from './ui.js';
 import {
   $, formatCurrency, formatDate, getTodayDate, capitalize, formatStatus, escapeHtml,
-  createChainStoreDropdown, createSortableTable, sortData, updateSortIndicators
+  createChainStoreDropdown, createSortableTable, sortData, updateSortIndicators, getItemTitle
 } from './utils.js';
 import { createLazyModal, initStoreDropdown, renderDetailSections } from './components.js';
 import { openAddItemModal, openEditItemModal, openViewItemModal } from './inventory.js';
@@ -239,7 +239,7 @@ function renderVisitItemsDetails(store, items) {
   let itemsHtml = '<div class="table-container"><table class="table table-responsive table--compact"><thead><tr><th>Item</th><th>Category</th><th>Brand</th><th>Cost</th></tr></thead><tbody>';
 
   for (const item of items) {
-    const title = item.title || 'Untitled item';
+    const title = getItemTitle(item);
     const category = capitalize(item.category?.primary);
     const brand = item.brand || '-';
     const price = formatCurrency(item.metadata?.acquisition?.price || 0);
@@ -378,7 +378,7 @@ function renderSpreadsheet() {
 
   tbody.innerHTML = visitWorkflow.items.map(item => `
     <tr data-item-id="${item.id}">
-      <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a></td>
+      <td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(getItemTitle(item))}</a></td>
       <td data-label="Category">${capitalize(item.category?.primary)}</td>
       <td data-label="Brand">${escapeHtml(item.brand || '-')}</td>
       <td data-label="Cost">${formatCurrency(item.metadata?.acquisition?.price || 0)}</td>

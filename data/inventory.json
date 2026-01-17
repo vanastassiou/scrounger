@@ -1,7 +1,7 @@
 {
   "items": [
     {
-      "id": "07be4243-7b4fe9-7fe42-fbe4-0000000005fd",
+      "id": "jonathan-simkhai-mustard-cashmere-sweater-4366e",
       "brand": "Jonathan Simkhai",
       "category": {
         "primary": "clothing",
@@ -73,7 +73,7 @@
       }
     },
     {
-      "id": "98fdb03d-98f70ce-98bdb0-90fdb-0000000098c0",
+      "id": "lord-taylor-black-cashmere-sweater-b7338",
       "brand": "Lord & Taylor",
       "category": {
         "primary": "clothing",
@@ -145,7 +145,7 @@
       }
     },
     {
-      "id": "3153e81a-315954c-3113e8-3953e-000000003949",
+      "id": "ellen-tracy-aubergine-merino-wool-sweater-2d514",
       "brand": "Ellen Tracy",
       "category": {
         "primary": "clothing",
@@ -217,7 +217,7 @@
       }
     },
     {
-      "id": "7bf10c0f-7bfbb0d-7bb10c-73f10-0000000077fe",
+      "id": "renee-tener-for-jeanne-pierre-magenta-lambswool-sweater-cf489",
       "brand": "Renee Tener for Jeanne Pierre",
       "category": {
         "primary": "clothing",
@@ -289,7 +289,7 @@
       }
     },
     {
-      "id": "cc6036b9-cc6a8a6-cc2036-c4603-00000000cad9",
+      "id": "anne-klein-2-cream-silk-jacket-73703",
       "brand": "Anne Klein 2",
       "category": {
         "primary": "clothing",
@@ -361,7 +361,7 @@
       }
     },
     {
-      "id": "c46a1d85-c460a15-c42a1d-cc6a1-00000000c9ef",
+      "id": "aquascutum-cream-wool-jacket-8187b",
       "brand": "Aquascutum",
       "category": {
         "primary": "clothing",
@@ -433,7 +433,7 @@
       }
     },
     {
-      "id": "8d041934-8d0ea5e-8d4419-85041-000000008430",
+      "id": "holt-renfrew-black-velvet-jacket-2c458",
       "brand": "Holt Renfrew",
       "category": {
         "primary": "clothing",
@@ -505,7 +505,7 @@
       }
     },
     {
-      "id": "975ef165-97544db-971ef1-9f5ef-00000000963b",
+      "id": "the-alpaca-experience-by-du-store-alpaca-aubergine-alpaca-sweater-71a57",
       "brand": "The Alpaca Experience by Du Store Alpaca",
       "category": {
         "primary": "clothing",
@@ -577,7 +577,7 @@
       }
     },
     {
-      "id": "052008a8-52ab47-56008-d200-000000000d88",
+      "id": "jones-new-york-separates-aubergine-merino-wool-sweater-7d241",
       "brand": "Jones New York Separates",
       "category": {
         "primary": "clothing",
@@ -649,7 +649,7 @@
       }
     },
     {
-      "id": "b23cd4de-b236680-b27cd4-ba3cd-00000000b6e2",
+      "id": "noelle-rouine-paris-burgundy-cashmere-sweater-a93ba",
       "brand": "Noelle Rouine Paris",
       "category": {
         "primary": "clothing",
@@ -726,14 +726,14 @@
       }
     },
     {
-      "id": "ef524ebe-ef58f26-ef124e-e7524-00000000e1ec",
+      "id": "russ-signature-navy-wool-sweater-d75f1",
       "brand": "Russ Signature",
       "category": {
         "primary": "clothing",
         "secondary": "sweater"
       },
       "colour": {
-        "primary": null,
+        "primary": "navy",
         "secondary": null
       },
       "material": {
@@ -798,7 +798,7 @@
       }
     },
     {
-      "id": "946d5442-9467e89-942d54-9c6d5-00000000902f",
+      "id": "ellen-tracy-aubergine-merino-wool-sweater-93647",
       "brand": "Ellen Tracy",
       "category": {
         "primary": "clothing",
@@ -870,7 +870,7 @@
       }
     },
     {
-      "id": "40cc3c60-40c680b-408c3c-48cc3-000000004cac",
+      "id": "melanie-lyne-red-wool-jacket-bf82f",
       "brand": "Melanie Lyne",
       "category": {
         "primary": "clothing",
@@ -947,7 +947,7 @@
       }
     },
     {
-      "id": "8f86cefa-8f8c722-8fc6ce-8786c-00000000817c",
+      "id": "danier-red-leather-jacket-70650",
       "brand": "Danier",
       "category": {
         "primary": "clothing",
@@ -1019,7 +1019,7 @@
       }
     },
     {
-      "id": "273c6b6f-2736d7b-277c6b-2f3c6-000000002c53",
+      "id": "giannini-fashion-collection-tan-cashmere-jacket-9a567",
       "brand": "Giannini Fashion Collection",
       "category": {
         "primary": "clothing",
@@ -1096,7 +1096,7 @@
       }
     },
     {
-      "id": "05608420-56a38f-52084-d608-000000000140",
+      "id": "gloverall-tan-jacket-e887a",
       "brand": "Gloverall",
       "category": {
         "primary": "clothing",
@@ -1165,7 +1165,7 @@
       }
     },
     {
-      "id": "0352d884-358645-312d8-b52d-000000000bd6",
+      "id": "pat-perkins-original-cream-wool-jacket-816cd",
       "brand": "Pat Perkins Original",
       "category": {
         "primary": "clothing",
@@ -1237,7 +1237,7 @@
       }
     },
     {
-      "id": "e43227ea-e4389b3-e47227-ec322-00000000e3d8",
+      "id": "opera-black-leather-jacket-1d8dd",
       "brand": "Opera",
       "category": {
         "primary": "clothing",
@@ -1309,7 +1309,7 @@
       }
     },
     {
-      "id": "1143a75f-11491b8-1103a7-1943a-00000000161c",
+      "id": "lucian-matis-black-polyester-dress-599da",
       "brand": "Lucian Matis",
       "category": {
         "primary": "clothing",
@@ -1386,7 +1386,7 @@
       }
     },
     {
-      "id": "5619b3e5-56130f3-5659b3-5e19b-0000000055fc",
+      "id": "moiselle-aubergine-silk-dress-02204",
       "brand": "Moiselle",
       "category": {
         "primary": "clothing",
@@ -1458,7 +1458,7 @@
       }
     },
     {
-      "id": "9893855e-9899398-98d385-90938-000000009dcd",
+      "id": "bardot-black-lace-dress-972fe",
       "brand": "Bardot",
       "category": {
         "primary": "clothing",
@@ -1530,7 +1530,7 @@
       }
     },
     {
-      "id": "dd497900-dd43c5d-dd0979-d5497-00000000d449",
+      "id": "aidan-mattox-black-lace-dress-8b09e",
       "brand": "Aidan Mattox",
       "category": {
         "primary": "clothing",
@@ -1602,7 +1602,7 @@
       }
     },
     {
-      "id": "83535fe9-8359e33-83135f-8b535-000000008cba",
+      "id": "eileen-fisher-red-silk-sweater-c7b40",
       "brand": "Eileen Fisher",
       "category": {
         "primary": "clothing",
@@ -1679,7 +1679,7 @@
       }
     },
     {
-      "id": "4e463bdc-4e4c870-4e063b-46463-00000000459a",
+      "id": "episode-by-carolyn-freeman-brown-wool-sweater-73794",
       "brand": "Episode by Carolyn Freeman",
       "category": {
         "primary": "clothing",
@@ -1756,7 +1756,7 @@
       }
     },
     {
-      "id": "48bd7e46-48b7c29-48fd7e-40bd7-0000000046fb",
+      "id": "fly-london-beige-pumps-71897",
       "brand": "Fly London",
       "category": {
         "primary": "shoes",
@@ -1827,7 +1827,7 @@
       }
     },
     {
-      "id": "71287aa7-7122c67-71687a-79287-000000007b8f",
+      "id": "frye-cognac-leather-boots-42a5d",
       "brand": "Frye",
       "category": {
         "primary": "shoes",
@@ -1901,7 +1901,7 @@
       }
     },
     {
-      "id": "2379cfaa-2373737-2339cf-2b79c-000000002cd3",
+      "id": "ingledews-grey-oxfords-132ed",
       "brand": "Ingledews",
       "category": {
         "primary": "shoes",
@@ -1972,7 +1972,7 @@
       }
     },
     {
-      "id": "ae5c4ce8-ae56f03-ae1c4c-a65c4-00000000a2b4",
+      "id": "ingledews-gunmetal-booties-a4933",
       "brand": "Ingledews",
       "category": {
         "primary": "shoes",
@@ -2043,14 +2043,14 @@
       }
     },
     {
-      "id": "65e4ff38-65ee43e-65a4ff-6de4f-000000006adc",
+      "id": "miz-mooz-brown-boots-ceaee",
       "brand": "Miz Mooz",
       "category": {
         "primary": "shoes",
         "secondary": "boots"
       },
       "colour": {
-        "primary": null,
+        "primary": "brown",
         "secondary": null
       },
       "material": {
@@ -2114,7 +2114,7 @@
       }
     },
     {
-      "id": "ea4d2b1c-ea4797c-ea0d2b-e24d2-00000000e151",
+      "id": "carlo-rosetti-burgundy-oxfords-e33c7",
       "brand": "Carlo Rosetti",
       "category": {
         "primary": "shoes",
@@ -2185,7 +2185,7 @@
       }
     },
     {
-      "id": "ce94acd5-ce9e100-ced4ac-c694a-00000000c241",
+      "id": "think-oxblood-boots-66c8f",
       "brand": "Think!",
       "category": {
         "primary": "shoes",
@@ -2256,7 +2256,7 @@
       }
     },
     {
-      "id": "9bb6dd2e-9bbc61f-9bf6dd-93b6d-000000009698",
+      "id": "wonders-black-booties-6dd3a",
       "brand": "Wonders",
       "category": {
         "primary": "shoes",
@@ -2327,7 +2327,7 @@
       }
     },
     {
-      "id": "510c25a8-5106997-514c25-590c2-0000000054a4",
+      "id": "chie-mihara-black-mary-janes-be7a2",
       "brand": "Chie Mihara",
       "category": {
         "primary": "shoes",
@@ -2398,7 +2398,7 @@
       }
     },
     {
-      "id": "3ab7617f-3abddda-3af761-32b76-000000003bc8",
+      "id": "marc-aurel-green-wool-jacket-a89f1",
       "brand": "Marc Aurel",
       "category": {
         "primary": "clothing",
@@ -2491,7 +2491,7 @@
       }
     },
     {
-      "id": "f3977de0-f39dc13-f3d77d-fb977-00000000fe77",
+      "id": "sesto-golf-by-sherry-cognac-leather-golf-shoes-96e5e",
       "brand": "Sesto Golf by Sherry",
       "category": {
         "primary": "shoes",
@@ -2565,7 +2565,7 @@
       }
     },
     {
-      "id": "eaf4186a-eafea4b-eab418-e2f41-00000000e29e",
+      "id": "john-fluevog-black-leather-boots-23b33",
       "brand": "John Fluevog",
       "category": {
         "primary": "shoes",
@@ -2639,7 +2639,7 @@
       }
     },
     {
-      "id": "fd55f734-fd5f4be-fd15f7-f555f-00000000fa61",
+      "id": "danier-black-leather-jacket-d4c07",
       "brand": "Danier",
       "category": {
         "primary": "clothing",
@@ -2711,7 +2711,7 @@
       }
     },
     {
-      "id": "d829c5a8-d823797-d869c5-d029c-00000000dd81",
+      "id": "unbranded-black-leather-boots-82af3",
       "brand": null,
       "category": {
         "primary": "shoes",
@@ -2785,7 +2785,7 @@
       }
     },
     {
-      "id": "88b0e615-88ba5ac-88f0e6-80b0e-000000008ea5",
+      "id": "evan-picone-black-pumps-07df4",
       "brand": "Evan Picone",
       "category": {
         "primary": "shoes",
@@ -2856,7 +2856,7 @@
       }
     },
     {
-      "id": "f717264a-f71d9a9-f75726-ff172-00000000f15d",
+      "id": "fera-giacomo-black-pumps-ab603",
       "brand": "Fera Giacomo",
       "category": {
         "primary": "shoes",
@@ -2927,7 +2927,7 @@
       }
     },
     {
-      "id": "cbaf3b87-cba5875-cbef3b-c3af3-00000000c028",
+      "id": "roots-black-boots-b9197",
       "brand": "Roots",
       "category": {
         "primary": "shoes",
@@ -2998,7 +2998,7 @@
       }
     },
     {
-      "id": "82abc0e4-82a17c3-82ebc0-8aabc-00000000824f",
+      "id": "babaton-camel-wool-jacket-96874",
       "brand": "Babaton",
       "category": {
         "primary": "clothing",
@@ -3070,7 +3070,7 @@
       }
     },
     {
-      "id": "0f9868b3-f92d46-fd868-7986-00000000072b",
+      "id": "escada-by-margaretha-ley-red-cashmere-jacket-e320e",
       "brand": "Escada by Margaretha Ley",
       "category": {
         "primary": "clothing",
@@ -3142,7 +3142,7 @@
       }
     },
     {
-      "id": "06f9f249-6f34e9-6b9f2-ef9f-0000000004b0",
+      "id": "escada-by-margaretha-ley-aubergine-wool-jacket-a947a",
       "brand": "Escada by Margaretha Ley",
       "category": {
         "primary": "clothing",
@@ -3219,7 +3219,7 @@
       }
     },
     {
-      "id": "d209115e-d203ad8-d24911-da091-00000000d357",
+      "id": "nanette-lepore-olive-wool-jacket-d1767",
       "brand": "Nanette Lepore",
       "category": {
         "primary": "clothing",
@@ -3291,7 +3291,7 @@
       }
     },
     {
-      "id": "66efeb09-66e557d-66afeb-6eefe-000000006de6",
+      "id": "ub-leather-collection-cream-wool-jacket-6d89e",
       "brand": "UB Leather Collection",
       "category": {
         "primary": "clothing",
@@ -3363,14 +3363,14 @@
       }
     },
     {
-      "id": "a71723c8-a71d9f1-a75723-af172-00000000a4df",
+      "id": "highland-queen-cream-wool-jacket-d1fba",
       "brand": "Highland Queen",
       "category": {
         "primary": "clothing",
         "secondary": "jacket"
       },
       "colour": {
-        "primary": null,
+        "primary": "cream",
         "secondary": null
       },
       "material": {
@@ -3435,7 +3435,7 @@
       }
     },
     {
-      "id": "b8c3d4e5-b8c9a0f-b8e3d4-b0c3d-00000000b1a2",
+      "id": "torrid-red-chemise-eb847",
       "brand": "Torrid",
       "category": {
         "primary": "clothing",
@@ -3504,7 +3504,7 @@
       }
     },
     {
-      "id": "c9d4e5f6-c9da1b0-c9f4e5-c1d4e-00000000c2b3",
+      "id": "paris-hilton-red-patent-leather-pumps-49c00",
       "brand": "Paris Hilton",
       "category": {
         "primary": "shoes",
@@ -3578,7 +3578,7 @@
       }
     },
     {
-      "id": "dae5f607-dae1b2c-daf5e6-d2e5f-00000000d3c4",
+      "id": "naot-beige-leather-boots-4d895",
       "brand": "Naot",
       "category": {
         "primary": "shoes",
@@ -3652,7 +3652,7 @@
       }
     },
     {
-      "id": "ebf60718-ebf2c3d-eb060f-e3f60-00000000e4d5",
+      "id": "rockport-black-leather-mary-janes-ad955",
       "brand": "Rockport",
       "category": {
         "primary": "shoes",
@@ -3726,7 +3726,7 @@
       }
     },
     {
-      "id": "fc071829-fc03d4e-fc1718-f4071-00000000f5e6",
+      "id": "franco-sarto-burgundy-boots-469f7",
       "brand": "Franco Sarto",
       "category": {
         "primary": "shoes",
@@ -3797,7 +3797,7 @@
       }
     },
     {
-      "id": "0d18293a-0d14e5f-0d2829-05182-0000000006f7",
+      "id": "jeffrey-campbell-tan-suede-booties-8fcb8",
       "brand": "Jeffrey Campbell",
       "category": {
         "primary": "shoes",
@@ -3871,7 +3871,7 @@
       }
     },
     {
-      "id": "1e293a4b-1e25f60-1e3930-16293-00000000a708",
+      "id": "adrianna-papell-pink-boucle-jacket-395db",
       "brand": "Adrianna Papell",
       "category": {
         "primary": "clothing",
@@ -3943,7 +3943,7 @@
       }
     },
     {
-      "id": "2f3a4b5c-2f36071-2f4a4b-273a4-00000000b819",
+      "id": "lafayette-148-new-york-mustard-yellow-jacket-473ca",
       "brand": "Lafayette 148 New York",
       "category": {
         "primary": "clothing",
@@ -4012,7 +4012,7 @@
       }
     },
     {
-      "id": "3a4b5c6d-3a47182-3a5b5c-383b5-00000000c92a",
+      "id": "banana-republic-off-white-linen-pants-5332a",
       "brand": "Banana Republic",
       "category": {
         "primary": "clothing",
@@ -4084,7 +4084,7 @@
       }
     },
     {
-      "id": "4b5c6d7e-4b58293-4b6c6d-494c6-00000000da3b",
+      "id": "banana-republic-salmon-pink-cotton-skirt-37149",
       "brand": "Banana Republic",
       "category": {
         "primary": "clothing",
@@ -4161,7 +4161,7 @@
       }
     },
     {
-      "id": "5c6d7e8f-5c693a4-5c7d7e-5a5d7-00000000eb4c",
+      "id": "blue-industry-gray-jacket-cae72",
       "brand": "Blue Industry",
       "category": {
         "primary": "clothing",
@@ -4230,7 +4230,7 @@
       }
     },
     {
-      "id": "6d7e8f90-6d7a4b5-6d8e8f-6b6e8-00000000fc5d",
+      "id": "adrianna-papell-black-dress-4f9ce",
       "brand": "Adrianna Papell",
       "category": {
         "primary": "clothing",
@@ -4299,7 +4299,7 @@
       }
     },
     {
-      "id": "7e8f90a1-7e8b5c6-7e9f90-7c7f9-000000000d6e",
+      "id": "wonders-black-leather-heels-8c4fb",
       "brand": "Wonders",
       "category": {
         "primary": "shoes",
@@ -4373,7 +4373,7 @@
       }
     },
     {
-      "id": "8f90a1b2-8f9c6d7-8fa0a1-8d809-000000001e7f",
+      "id": "barneys-new-york-black-patent-leather-heels-7329c",
       "brand": "Barneys New York",
       "category": {
         "primary": "shoes",
@@ -4447,7 +4447,7 @@
       }
     },
     {
-      "id": "90a1b2c3-90ad7e8-90b1b2-9e91a-000000002f80",
+      "id": "banana-republic-gray-wool-skirt-74290",
       "brand": "Banana Republic",
       "category": {
         "primary": "clothing",
@@ -4519,7 +4519,7 @@
       }
     },
     {
-      "id": "a1b2c3d4-a1be8f9-a1c2c3-afa2b-00000000a091",
+      "id": "banana-republic-gray-wool-skirt-e31fe",
       "brand": "Banana Republic",
       "category": {
         "primary": "clothing",
@@ -4591,7 +4591,7 @@
       }
     },
     {
-      "id": "b2c3d4e5-b2cf90a-b2d3d4-b0b3c-00000000b1a2",
+      "id": "joseph-ribkoff-black-silk-jacket-dd6cf",
       "brand": "Joseph Ribkoff",
       "category": {
         "primary": "clothing",

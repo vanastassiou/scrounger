@@ -8,9 +8,9 @@ import { showToast, createModalController } from './ui.js';
 import {
   $, $$, formatCurrency, formatDate, capitalize, formatStatus, formatPackaging, escapeHtml,
   sortData, createChainStoreDropdown, formatChainName, getLocationName, compressImage,
-  formatProfitDisplay, renderProfitWaterfall
+  formatProfitDisplay, renderProfitWaterfall, getItemTitle, formatColour, formatMaterial
 } from './utils.js';
-import { createSubTabController, initStoreDropdown, setVisible, createLazyModal, createTableController, renderDetailSections } from './components.js';
+import { createSubTabController, initStoreDropdown, setVisible, createLazyModal, createTableController, renderDetailSection, renderDetailSections } from './components.js';
 import {
   CATEGORIES, SUBCATEGORIES, STATUS_OPTIONS, CONDITION_OPTIONS, ERA_OPTIONS,
   METAL_TYPES, CLOSURE_TYPES, JEWELRY_TESTS,
@@ -139,7 +139,7 @@ function setupTableController() {
       if (isInPipeline(item.metadata?.status) || item.metadata?.status === 'sold') return false;
       if (filters.category && item.category?.primary !== filters.category) return false;
       if (search) {
-        const inTitle = item.title?.toLowerCase().includes(search);
+        const inTitle = getItemTitle(item).toLowerCase().includes(search);
         const inBrand = item.brand?.toLowerCase().includes(search);
         const inDesc = item.description?.toLowerCase().includes(search);
         if (!inTitle && !inBrand && !inDesc) return false;
@@ -212,7 +212,7 @@ export function createInventoryRow(item, options = {}) {
   return `
     <tr data-id="${item.id}" class="collection-row">
       <td>
-        <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || '-')}</a>
+        <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(getItemTitle(item))}</a>
       </td>
       <td data-label="Est. Return" class="col-numeric">${estReturnHtml}</td>
       <td class="table-actions">
@@ -392,24 +392,6 @@ function formatMetalType(type) {
   return map[type] || formatStatus(type);
 }
 
-function formatColour(colour) {
-  const map = {
-    'royal_blue': 'Royal Blue',
-    'powder_blue': 'Powder Blue',
-    'multicolour': 'Multicolour'
-  };
-  return map[colour] || capitalize(colour);
-}
-
-function formatMaterial(material) {
-  const map = {
-    'merino_wool': 'Merino Wool',
-    'patent_leather': 'Patent Leather',
-    'pony_hair': 'Pony Hair'
-  };
-  return map[material] || material.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-}
-
 /**
  * Parse and format material strings with percentages.
  * Examples:
@@ -437,29 +419,6 @@ function formatMaterialString(str) {
   // No percentages - assume 100% and capitalize
   const formatted = str.replace(/\b\w/g, c => c.toUpperCase());
   return `${formatted} (100%)`;
-}
-
-// Generate auto-title from item components
-function generateItemTitle(brand, colour, materials, subcategory, size) {
-  const parts = [];
-  if (brand) parts.push(brand);
-  if (colour) parts.push(formatColour(colour).toLowerCase());
-
-  // Handle materials - can be single string, array of strings, or array of {name} objects
-  if (materials) {
-    const materialList = Array.isArray(materials) ? materials : [materials];
-    const formatted = materialList
-      .map(m => typeof m === 'object' && m.name ? m.name : m)
-      .filter(Boolean)
-      .map(m => formatMaterial(m).toLowerCase());
-    if (formatted.length > 0) {
-      parts.push(formatted.join('/'));
-    }
-  }
-
-  if (subcategory) parts.push(formatStatus(subcategory).toLowerCase());
-  if (size) parts.push(size);
-  return parts.join(' ') || 'Untitled item';
 }
 
 // =============================================================================
@@ -954,8 +913,7 @@ export async function openEditItemModal(itemId, context = null) {
 }
 
 function populateFormWithItem(item) {
-  // Basic info
-  setValue('#item-title', item.title);
+  // Basic info (title is computed from item properties, not stored)
   setValue('#item-category', item.category?.primary);
   setValue('#item-brand', item.brand);
   setValue('#item-country', item.country_of_manufacture);
@@ -1196,22 +1154,12 @@ async function handleItemSubmit(e) {
   // Collect secondary materials
   const secondaryMaterials = collectSecondaryMaterials();
 
-  // Build materials array for title (primary + secondary names)
-  const allMaterials = [];
-  if (primaryMaterialName) allMaterials.push(primaryMaterialName);
-  secondaryMaterials.forEach(m => { if (m.name) allMaterials.push(m.name); });
-
-  // Get size for title
+  // Get size for item
   const labeledSizeValue = formData.get('labeled_size')?.trim() || null;
   const sizeGender = formData.get('size_gender') || null;
 
-  // Auto-generate title from components
-  const title = generateItemTitle(brand, primaryColour, allMaterials, categorySecondary, labeledSizeValue);
-
-  // Build item object with new nested schema
+  // Build item object with new nested schema (title is computed on-the-fly via getItemTitle)
   const item = {
-    // Basic info (title is auto-generated)
-    title: title,
     brand: brand,
     country_of_manufacture: formData.get('country_of_manufacture')?.trim() || null,
     era: formData.get('era') || null,
@@ -1417,7 +1365,7 @@ const viewItemModal = createLazyModal('#view-item-dialog', {
     // Update title
     const titleEl = dialog.querySelector('#view-item-title');
     if (titleEl) {
-      titleEl.textContent = item.title || 'Item Details';
+      titleEl.textContent = getItemTitle(item);
     }
 
     // Render content
@@ -1601,29 +1549,31 @@ function renderItemDetails(item, photos = []) {
   const category = item.category?.primary;
   const jewelrySpec = item.jewelry_specific;
 
-  return renderDetailSections([
-    // Photos
-    { title: 'Photos', content: renderPhotoGallerySection(photos, item) },
+  // Photos section (full width)
+  const photosSection = renderDetailSection('Photos', renderPhotoGallerySection(photos, item));
 
-    // Basic Info
-    { title: 'Basic info', content: [
-      { dt: 'Category', dd: formatCategoryDisplay(item) },
-      { dt: 'Brand', dd: item.brand ? escapeHtml(item.brand) : null },
-      { dt: 'Country', dd: item.country_of_manufacture ? escapeHtml(item.country_of_manufacture) : null },
-      { dt: 'Colours', dd: formatColourDisplay(item) },
-      { dt: 'Era', dd: item.era ? formatEra(item.era) : null },
-      { dt: 'Status', dd: `<span class="status status--${status}">${formatStatus(status)}</span>` }
-    ]},
+  // Basic Info and Acquisition side-by-side on desktop
+  const basicInfoSection = renderDetailSection('Basic info', [
+    { dt: 'Category', dd: formatCategoryDisplay(item) },
+    { dt: 'Brand', dd: item.brand ? escapeHtml(item.brand) : null },
+    { dt: 'Country', dd: item.country_of_manufacture ? escapeHtml(item.country_of_manufacture) : null },
+    { dt: 'Colours', dd: formatColourDisplay(item) },
+    { dt: 'Era', dd: item.era ? formatEra(item.era) : null },
+    { dt: 'Status', dd: `<span class="status status--${status}">${formatStatus(status)}</span>` }
+  ]);
 
-    // Acquisition
-    { title: 'Acquisition', content: [
-      { dt: 'Store', dd: escapeHtml(storeName) },
-      { dt: 'Date', dd: item.metadata?.acquisition?.date ? formatDate(item.metadata.acquisition.date) : '-' },
-      { dt: 'Price', dd: formatCurrency(purchasePrice) },
-      { dt: 'Tax', dd: item.tax_paid ? formatCurrency(item.tax_paid) : null },
-      { dt: 'Total cost', dd: `<strong>${formatCurrency(totalCost)}</strong>` }
-    ]},
+  const acquisitionSection = renderDetailSection('Acquisition', [
+    { dt: 'Store', dd: escapeHtml(storeName) },
+    { dt: 'Date', dd: item.metadata?.acquisition?.date ? formatDate(item.metadata.acquisition.date) : '-' },
+    { dt: 'Price', dd: formatCurrency(purchasePrice) },
+    { dt: 'Tax', dd: item.tax_paid ? formatCurrency(item.tax_paid) : null },
+    { dt: 'Total cost', dd: `<strong>${formatCurrency(totalCost)}</strong>` }
+  ]);
 
+  const twoColumnRow = `<div class="detail-section-row">${basicInfoSection}${acquisitionSection}</div>`;
+
+  // Remaining sections
+  const remainingSections = renderDetailSections([
     // Sizing
     renderSizingSection(item),
 
@@ -1652,12 +1602,11 @@ function renderItemDetails(item, photos = []) {
       : null,
 
     // Packaging
-    item.metadata?.acquisition?.packaging ? { title: 'Packaging', content: `<p>${formatPackaging(item.metadata.acquisition.packaging)}</p>` } : null,
-
-    // Description
-    item.description ? { title: 'Description', content: `<p class="item-description">${escapeHtml(item.description)}</p>` } : null
+    item.metadata?.acquisition?.packaging ? { title: 'Packaging', content: `<p>${formatPackaging(item.metadata.acquisition.packaging)}</p>` } : null
 
   ].filter(Boolean));
+
+  return photosSection + twoColumnRow + remainingSections;
 }
 
 // =============================================================================
@@ -1693,7 +1642,7 @@ const startSellingModal = createLazyModal('#start-selling-dialog', {
     const estValueInput = dialog.querySelector('#start-selling-est-value');
 
     if (itemIdInput) itemIdInput.value = item.id;
-    if (itemTitleEl) itemTitleEl.textContent = item.title || 'Untitled';
+    if (itemTitleEl) itemTitleEl.textContent = getItemTitle(item);
 
     // Render item metadata (brand, category)
     if (itemMetaEl) {
@@ -1946,9 +1895,10 @@ async function handleStartSellingSubmit(e) {
   const estimatedValue = parseFloat(formData.get('estimated_resale_value')) || null;
 
   try {
-    const updates = { status: 'needs_photo' };
+    // Use nested schema: status under metadata, estimated_resale_value under pricing
+    const updates = { metadata: { status: 'needs_photo' } };
     if (estimatedValue !== null) {
-      updates.estimated_resale_value = estimatedValue;
+      updates.pricing = { estimated_resale_value: estimatedValue };
     }
 
     await updateInventoryItem(itemId, updates);
@@ -1993,7 +1943,7 @@ async function openProfitBreakdownModal(itemId) {
 
   // Populate title
   const titleEl = $('#breakdown-item-title');
-  if (titleEl) titleEl.textContent = item.title || 'Untitled';
+  if (titleEl) titleEl.textContent = getItemTitle(item);
 
   // Calculate cost basis
   const purchasePrice = item.purchase_price || 0;

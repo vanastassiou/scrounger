@@ -10,9 +10,6 @@ export const SIZE_GENDER_OPTIONS = ['women', 'men', 'unisex'];
 
 export const STORE_TIERS = ['S', 'A', 'B', 'C'];
 
-export const SYNC_FILE_NAME = 'thrifting-data.json';
-export const DRIVE_FOLDER_NAME = 'Seneschal';
-
 export const CATEGORIES = ['clothing', 'shoes', 'jewelry', 'accessories'];
 
 export const SUBCATEGORIES = {
