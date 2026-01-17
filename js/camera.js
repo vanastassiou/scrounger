@@ -6,7 +6,7 @@
 import { getInventoryItem, getAttachmentsByItem, createAttachment } from './db.js';
 import { showToast } from './ui.js';
 import { $ } from './utils.js';
-import { REQUIRED_PHOTO_TYPES, OPTIONAL_PHOTO_TYPES, PHOTO_TYPE_HINTS } from './config.js';
+import { REQUIRED_PHOTO_TYPES, getOptionalPhotoTypes, getPhotoHint } from './config.js';
 import { queueSync } from './sync.js';
 
 // =============================================================================
@@ -672,7 +672,8 @@ function renderPrompt() {
     hintEl.textContent = 'Tap Save to keep or Retake to try again';
   } else if (currentType) {
     titleEl.textContent = `Take ${formatType(currentType)} photo`;
-    hintEl.textContent = PHOTO_TYPE_HINTS[currentType] || '';
+    const category = guidedState.item?.category?.primary || null;
+    hintEl.textContent = getPhotoHint(currentType, category);
   }
 }
 
@@ -681,8 +682,10 @@ function renderOptionalTypes() {
   if (!container) return;
 
   const existingTypes = new Set(guidedState.attachments.map(a => a.type).filter(Boolean));
+  const category = guidedState.item?.category?.primary || null;
+  const optionalTypes = getOptionalPhotoTypes(category);
 
-  container.innerHTML = OPTIONAL_PHOTO_TYPES.map(type => {
+  container.innerHTML = optionalTypes.map(type => {
     const hasPhoto = existingTypes.has(type);
     const className = hasPhoto ? 'guided-optional-btn guided-optional-btn--complete' : 'guided-optional-btn';
     const check = hasPhoto ? '<span class="guided-optional-check">&#10003;</span>' : '';

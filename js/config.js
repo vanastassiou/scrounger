@@ -301,8 +301,79 @@ export const PHOTO_TYPE_HINTS = {
   hallmark: 'Jewelry stamps and markings',
   closure: 'Zippers, buttons, or clasps',
   measurement: 'Item with measuring tape',
-  styled: 'Item styled or being worn'
+  styled: 'Item styled or being worn',
+  // New category-specific types
+  sole: 'Bottom of shoe showing wear pattern',
+  heel: 'Heel condition and height',
+  inside: 'Insole and interior lining',
+  clasp: 'Closure mechanism detail',
+  scale: 'Next to ruler or coin for size reference',
+  interior: 'Inside of bag showing lining and pockets',
+  hardware: 'Zippers, buckles, clasps, or locks'
 };
+
+// Category-specific optional photo types
+export const CATEGORY_PHOTO_TYPES = {
+  clothing: ['detail', 'closure', 'measurement', 'styled'],
+  shoes: ['sole', 'heel', 'inside', 'closure', 'detail'],
+  jewelry: ['hallmark', 'clasp', 'detail', 'scale'],
+  accessories: ['interior', 'hardware', 'detail', 'closure']
+};
+
+// All unique optional types (fallback when no category)
+export const ALL_OPTIONAL_PHOTO_TYPES = [
+  'detail', 'closure', 'measurement', 'styled',
+  'sole', 'heel', 'inside',
+  'hallmark', 'clasp', 'scale',
+  'interior', 'hardware'
+];
+
+// Category-specific hint overrides for photo types
+export const CATEGORY_PHOTO_HINTS = {
+  clothing: {
+    detail: 'Close-up of fabric texture, stitching, or unique features',
+    closure: 'Zippers, buttons, snaps, or hooks'
+  },
+  shoes: {
+    detail: 'Close-up of leather grain, stitching, or embellishments',
+    closure: 'Buckles, laces, zippers, or straps'
+  },
+  jewelry: {
+    detail: 'Close-up of stones, engraving, or craftsmanship',
+    clasp: 'Closure mechanism (lobster claw, toggle, etc.)'
+  },
+  accessories: {
+    detail: 'Close-up of stitching, logo, or unique features',
+    closure: 'Snaps, magnetic closures, or turn-locks'
+  }
+};
+
+/**
+ * Get optional photo types for a category.
+ * @param {string|null} category - Item category (clothing, shoes, jewelry, accessories)
+ * @returns {string[]} Array of optional photo type strings
+ */
+export function getOptionalPhotoTypes(category) {
+  if (category && CATEGORY_PHOTO_TYPES[category]) {
+    return CATEGORY_PHOTO_TYPES[category];
+  }
+  return ALL_OPTIONAL_PHOTO_TYPES;
+}
+
+/**
+ * Get the hint for a photo type, with optional category-specific override.
+ * @param {string} type - Photo type
+ * @param {string|null} category - Item category
+ * @returns {string} Hint text
+ */
+export function getPhotoHint(type, category) {
+  // Check for category-specific override first
+  if (category && CATEGORY_PHOTO_HINTS[category] && CATEGORY_PHOTO_HINTS[category][type]) {
+    return CATEGORY_PHOTO_HINTS[category][type];
+  }
+  // Fall back to default hint
+  return PHOTO_TYPE_HINTS[type] || '';
+}
 
 // Conditions that require flaws to be documented before entering pipeline
 export const CONDITIONS_REQUIRING_FLAWS = ['good', 'fair', 'poor', 'for_parts'];

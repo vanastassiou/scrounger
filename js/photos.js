@@ -7,7 +7,7 @@ import { getInventoryItem, getAttachmentsByItem, createAttachment, deleteAttachm
 import { showToast } from './ui.js';
 import { $, capitalize, escapeHtml, getItemTitle } from './utils.js';
 import { createLazyModal } from './components.js';
-import { REQUIRED_PHOTO_TYPES } from './config.js';
+import { REQUIRED_PHOTO_TYPES, getOptionalPhotoTypes } from './config.js';
 import { queueSync } from './sync.js';
 import { openGuidedCapture, isGuidedCaptureSupported } from './camera.js';
 
@@ -15,7 +15,11 @@ import { openGuidedCapture, isGuidedCaptureSupported } from './camera.js';
 // CONSTANTS
 // =============================================================================
 
-const PHOTO_TYPES = ['front', 'back', 'label', 'flaw', 'detail', 'hallmark', 'closure', 'measurement', 'styled'];
+const PHOTO_TYPES = [
+  'front', 'back', 'label', 'flaw',
+  'detail', 'hallmark', 'closure', 'measurement', 'styled',
+  'sole', 'heel', 'inside', 'clasp', 'scale', 'interior', 'hardware'
+];
 
 // =============================================================================
 // STATE
@@ -501,12 +505,13 @@ function renderTypeButtons(dialog, status) {
   const buttonsEl = dialog.querySelector('#photo-type-buttons');
   if (!buttonsEl) return;
 
-  // Show required types first, then optional
+  // Show required types first, then optional based on category
   const requiredTypes = [...REQUIRED_PHOTO_TYPES];
   if (currentItem.flaws && currentItem.flaws.length > 0) {
     requiredTypes.push('flaw');
   }
-  const optionalTypes = PHOTO_TYPES.filter(t => !requiredTypes.includes(t));
+  const category = currentItem.category?.primary || null;
+  const optionalTypes = getOptionalPhotoTypes(category).filter(t => !requiredTypes.includes(t));
   const orderedTypes = [...requiredTypes, ...optionalTypes];
 
   buttonsEl.innerHTML = orderedTypes.map(type => {

@@ -451,7 +451,14 @@
                 "hallmark",
                 "closure",
                 "measurement",
-                "styled"
+                "styled",
+                "sole",
+                "heel",
+                "inside",
+                "clasp",
+                "scale",
+                "interior",
+                "hardware"
               ],
               "type": "enum"
             }
