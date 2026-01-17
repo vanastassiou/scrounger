@@ -425,7 +425,7 @@ function renderTable() {
       <tr class="brand-row" data-brand-key="${escapeHtml(brand.key)}">
         <td>
           <div class="row-mobile flex brand-row-layout">
-            <span class="brand-row__name">${escapeHtml(brand.name)}</span>
+            <span class="brand-row__name">${escapeHtml(brand.name)} <span class="brand-row__type">(${escapeHtml(categoryLabel)})</span></span>
             <div class="brand-row__meta">
               ${multText ? `<span class="brand-row__mult">${multText}</span>` : ''}
               <span class="${tierClass}">${escapeHtml(brand.tier)}</span>
