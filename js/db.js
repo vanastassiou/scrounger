@@ -41,10 +41,12 @@ export async function clearAllData() {
 /**
  * Migrate an item from old flat schema to new nested schema (v4 → v5).
  * Transforms flat fields into nested objects.
+ * Handles partially-migrated items by checking for nested colour field.
  */
 function migrateItemToNestedSchema(item) {
-  // Skip if already migrated (has metadata object)
-  if (item.metadata) return item;
+  // Skip if already fully migrated (has nested colour object with primary)
+  // This is the definitive check since colour.primary is required in the new schema
+  if (item.colour?.primary !== undefined) return item;
 
   const migrated = {
     id: item.id,
@@ -108,7 +110,7 @@ function migrateItemToNestedSchema(item) {
       width: item.width || null
     } : null,
     photos: item.photos || null,
-    title: item.title || null,
+    // title is deprecated - computed on-the-fly via getItemTitle()
     source: item.source || null,
     tax_paid: item.tax_paid || null,
     metadata: {
@@ -195,6 +197,69 @@ export async function migrateCategoryFormat() {
 
     request.onerror = () => reject(request.error);
   });
+}
+
+/**
+ * Remove deprecated 'title' field from all inventory and archive items.
+ * Title is now computed on-the-fly via getItemTitle().
+ * @returns {Promise<{migrated: number, total: number}>}
+ */
+export async function migrateRemoveTitle() {
+  const db = await openDB();
+  let totalMigrated = 0;
+  let totalItems = 0;
+
+  // Process both inventory and archive stores
+  for (const storeName of ['inventory', 'archive']) {
+    if (!db.objectStoreNames.contains(storeName)) continue;
+
+    const tx = db.transaction(storeName, 'readwrite');
+    const store = tx.objectStore(storeName);
+
+    await new Promise((resolve, reject) => {
+      const items = [];
+      const request = store.openCursor();
+
+      request.onsuccess = (event) => {
+        const cursor = event.target.result;
+        if (cursor) {
+          items.push(cursor.value);
+          cursor.continue();
+        } else {
+          // All items collected, now migrate
+          const updates = [];
+
+          for (const item of items) {
+            if ('title' in item) {
+              delete item.title;
+              item.metadata = item.metadata || {};
+              item.metadata.updated = new Date().toISOString();
+              item.metadata.sync = item.metadata.sync || {};
+              item.metadata.sync.unsynced = true; // Mark for sync
+              updates.push(store.put(item));
+              totalMigrated++;
+            }
+          }
+          totalItems += items.length;
+
+          if (updates.length === 0) {
+            resolve();
+            return;
+          }
+
+          // Wait for all updates
+          Promise.all(updates.map(req => new Promise((res, rej) => {
+            req.onsuccess = res;
+            req.onerror = () => rej(req.error);
+          }))).then(resolve).catch(reject);
+        }
+      };
+
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  return { migrated: totalMigrated, total: totalItems };
 }
 
 export function openDB() {
@@ -288,9 +353,10 @@ export function openDB() {
           const cursor = e.target.result;
           if (cursor) {
             const item = cursor.value;
-            // Only migrate if not already in new format
-            if (!item.metadata) {
-              const migrated = migrateItemToNestedSchema(item);
+            // migrateItemToNestedSchema handles the check internally
+            const migrated = migrateItemToNestedSchema(item);
+            // Only update if migration occurred (different reference)
+            if (migrated !== item) {
               cursor.update(migrated);
             }
             cursor.continue();
@@ -449,7 +515,7 @@ export async function computeVisitsFromInventory() {
       visit.total_spent += (item.metadata?.acquisition?.price || 0) + (item.tax_paid || 0);
       visit.items.push({
         id: item.id,
-        title: item.title,
+        // title deprecated - use getItemTitle(item) with full item object
         purchase_price: item.metadata?.acquisition?.price,
         category: item.category?.primary
       });
@@ -1170,7 +1236,9 @@ export async function importData(data, merge = false) {
 
     if (data.inventory) {
       for (const item of data.inventory) {
-        inventoryStore.put(item);
+        // Apply schema migration to ensure nested format
+        const migrated = migrateItemToNestedSchema(item);
+        inventoryStore.put(migrated);
       }
     }
 
@@ -1182,7 +1250,9 @@ export async function importData(data, merge = false) {
 
     if (data.archive) {
       for (const item of data.archive) {
-        archiveStore.put(item);
+        // Apply schema migration to ensure nested format
+        const migrated = migrateItemToNestedSchema(item);
+        archiveStore.put(migrated);
       }
     }
 
@@ -1299,10 +1369,44 @@ export async function getAttachmentsByItem(itemId) {
   }
 }
 
+export async function findAttachmentByItemAndFilename(itemId, filename) {
+  const attachments = await getAttachmentsByItem(itemId);
+  return attachments.find(a => a.filename === filename) || null;
+}
+
+export async function upsertAttachmentFromSync(itemId, filename, blob, mimeType, driveFileId, type = null) {
+  const existing = await findAttachmentByItemAndFilename(itemId, filename);
+
+  if (existing) {
+    // Update existing - preserve local ID, update driveFileId
+    const store = await getStore('attachments', 'readwrite');
+    const updated = { ...existing, blob, driveFileId, synced: true, updated_at: nowISO() };
+    await promisify(store.put(updated));
+    return updated;
+  }
+
+  // Create new, already marked as synced
+  const attachment = {
+    id: generateId(),
+    itemId,
+    filename,
+    blob,
+    mimeType: mimeType || 'application/octet-stream',
+    type,
+    synced: true,
+    driveFileId,
+    created_at: nowISO(),
+    updated_at: nowISO()
+  };
+  await addRecord('attachments', attachment);
+  return attachment;
+}
+
 export async function getPendingAttachments() {
   try {
     const all = await getAllFromStore('attachments');
-    return all.filter(att => !att.synced);
+    // Don't re-upload files that already have a driveFileId (even if synced flag is false)
+    return all.filter(att => !att.synced && !att.driveFileId);
   } catch (err) {
     return handleError(err, 'Failed to get pending attachments', []);
   }

@@ -20,7 +20,8 @@ import {
   formatProfitDisplay,
   renderProfitWaterfall,
   escapeHtml,
-  createFormHandler
+  createFormHandler,
+  getItemTitle
 } from './utils.js';
 import {
   RESALE_PLATFORMS,
@@ -258,7 +259,7 @@ function setupTableController() {
       }
       // Filter by search
       if (search) {
-        const title = (item.title || '').toLowerCase();
+        const title = getItemTitle(item).toLowerCase();
         const brand = (item.brand || '').toLowerCase();
         const description = (item.description || '').toLowerCase();
         return title.includes(search) || brand.includes(search) || description.includes(search);
@@ -267,7 +268,7 @@ function setupTableController() {
     },
     getColumnValue: (item, col) => {
       switch (col) {
-        case 'title': return (item.title || '').toLowerCase();
+        case 'title': return getItemTitle(item).toLowerCase();
         case 'category': return item.category?.primary || '';
         case 'status': return getStatusSortOrder(item.metadata?.status);
         case 'purchase_price': return item.metadata?.acquisition?.price || 0;
@@ -299,12 +300,17 @@ function setupTableController() {
       '.mark-sold-btn': (el) => {
         openMarkAsSoldModal(el.dataset.id);
       },
+      '.manage-photos-btn': (el) => {
+        openPhotoUploadModal(el.dataset.id);
+      },
+      '.ready-to-list-btn': async (el) => {
+        await updateItemStatus(el.dataset.id, 'unlisted');
+        showToast('Item ready to list');
+      },
       '.status-next-btn': (el) => {
         const itemId = el.dataset.id;
         const nextStatus = el.dataset.nextStatus;
-        if (nextStatus === 'unlisted') {
-          openPhotoUploadModal(itemId);
-        } else if (nextStatus === 'listed') {
+        if (nextStatus === 'listed') {
           openMarkAsListedModal(itemId);
         } else if (nextStatus === 'shipped') {
           openShipItemModal(itemId);
@@ -335,7 +341,7 @@ function setupArchiveTableController() {
     getData: () => archiveData,
     filterItem: (item, filters, search) => {
       if (search) {
-        const title = (item.title || '').toLowerCase();
+        const title = getItemTitle(item).toLowerCase();
         const brand = (item.brand || '').toLowerCase();
         return title.includes(search) || brand.includes(search);
       }
@@ -343,7 +349,7 @@ function setupArchiveTableController() {
     },
     getColumnValue: (item, col) => {
       switch (col) {
-        case 'title': return (item.title || '').toLowerCase();
+        case 'title': return getItemTitle(item).toLowerCase();
         case 'sold_date': return item.listing_status?.sold_date || '';
         case 'sold_platform': return item.listing_status?.sold_platform || '';
         case 'profit': return calculateProfit(item).profit;
@@ -384,7 +390,7 @@ function renderArchiveRow(item) {
   return `
     <tr data-id="${item.id}">
       <td>
-        <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || 'Untitled')}</a>
+        <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(getItemTitle(item))}</a>
         <button class="btn-icon edit-item-btn" data-id="${item.id}" aria-label="Go to Collection">✏️</button>
       </td>
       <td data-label="Sold">${soldDate}</td>
@@ -672,6 +678,12 @@ function renderPipelineRow(item) {
 
   if (!isInPipeline) {
     actionButton = `<button class="btn btn--sm btn--cta list-for-sale-btn" data-id="${item.id}">List for sale</button>`;
+  } else if (status === 'needs_photo') {
+    // Two buttons: manage photos + advance when ready
+    actionButton = `
+      <button class="btn btn--sm btn--cta manage-photos-btn" data-id="${item.id}">Photos</button>
+      <button class="btn btn--sm btn--ghost ready-to-list-btn" data-id="${item.id}">Ready to list</button>
+    `;
   } else if (status === 'listed') {
     actionButton = `<button class="btn btn--sm btn--cta mark-sold-btn" data-id="${item.id}">Mark sold</button>`;
   } else if (status === 'shipped') {
@@ -693,7 +705,7 @@ function renderPipelineRow(item) {
   return `
     <tr data-id="${item.id}">
       <td>
-        <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(item.title || 'Untitled')}</a>
+        <a href="#" class="table-link" data-id="${item.id}">${escapeHtml(getItemTitle(item))}</a>
         <button class="btn-icon edit-item-btn" data-id="${item.id}" aria-label="Go to Collection">✏️</button>
       </td>
       <td data-label="Next">${actionButton}${delistButton}</td>
@@ -755,7 +767,7 @@ const markSoldModal = createLazyModal('#mark-sold-dialog', {
 
     // Set up title link to open view modal
     if (titleEl) {
-      titleEl.textContent = item.title || 'Untitled';
+      titleEl.textContent = getItemTitle(item);
       titleEl.onclick = (e) => {
         e.preventDefault();
         markSoldModal.close();
@@ -881,7 +893,7 @@ const shipItemModal = createLazyModal('#ship-item-dialog', {
     const shippingCostInput = dialog.querySelector('#ship-shipping-cost');
 
     if (itemIdInput) itemIdInput.value = item.id;
-    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+    if (titleEl) titleEl.textContent = getItemTitle(item);
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
     if (carrierSelect) carrierSelect.value = '';
     if (trackingInput) trackingInput.value = '';
@@ -938,7 +950,7 @@ const validationErrorModal = createLazyModal('#validation-error-dialog', {
     const listEl = dialog.querySelector('#validation-error-list');
     const editBtn = dialog.querySelector('#validation-edit-btn');
 
-    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+    if (titleEl) titleEl.textContent = getItemTitle(item);
     if (listEl) {
       listEl.innerHTML = errors.map(err => `<li>${escapeHtml(err)}</li>`).join('');
     }
@@ -968,7 +980,7 @@ const photoUploadModal = createLazyModal('#photo-upload-dialog', {
     const previewEl = dialog.querySelector('#photo-preview-grid');
     const completeBtn = dialog.querySelector('#photo-complete-btn');
 
-    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+    if (titleEl) titleEl.textContent = getItemTitle(item);
 
     // Determine required photo types
     const requiredTypes = [...REQUIRED_PHOTO_TYPES];
@@ -1007,24 +1019,9 @@ async function openPhotoUploadModal(itemId) {
     return;
   }
 
-  const attachments = await getAttachmentsByItem(itemId);
-
-  // Check if photos are already complete
-  const validation = validatePhotosComplete(item, attachments);
-  if (validation.valid) {
-    // Photos already complete, just transition
-    await updateItemStatus(itemId, 'unlisted');
-    return;
-  }
-
-  // Use the centralized photo manager
+  // Always open photo manager - user controls when to advance
   await openPhotoManager(itemId, {
-    onComplete: async (status) => {
-      if (status.complete) {
-        // Transition to unlisted after photos complete
-        await updateItemStatus(itemId, 'unlisted');
-        showToast('Photos complete - item ready to list');
-      }
+    onComplete: async () => {
       await loadPipeline();
     }
   });
@@ -1120,7 +1117,7 @@ const photoRequiredModal = createLazyModal('#photo-required-dialog', {
     const addBtn = dialog.querySelector('#photo-required-add');
     const cancelBtn = dialog.querySelector('#photo-required-cancel');
 
-    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+    if (titleEl) titleEl.textContent = getItemTitle(item);
     if (listEl) {
       listEl.innerHTML = missing.map(type => `<li>${capitalize(type)}</li>`).join('');
     }
@@ -1165,7 +1162,7 @@ const markAsListedModal = createLazyModal('#mark-listed-dialog', {
     const urlInput = dialog.querySelector('#listing-url');
 
     if (itemIdInput) itemIdInput.value = item.id;
-    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+    if (titleEl) titleEl.textContent = getItemTitle(item);
     // Pre-populate with existing values if editing, otherwise use defaults
     if (dateInput) dateInput.value = item.listing_status?.list_date || new Date().toISOString().split('T')[0];
     if (platformSelect) platformSelect.value = item.listing_status?.list_platform || '';
@@ -1231,7 +1228,7 @@ const confirmDeliveryModal = createLazyModal('#confirm-delivery-dialog', {
     const confirmBtn = dialog.querySelector('#delivery-confirm-btn');
 
     if (itemIdInput) itemIdInput.value = item.id;
-    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+    if (titleEl) titleEl.textContent = getItemTitle(item);
     if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
     // Show tracking URL if available
@@ -1344,7 +1341,7 @@ const delistItemModal = createLazyModal('#delist-item-dialog', {
     const warningEl = dialog.querySelector('#delist-listed-warning');
     const platformEl = dialog.querySelector('#delist-platform-name');
 
-    if (titleEl) titleEl.textContent = item.title || 'Untitled';
+    if (titleEl) titleEl.textContent = getItemTitle(item);
 
     // Show warning if item is currently listed on a platform
     if (item.metadata?.status === 'listed' && item.listing_status?.list_platform) {

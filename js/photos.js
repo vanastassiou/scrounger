@@ -5,7 +5,7 @@
 
 import { getInventoryItem, getAttachmentsByItem, createAttachment, deleteAttachment } from './db.js';
 import { showToast } from './ui.js';
-import { $, capitalize, escapeHtml } from './utils.js';
+import { $, capitalize, escapeHtml, getItemTitle } from './utils.js';
 import { createLazyModal } from './components.js';
 import { REQUIRED_PHOTO_TYPES } from './config.js';
 import { queueSync } from './sync.js';
@@ -196,7 +196,7 @@ async function handlePhotoUpload(file, photoType) {
 
   try {
     const compressedBlob = await compressImage(file);
-    const filename = `${photoType}_${file.name}`;
+    const filename = `${currentItem.id}-${photoType}.jpg`;
 
     await createAttachment(
       currentItem.id,
@@ -427,7 +427,7 @@ function renderModalContent() {
 
   // Title
   const titleEl = dialog.querySelector('#photo-manager-title');
-  if (titleEl) titleEl.textContent = currentItem.title || 'Untitled';
+  if (titleEl) titleEl.textContent = getItemTitle(currentItem);
 
   // Meta
   const metaEl = dialog.querySelector('#photo-manager-meta');

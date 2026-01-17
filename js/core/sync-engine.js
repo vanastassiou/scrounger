@@ -214,7 +214,14 @@ export function createSyncEngine(config) {
   }
 
   /**
-   * Merge two arrays of items with id and updatedAt fields
+   * Get timestamp from item (supports nested metadata.updated or flat updated_at)
+   */
+  function getItemTimestamp(item) {
+    return item?.metadata?.updated || item?.updated_at || 0;
+  }
+
+  /**
+   * Merge two arrays of items with id field
    */
   function mergeArrays(local, remote) {
     const merged = new Map();
@@ -234,8 +241,8 @@ export function createSyncEngine(config) {
         merged.set(remoteItem.id, remoteItem);
       } else {
         // Conflict resolution: last-write-wins
-        const localTime = new Date(localItem.updatedAt || 0).getTime();
-        const remoteTime = new Date(remoteItem.updatedAt || 0).getTime();
+        const localTime = new Date(getItemTimestamp(localItem)).getTime();
+        const remoteTime = new Date(getItemTimestamp(remoteItem)).getTime();
 
         if (remoteTime > localTime) {
           merged.set(remoteItem.id, remoteItem);

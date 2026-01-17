@@ -33,6 +33,7 @@ import {
   loadSeasonalData,
   loadPlatformsData
 } from './data-loaders.js';
+import { getItemTitle } from './utils.js';
 
 
 // =============================================================================
@@ -580,7 +581,7 @@ async function matchItemToColorTrends(item, monthKey) {
  * @returns {string[]} Array of detected cuts
  */
 function inferCutsFromItem(item) {
-  const text = `${item.description || ''} ${item.title || ''} ${item.category?.secondary || ''}`.toLowerCase();
+  const text = `${item.description || ''} ${getItemTitle(item)} ${item.category?.secondary || ''}`.toLowerCase();
   const detectedCuts = [];
 
   for (const [cut, keywords] of Object.entries(CUT_KEYWORDS)) {
@@ -672,7 +673,7 @@ async function matchItemToCutTrends(item, monthKey, platformId) {
  * @returns {string[]} Array of detected styles
  */
 function inferStylesFromItem(item) {
-  const text = `${item.description || ''} ${item.title || ''} ${item.brand || ''}`.toLowerCase();
+  const text = `${item.description || ''} ${getItemTitle(item)} ${item.brand || ''}`.toLowerCase();
   const detectedStyles = [];
 
   // Check keywords

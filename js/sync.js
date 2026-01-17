@@ -11,8 +11,8 @@ import {
   importData,
   getPendingAttachments,
   markAttachmentSynced,
-  createAttachment,
-  getAttachment,
+  getAllAttachments,
+  upsertAttachmentFromSync,
   getInventoryItem
 } from './db.js';
 import { updateSyncStatus, showToast } from './ui.js';
@@ -292,7 +292,7 @@ export async function syncOnOpen() {
 
 /**
  * Sync attachments (photos) with Google Drive.
- * Uses item slug for folder organization when available.
+ * Stores in inventory/{item-id}/ folder structure.
  */
 async function syncAttachments() {
   if (!provider || !provider.isFolderConfigured()) {
@@ -304,16 +304,16 @@ async function syncAttachments() {
     const pending = await getPendingAttachments();
     for (const att of pending) {
       try {
-        // Get the item to get its slug ID for folder organization
+        // Get the item ID for folder organization
         const item = await getInventoryItem(att.itemId);
-        const itemSlug = item?.id || null;
+        const itemId = item?.id || null;
 
         const driveId = await provider.uploadAttachment(
           att.id,
           att.filename,
           att.blob,
           att.mimeType,
-          itemSlug // Pass item slug for folder-based organization
+          itemId // Pass item ID for folder-based organization
         );
         await markAttachmentSynced(att.id, driveId);
       } catch (err) {
@@ -323,20 +323,25 @@ async function syncAttachments() {
 
     // Download missing remote attachments
     const remoteList = await provider.listAttachments();
+    const allAttachments = await getAllAttachments();
+
     for (const remote of remoteList) {
-      const existing = await getAttachment(remote.id);
-      if (!existing) {
-        try {
-          const blob = await provider.downloadAttachment(remote.remoteId);
-          await createAttachment(
-            remote.itemId || remote.id.split('-')[0], // Extract itemId from filename if not stored
-            remote.filename,
-            blob,
-            remote.mimeType
-          );
-        } catch (err) {
-          console.error(`Failed to download attachment ${remote.id}:`, err);
-        }
+      // Skip if we already have this Drive file
+      if (allAttachments.some(a => a.driveFileId === remote.remoteId)) continue;
+
+      try {
+        const blob = await provider.downloadAttachment(remote.remoteId);
+        const itemId = remote.itemId || remote.id.split('-')[0]; // Extract itemId from filename if not stored
+
+        await upsertAttachmentFromSync(
+          itemId,
+          remote.filename,
+          blob,
+          remote.mimeType,
+          remote.remoteId
+        );
+      } catch (err) {
+        console.error(`Failed to download attachment ${remote.id}:`, err);
       }
     }
   } catch (err) {
@@ -368,7 +373,8 @@ async function importMergedData(data) {
 // =============================================================================
 
 /**
- * Export data to Google Drive as a backup file
+ * Export data to Google Drive as a backup file.
+ * Saves to backups/ folder.
  */
 export async function exportToDrive() {
   if (!provider || !isConnected()) {
@@ -380,116 +386,46 @@ export async function exportToDrive() {
   }
 
   const data = await exportAllData();
-  const folder = getFolder();
   const filename = `thrifting-backup-${new Date().toISOString().split('T')[0]}.json`;
 
-  // Upload backup file to the sync folder
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
 
-  const token = await getAccessToken();
-  if (!token) {
-    throw new Error('No access token');
-  }
-
-  const metadata = {
-    name: filename,
-    parents: [folder.id],
-    mimeType: 'application/json'
-  };
-
-  const form = new FormData();
-  form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-  form.append('file', blob);
-
-  const response = await fetch(
-    'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',
-    {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${token}` },
-      body: form
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to upload backup to Google Drive');
-  }
-
+  await provider.uploadBackup(filename, blob);
   return filename;
 }
 
 /**
- * List backup files in Google Drive
+ * List backup files in Google Drive backups/ folder
  */
 export async function listDriveBackups() {
   if (!provider || !isConnected() || !isFolderConfigured()) {
     return [];
   }
 
-  const folder = getFolder();
-  const token = await getAccessToken();
-  if (!token) {
-    return [];
-  }
-
-  const query = `'${folder.id}' in parents and name contains 'thrifting-backup' and mimeType='application/json' and trashed=false`;
-  const response = await fetch(
-    `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&orderBy=createdTime desc&fields=files(id,name,createdTime,size)`,
-    {
-      headers: { 'Authorization': `Bearer ${token}` }
-    }
-  );
-
-  if (!response.ok) {
-    return [];
-  }
-
-  const result = await response.json();
-  return result.files || [];
+  return provider.listBackups();
 }
 
 /**
- * Import data from a Google Drive backup file
+ * List JSON files in root sync folder (for inventory/stores import)
+ */
+export async function listDriveFiles() {
+  if (!provider || !isConnected() || !isFolderConfigured()) {
+    return [];
+  }
+
+  return provider.listRootFiles();
+}
+
+/**
+ * Import data from a Google Drive file
  */
 export async function importFromDrive(fileId) {
   if (!provider || !isConnected()) {
     throw new Error('Not connected to Google Drive');
   }
 
-  const token = await getAccessToken();
-  if (!token) {
-    throw new Error('No access token');
-  }
-
-  const response = await fetch(
-    `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`,
-    {
-      headers: { 'Authorization': `Bearer ${token}` }
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to download backup from Google Drive');
-  }
-
-  const data = await response.json();
-  return data;
-}
-
-/**
- * Get access token from provider
- */
-function getAccessToken() {
-  // Access the token from the oauth module
-  const tokenData = localStorage.getItem('token-google');
-  if (!tokenData) return null;
-
-  try {
-    const parsed = JSON.parse(tokenData);
-    return parsed.accessToken;
-  } catch {
-    return null;
-  }
+  return provider.downloadFile(fileId);
 }
 
 // =============================================================================

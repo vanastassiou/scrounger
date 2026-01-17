@@ -29,6 +29,7 @@ export function createGoogleDriveProvider(config) {
 
   let fileId = null;
   let attachmentsFolderId = null;
+  let backupsFolderId = null;
 
   /**
    * Check if connected to Google Drive
@@ -60,6 +61,7 @@ export function createGoogleDriveProvider(config) {
     clearFolder(domain);
     fileId = null;
     attachmentsFolderId = null;
+    backupsFolderId = null;
   }
 
   /**
@@ -87,6 +89,7 @@ export function createGoogleDriveProvider(config) {
       // Reset cached IDs when folder changes
       fileId = null;
       attachmentsFolderId = null;
+      backupsFolderId = null;
     }
     return folder;
   }
@@ -201,9 +204,9 @@ export function createGoogleDriveProvider(config) {
   }
 
   /**
-   * Find or create the attachments folder
+   * Find or create the inventory folder for item artifacts
    */
-  async function getOrCreateAttachmentsFolder() {
+  async function getOrCreateInventoryFolder() {
     if (attachmentsFolderId) return attachmentsFolderId;
 
     const folder = getSavedFolder(domain);
@@ -211,43 +214,21 @@ export function createGoogleDriveProvider(config) {
       throw new Error('No folder selected. Please select a folder in Settings.');
     }
 
-    // First find or create 'attachments' folder
-    let attachmentsParent;
-    const attachmentsQuery = `name='attachments' and '${folder.id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-    const attachmentsResult = await apiRequest(
-      `/drive/v3/files?q=${encodeURIComponent(attachmentsQuery)}`
+    // Find or create 'inventory' folder directly under selected folder
+    const query = `name='inventory' and '${folder.id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    const result = await apiRequest(
+      `/drive/v3/files?q=${encodeURIComponent(query)}`
     );
 
-    if (attachmentsResult?.files?.length > 0) {
-      attachmentsParent = attachmentsResult.files[0].id;
+    if (result?.files?.length > 0) {
+      attachmentsFolderId = result.files[0].id;
     } else {
       const createResult = await apiRequest('/drive/v3/files', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: 'attachments',
+          name: 'inventory',
           parents: [folder.id],
-          mimeType: 'application/vnd.google-apps.folder'
-        })
-      });
-      attachmentsParent = createResult.id;
-    }
-
-    // Now find or create domain subfolder
-    const domainQuery = `name='${domain}' and '${attachmentsParent}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-    const domainResult = await apiRequest(
-      `/drive/v3/files?q=${encodeURIComponent(domainQuery)}`
-    );
-
-    if (domainResult?.files?.length > 0) {
-      attachmentsFolderId = domainResult.files[0].id;
-    } else {
-      const createResult = await apiRequest('/drive/v3/files', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: domain,
-          parents: [attachmentsParent],
           mimeType: 'application/vnd.google-apps.folder'
         })
       });
@@ -257,24 +238,129 @@ export function createGoogleDriveProvider(config) {
     return attachmentsFolderId;
   }
 
+  /**
+   * Find or create the backups folder
+   * Structure: {selected-folder}/backups/
+   */
+  async function getOrCreateBackupsFolder() {
+    if (backupsFolderId) return backupsFolderId;
+
+    const folder = getSavedFolder(domain);
+    if (!folder) {
+      throw new Error('No folder selected. Please select a folder in Settings.');
+    }
+
+    // Find or create 'backups' folder directly under selected folder
+    const query = `name='backups' and '${folder.id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    const result = await apiRequest(
+      `/drive/v3/files?q=${encodeURIComponent(query)}`
+    );
+
+    if (result?.files?.length > 0) {
+      backupsFolderId = result.files[0].id;
+    } else {
+      const createResult = await apiRequest('/drive/v3/files', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'backups',
+          parents: [folder.id],
+          mimeType: 'application/vnd.google-apps.folder'
+        })
+      });
+      backupsFolderId = createResult.id;
+    }
+
+    return backupsFolderId;
+  }
+
+  /**
+   * Upload a backup file to the backups folder
+   * @param {string} filename - Backup filename
+   * @param {Blob} blob - File data
+   * @returns {Promise<string>} Google Drive file ID
+   */
+  async function uploadBackup(filename, blob) {
+    const folderId = await getOrCreateBackupsFolder();
+
+    const metadata = {
+      name: filename,
+      parents: [folderId],
+      mimeType: 'application/json'
+    };
+
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', blob);
+
+    const result = await apiRequest(
+      '/upload/drive/v3/files?uploadType=multipart',
+      { method: 'POST', body: form }
+    );
+
+    return result.id;
+  }
+
+  /**
+   * List backup files in the backups folder
+   * @returns {Promise<Array>} List of backup files
+   */
+  async function listBackups() {
+    const folderId = await getOrCreateBackupsFolder();
+
+    const query = `'${folderId}' in parents and mimeType='application/json' and trashed=false`;
+    const result = await apiRequest(
+      `/drive/v3/files?q=${encodeURIComponent(query)}&orderBy=createdTime desc&fields=files(id,name,createdTime,size)`
+    );
+
+    return result.files || [];
+  }
+
+  /**
+   * List JSON files in the root sync folder (for importing inventory/stores)
+   * @returns {Promise<Array>} List of JSON files
+   */
+  async function listRootFiles() {
+    const folder = getSavedFolder(domain);
+    if (!folder) return [];
+
+    const query = `'${folder.id}' in parents and mimeType='application/json' and trashed=false`;
+    const result = await apiRequest(
+      `/drive/v3/files?q=${encodeURIComponent(query)}&orderBy=name&fields=files(id,name,createdTime,size)`
+    );
+
+    return result.files || [];
+  }
+
+  /**
+   * Download a file by ID
+   * @param {string} fileId - Google Drive file ID
+   * @returns {Promise<Object>} Parsed JSON data
+   */
+  async function downloadFile(fileId) {
+    const response = await apiRequest(`/drive/v3/files/${fileId}?alt=media`);
+    return response;
+  }
+
   // Cache for item folder IDs
   const itemFolderCache = new Map();
 
   /**
-   * Get or create a folder for an item's attachments.
-   * @param {string} itemSlug - Item slug ID (used as folder name)
+   * Get or create a folder for an item's artifacts (photos, documents, etc).
+   * Structure: {selected-folder}/inventory/{item-id}/
+   * @param {string} itemId - Item ID (used as folder name)
    * @returns {Promise<string>} Folder ID
    */
-  async function getOrCreateItemFolder(itemSlug) {
+  async function getOrCreateItemFolder(itemId) {
     // Check cache first
-    if (itemFolderCache.has(itemSlug)) {
-      return itemFolderCache.get(itemSlug);
+    if (itemFolderCache.has(itemId)) {
+      return itemFolderCache.get(itemId);
     }
 
-    const attachmentsFolderId = await getOrCreateAttachmentsFolder();
+    const inventoryFolderId = await getOrCreateInventoryFolder();
 
     // Search for existing item folder
-    const query = `name='${itemSlug}' and '${attachmentsFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    const query = `name='${itemId}' and '${inventoryFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
     const result = await apiRequest(
       `/drive/v3/files?q=${encodeURIComponent(query)}`
     );
@@ -288,8 +374,8 @@ export function createGoogleDriveProvider(config) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: itemSlug,
-          parents: [attachmentsFolderId],
+          name: itemId,
+          parents: [inventoryFolderId],
           mimeType: 'application/vnd.google-apps.folder'
         })
       });
@@ -297,7 +383,7 @@ export function createGoogleDriveProvider(config) {
     }
 
     // Cache the folder ID
-    itemFolderCache.set(itemSlug, folderId);
+    itemFolderCache.set(itemId, folderId);
     return folderId;
   }
 
@@ -369,27 +455,27 @@ export function createGoogleDriveProvider(config) {
 
   /**
    * Upload attachment to Google Drive.
-   * If itemSlug is provided, uploads to item folder with clean filename.
+   * If itemId is provided, uploads to item folder with clean filename.
    * Otherwise uses legacy flat structure with attachmentId prefix.
    *
    * @param {string} attachmentId - Attachment ID
    * @param {string} filename - Original filename (e.g., "front.jpg")
    * @param {Blob} blob - File data
    * @param {string} mimeType - MIME type
-   * @param {string} [itemSlug] - Item slug ID for folder-based organization
+   * @param {string} [itemId] - Item ID for folder-based organization
    * @returns {Promise<string>} Google Drive file ID
    */
-  async function uploadAttachment(attachmentId, filename, blob, mimeType, itemSlug = null) {
+  async function uploadAttachment(attachmentId, filename, blob, mimeType, itemId = null) {
     let folderId;
     let uploadName;
 
-    if (itemSlug) {
-      // New folder-based structure: attachments/thrifting/{item-slug}/{filename}
-      folderId = await getOrCreateItemFolder(itemSlug);
+    if (itemId) {
+      // Folder-based structure: inventory/{item-id}/{filename}
+      folderId = await getOrCreateItemFolder(itemId);
       uploadName = filename; // Clean filename like "front.jpg"
     } else {
-      // Legacy flat structure: attachments/thrifting/{attachmentId}-{filename}
-      folderId = await getOrCreateAttachmentsFolder();
+      // Legacy flat structure: inventory/{attachmentId}-{filename}
+      folderId = await getOrCreateInventoryFolder();
       uploadName = `${attachmentId}-${filename}`;
     }
 
@@ -450,29 +536,40 @@ export function createGoogleDriveProvider(config) {
   }
 
   /**
-   * List all attachments
+   * List all attachments from inventory/{item-id}/ folder structure.
+   * Returns attachments with itemId derived from parent folder name.
    */
   async function listAttachments() {
-    const folderId = await getOrCreateAttachmentsFolder();
+    const inventoryFolderId = await getOrCreateInventoryFolder();
+    const attachments = [];
 
-    const query = `'${folderId}' in parents and trashed=false`;
-    const result = await apiRequest(
-      `/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,mimeType,size)`
+    // List item folders inside inventory/
+    const foldersQuery = `'${inventoryFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    const foldersResult = await apiRequest(
+      `/drive/v3/files?q=${encodeURIComponent(foldersQuery)}&fields=files(id,name)`
     );
 
-    return (result.files || []).map((file) => {
-      const dashIndex = file.name.indexOf('-');
-      const id = dashIndex > 0 ? file.name.substring(0, dashIndex) : file.name;
-      const filename = dashIndex > 0 ? file.name.substring(dashIndex + 1) : file.name;
+    // For each item folder, list files inside
+    for (const folder of foldersResult.files || []) {
+      const itemId = folder.name;
+      const filesQuery = `'${folder.id}' in parents and trashed=false`;
+      const filesResult = await apiRequest(
+        `/drive/v3/files?q=${encodeURIComponent(filesQuery)}&fields=files(id,name,mimeType,size)`
+      );
 
-      return {
-        id,
-        remoteId: file.id,
-        filename,
-        mimeType: file.mimeType,
-        size: parseInt(file.size, 10)
-      };
-    });
+      for (const file of filesResult.files || []) {
+        attachments.push({
+          id: `${itemId}-${file.name}`, // Composite ID for deduplication
+          itemId,
+          remoteId: file.id,
+          filename: file.name,
+          mimeType: file.mimeType,
+          size: parseInt(file.size, 10)
+        });
+      }
+    }
+
+    return attachments;
   }
 
   // Return provider interface
@@ -495,7 +592,11 @@ export function createGoogleDriveProvider(config) {
     uploadAttachment,
     downloadAttachment,
     deleteAttachment,
-    listAttachments
+    listAttachments,
+    uploadBackup,
+    listBackups,
+    listRootFiles,
+    downloadFile
   };
 }
 

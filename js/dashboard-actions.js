@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { getInventoryInPipeline, getAllInventory, getItemsNeedingMigration, migrateItemToSlug } from './db.js';
-import { $, $$, escapeHtml, isUuidFormat } from './utils.js';
+import { $, $$, escapeHtml, isUuidFormat, getItemTitle } from './utils.js';
 import { createModalController, showToast } from './ui.js';
 import { setVisible } from './components.js';
 import { loadSeasonalData, getSeasonalOpportunities } from './seasonal.js';
@@ -164,7 +164,7 @@ function renderModalRow(entry, actionType) {
 
   return `
     <button type="button" class="action-item" data-id="${escapeHtml(item.id)}">
-      <span class="action-item__title">${escapeHtml(item.title || 'Untitled')}</span>
+      <span class="action-item__title">${escapeHtml(getItemTitle(item))}</span>
       ${reason ? `<span class="action-item__reason">${escapeHtml(reason)}</span>` : ''}
     </button>
   `;

@@ -5,7 +5,7 @@
 import { state } from './state.js';
 import { getAllStoreStats, getAllUserStores, createUserStore, getInventoryByStore } from './db.js';
 import { showToast } from './ui.js';
-import { $, formatCurrency, formatDate, escapeHtml, formatChainName, createFormHandler } from './utils.js';
+import { $, formatCurrency, formatDate, escapeHtml, formatChainName, createFormHandler, getItemTitle } from './utils.js';
 import { getTierSortOrder } from './config.js';
 import { openViewItemModal } from './inventory.js';
 import { createLazyModal, createTableController, renderDetailSections } from './components.js';
@@ -258,7 +258,7 @@ function renderStoreDetails(store, stats, items) {
 
     let itemsHtml = '<table class="table table--mini"><thead><tr><th>Item</th><th>Date</th><th>Price</th></tr></thead><tbody>';
     for (const item of sortedItems) {
-      const title = item.title || 'Untitled item';
+      const title = getItemTitle(item);
       const date = item.metadata?.acquisition?.date ? formatDate(item.metadata.acquisition.date) : '-';
       const price = item.metadata?.acquisition?.price != null ? formatCurrency(item.metadata.acquisition.price) : '-';
       itemsHtml += `<tr><td><a href="#" class="table-link" data-id="${item.id}">${escapeHtml(title)}</a></td><td>${date}</td><td>${price}</td></tr>`;

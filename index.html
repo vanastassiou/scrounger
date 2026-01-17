@@ -555,8 +555,7 @@
         <details class="form-section form-section--collapsible" open>
           <summary class="form-section-title">Basic info</summary>
           <div class="form-section-content">
-            <!-- Hidden title field - auto-generated from brand, colour, material, subcategory -->
-            <input type="hidden" id="item-title" name="title">
+            <!-- Title is computed on-the-fly via getItemTitle(), not stored -->
 
             <div class="form-row">
               <div class="form-group">
@@ -1247,7 +1246,10 @@
 
         <div class="form-group">
           <label class="form-label" for="start-selling-listing-price">Listing price</label>
-          <input type="number" class="form-input" id="start-selling-listing-price" name="listing_price" step="0.01" min="0" placeholder="0.00">
+          <div class="input-with-button">
+            <input type="number" class="form-input" id="start-selling-listing-price" name="listing_price" step="0.01" min="0" placeholder="0.00">
+            <button type="submit" class="btn btn--primary">Sell</button>
+          </div>
           <small class="form-hint" id="start-selling-suggestion"></small>
         </div>
 
@@ -1267,8 +1269,6 @@
             <div id="platform-comparison" class="platform-comparison-table"></div>
           </details>
         </div>
-
-        <button type="submit" class="btn btn--primary btn--block">Add to selling pipeline</button>
       </form>
     </div>
   </dialog>
@@ -1479,67 +1479,80 @@
     </div>
   </dialog>
 
-  <!-- Guided Capture Dialog (fullscreen camera) -->
-  <dialog id="guided-capture-dialog" class="modal modal--fullscreen">
-    <div class="guided-capture-modal">
+  <!-- Guided Capture Dialog (modal) -->
+  <dialog id="guided-capture-dialog" class="modal modal--large">
+    <div class="modal-content guided-capture-modal">
       <!-- Header -->
-      <div class="guided-capture-header">
-        <button type="button" class="guided-close-btn" id="guided-close-btn" aria-label="Close">&times;</button>
-        <div class="guided-step-text" id="guided-step-text">Step 1 of 3</div>
-        <div class="guided-progress-dots" id="guided-progress-dots">
-          <!-- Dynamically populated -->
+      <div class="modal-header guided-capture-header">
+        <div class="guided-header-left">
+          <h2 id="guided-prompt-title">Take Front photo</h2>
+          <div class="guided-progress-dots" id="guided-progress-dots">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+        <button type="button" class="modal-close" id="guided-close-btn" aria-label="Close">&times;</button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body guided-capture-body">
+        <!-- Step indicator and hint -->
+        <div class="guided-prompt">
+          <p class="guided-step-text" id="guided-step-text">Step 1 of 3</p>
+          <p class="text-muted" id="guided-prompt-hint">Capture the full front view of the item</p>
+          <p class="guided-camera-error hidden" id="guided-camera-error"></p>
+        </div>
+
+        <!-- Viewfinder section -->
+        <div class="guided-viewfinder-section hidden">
+          <video id="guided-viewfinder" autoplay playsinline muted></video>
+          <div class="viewfinder-overlay"></div>
+          <button type="button" class="guided-switch-btn" id="guided-switch-btn" aria-label="Switch camera">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+              <path d="M9 12c0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3-3 1.34-3 3zm13-3h-3.17l-1.24-1.35A1.99 1.99 0 0016.12 7H7.88c-.56 0-1.1.24-1.47.65L5.17 9H2c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2v-9c0-1.1-.9-2-2-2zm-10 9c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Preview section -->
+        <div class="guided-preview-section hidden">
+          <img id="guided-preview-img" alt="Captured photo">
+        </div>
+
+        <!-- Optional types section (shown after required complete) -->
+        <div class="guided-optional-section hidden">
+          <div class="guided-optional-success">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="var(--color-success)">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+            </svg>
+          </div>
+          <div class="guided-optional-types" id="guided-optional-types">
+            <!-- Dynamically populated -->
+          </div>
         </div>
       </div>
 
-      <!-- Viewfinder section -->
-      <div class="guided-viewfinder-section hidden">
-        <video id="guided-viewfinder" autoplay playsinline muted></video>
-        <div class="viewfinder-overlay"></div>
-        <button type="button" class="guided-switch-btn" id="guided-switch-btn" aria-label="Switch camera">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
-            <path d="M9 12c0 1.66 1.34 3 3 3s3-1.34 3-3-1.34-3-3-3-3 1.34-3 3zm13-3h-3.17l-1.24-1.35A1.99 1.99 0 0016.12 7H7.88c-.56 0-1.1.24-1.47.65L5.17 9H2c-1.1 0-2 .9-2 2v9c0 1.1.9 2 2 2h20c1.1 0 2-.9 2-2v-9c0-1.1-.9-2-2-2zm-10 9c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
-          </svg>
-        </button>
-      </div>
-
-      <!-- Preview section -->
-      <div class="guided-preview-section hidden">
-        <img id="guided-preview-img" alt="Captured photo">
-      </div>
-
-      <!-- Optional types section (shown after required complete) -->
-      <div class="guided-optional-section hidden">
-        <div class="guided-optional-success">
-          <svg viewBox="0 0 24 24" width="48" height="48" fill="var(--color-success)">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-          </svg>
+      <!-- Action bar -->
+      <div class="action-bar guided-action-bar">
+        <!-- Capture controls -->
+        <div class="guided-capture-controls hidden">
+          <button type="button" class="btn" id="guided-gallery-btn">Gallery</button>
+          <button type="button" class="btn btn--primary btn--capture" id="guided-capture-btn">
+            <span class="capture-icon"></span>
+            Take Photo
+          </button>
+          <button type="button" class="btn guided-btn--skip hidden" id="guided-skip-btn">Skip</button>
         </div>
-        <div class="guided-optional-types" id="guided-optional-types">
-          <!-- Dynamically populated -->
+
+        <!-- Preview controls -->
+        <div class="guided-preview-controls hidden">
+          <button type="button" class="btn" id="guided-retake-btn">Retake</button>
+          <button type="button" class="btn btn--primary" id="guided-save-btn">Save</button>
         </div>
-        <button type="button" class="btn btn--primary btn--lg guided-done-btn" id="guided-done-btn">Done</button>
-      </div>
 
-      <!-- Prompt -->
-      <div class="guided-prompt">
-        <h3 id="guided-prompt-title">Take Front photo</h3>
-        <p class="text-muted" id="guided-prompt-hint">Capture the full front view of the item</p>
-        <p class="guided-camera-error hidden" id="guided-camera-error"></p>
-      </div>
-
-      <!-- Capture controls -->
-      <div class="guided-capture-controls hidden">
-        <button type="button" class="guided-btn guided-btn--secondary" id="guided-gallery-btn">Gallery</button>
-        <button type="button" class="guided-btn guided-btn--capture" id="guided-capture-btn">
-          <span class="capture-ring"></span>
-        </button>
-        <button type="button" class="guided-btn guided-btn--secondary guided-btn--skip hidden" id="guided-skip-btn">Skip</button>
-      </div>
-
-      <!-- Preview controls -->
-      <div class="guided-preview-controls hidden">
-        <button type="button" class="btn btn--lg" id="guided-retake-btn">Retake</button>
-        <button type="button" class="btn btn--primary btn--lg" id="guided-save-btn">Save</button>
+        <!-- Done button (for optional section) -->
+        <div class="guided-done-controls hidden">
+          <button type="button" class="btn btn--primary" id="guided-done-btn">Done</button>
+        </div>
       </div>
 
       <!-- Hidden file input -->
@@ -1751,6 +1764,25 @@
       <footer class="action-bar">
         <button class="btn" id="import-confirm-cancel">Cancel</button>
         <button class="btn btn--primary" id="import-confirm-ok">Restore</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <!-- Drive File Picker Dialog -->
+  <dialog id="drive-file-picker-dialog" class="modal modal--large">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="drive-picker-title">Select file</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="drive-picker-description">Select a file from Google Drive:</p>
+        <div id="drive-picker-loading" class="text-muted">Loading files...</div>
+        <ul id="drive-picker-list" class="file-list" style="display: none;"></ul>
+        <p id="drive-picker-empty" class="text-muted" style="display: none;">No files found.</p>
+      </div>
+      <footer class="action-bar">
+        <button class="btn" id="drive-picker-cancel">Cancel</button>
       </footer>
     </div>
   </dialog>

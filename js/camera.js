@@ -545,6 +545,7 @@ function renderGuidedUI() {
   const optionalSection = dialog.querySelector('.guided-optional-section');
   const captureControls = dialog.querySelector('.guided-capture-controls');
   const previewControls = dialog.querySelector('.guided-preview-controls');
+  const doneControls = dialog.querySelector('.guided-done-controls');
 
   // Hide all first
   if (viewfinderSection) viewfinderSection.classList.add('hidden');
@@ -552,6 +553,7 @@ function renderGuidedUI() {
   if (optionalSection) optionalSection.classList.add('hidden');
   if (captureControls) captureControls.classList.add('hidden');
   if (previewControls) previewControls.classList.add('hidden');
+  if (doneControls) doneControls.classList.add('hidden');
 
   // Update overlay class
   const overlay = dialog.querySelector('.viewfinder-overlay');
@@ -589,6 +591,7 @@ function renderGuidedUI() {
         optionalSection.classList.remove('hidden');
         renderOptionalTypes();
       }
+      if (doneControls) doneControls.classList.remove('hidden');
       break;
   }
 
@@ -635,6 +638,7 @@ function renderPrompt() {
   const titleEl = $('#guided-prompt-title');
   const hintEl = $('#guided-prompt-hint');
   const errorEl = $('#guided-camera-error');
+  const promptSection = $('.guided-prompt');
   if (!titleEl || !hintEl) return;
 
   const { currentType, state, cameraError } = guidedState;
@@ -651,11 +655,20 @@ function renderPrompt() {
     }
   }
 
+  // Show/hide prompt section based on state
+  if (promptSection) {
+    if (state === GUIDED_STATES.OPTIONAL || state === GUIDED_STATES.COMPLETE) {
+      promptSection.classList.add('hidden');
+    } else {
+      promptSection.classList.remove('hidden');
+    }
+  }
+
   if (state === GUIDED_STATES.OPTIONAL || state === GUIDED_STATES.COMPLETE) {
-    titleEl.textContent = 'Required photos complete!';
+    titleEl.textContent = 'Photos complete';
     hintEl.textContent = 'Add optional photos or tap Done to finish';
   } else if (state === GUIDED_STATES.PREVIEWING) {
-    titleEl.textContent = `Save as ${formatType(currentType)} photo?`;
+    titleEl.textContent = `Save ${formatType(currentType)} photo?`;
     hintEl.textContent = 'Tap Save to keep or Retake to try again';
   } else if (currentType) {
     titleEl.textContent = `Take ${formatType(currentType)} photo`;
@@ -851,7 +864,7 @@ async function handleSave() {
   renderGuidedUI();
 
   try {
-    const filename = `${guidedState.currentType}_${Date.now()}.jpg`;
+    const filename = `${guidedState.item.id}-${guidedState.currentType}.jpg`;
 
     await createAttachment(
       guidedState.item.id,
