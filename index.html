@@ -33,6 +33,7 @@
   <link rel="modulepreload" href="js/google-config.js">
   <link rel="modulepreload" href="js/google-picker.js">
   <link rel="modulepreload" href="js/oauth.js">
+  <link rel="modulepreload" href="js/chat.js">
   <!-- Prevent flash of wrong tab -->
   <script>
     (function() {
@@ -48,10 +49,13 @@
     /* Prevent flash of wrong tab on initial load */
     .page { display: none; }
     html[data-tab="dashboard"] #dashboard,
+    html[data-tab="chat"] #chat,
     html[data-tab="inventory"] #inventory,
     html[data-tab="references"] #references,
     html[data-tab="settings"] #settings { display: block; }
+    html[data-tab="chat"] #chat { display: flex; flex-direction: column; }
     html[data-tab="dashboard"] .tab[data-tab="dashboard"],
+    html[data-tab="chat"] .tab[data-tab="chat"],
     html[data-tab="inventory"] .tab[data-tab="inventory"],
     html[data-tab="references"] .tab[data-tab="references"],
     html[data-tab="settings"] .tab[data-tab="settings"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
@@ -84,6 +88,7 @@
 
   <nav class="tabs" role="tablist" aria-label="Main navigation">
     <button class="tab" data-tab="dashboard" role="tab" aria-selected="false" aria-controls="dashboard">Home</button>
+    <button class="tab" data-tab="chat" role="tab" aria-selected="false" aria-controls="chat">Chat</button>
     <button class="tab" data-tab="inventory" role="tab" aria-selected="false" aria-controls="inventory">Inventory</button>
     <button class="tab" data-tab="references" role="tab" aria-selected="false" aria-controls="references">References</button>
     <button class="tab" data-tab="settings" role="tab" aria-selected="false" aria-controls="settings">Settings</button>
@@ -160,6 +165,52 @@
           </button>
         </div>
       </article>
+    </section>
+
+    <!-- Chat -->
+    <section id="chat" class="page page--chat" role="tabpanel" aria-labelledby="chat-tab">
+      <!-- Status bar -->
+      <div class="chat-status-bar">
+        <div class="chat-connection" id="chat-connection">
+          <span class="connection-dot"></span>
+          <span class="connection-text">Connected</span>
+        </div>
+        <div class="chat-trip-badge" id="chat-trip-badge" hidden>
+          <span class="trip-icon">📍</span>
+          <span class="trip-store" id="chat-trip-store"></span>
+        </div>
+      </div>
+
+      <!-- Queue indicator (offline) -->
+      <div class="chat-queue" id="chat-queue" hidden>
+        <span><span id="chat-queue-count">0</span> messages queued</span>
+      </div>
+
+      <!-- Messages area -->
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-welcome" id="chat-welcome">
+          <div class="chat-welcome-icon">💬</div>
+          <h3>Sourcing Advisor</h3>
+          <p class="text-muted">Ask about brands, pricing, or start a trip.</p>
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="chat-actions" id="chat-actions">
+        <button class="btn btn--outline" id="btn-start-trip">📍 Start Trip</button>
+        <button class="btn btn--outline" id="btn-log-item">👗 Log Item</button>
+        <button class="btn btn--outline btn--success" id="btn-end-trip" hidden>✓ End Trip</button>
+      </div>
+
+      <!-- Input bar -->
+      <form class="chat-input-bar" id="chat-form">
+        <input type="text" class="chat-input" id="chat-input"
+               placeholder="Ask about a brand or describe a find..."
+               autocomplete="off" enterkeyhint="send">
+        <button type="submit" class="btn btn--primary chat-send" id="chat-send">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
+      </form>
     </section>
 
     <!-- Inventory -->

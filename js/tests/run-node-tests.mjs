@@ -21,6 +21,34 @@ globalThis.localStorage = {
   clear() { this.data = {}; }
 };
 
+// Mock document for chat module
+globalThis.document = {
+  createElement(tag) {
+    return {
+      textContent: '',
+      innerHTML: '',
+      get innerHTML() {
+        // Simple HTML escape for testing
+        return this.textContent
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+      },
+      set innerHTML(val) {
+        this._innerHTML = val;
+      }
+    };
+  },
+  getElementById() { return null; },
+  querySelector() { return null; },
+  querySelectorAll() { return []; }
+};
+
+// Mock navigator
+globalThis.navigator = {
+  onLine: true
+};
+
 // Import and run tests
 async function main() {
   console.log('\n🧪 CHAT LOGS TEST SUITE (Node.js)\n');
@@ -324,6 +352,13 @@ async function main() {
       const pwaResults = await pwaTests.runAllTests();
       passed += pwaResults.passed;
       failed += pwaResults.failed;
+
+      // Chat module tests
+      console.log('\n\n');
+      const chatTests = await import('./chat.test.js');
+      const chatResults = await chatTests.runAllTests();
+      passed += chatResults.passed;
+      failed += chatResults.failed;
 
       console.log('\n' + '='.repeat(50));
       console.log(`  COMBINED RESULTS: ${passed} passed, ${failed} failed`);

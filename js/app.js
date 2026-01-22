@@ -10,6 +10,7 @@ import { initSelling, listItemForSale } from './selling.js';
 import { initDashboardActions } from './dashboard-actions.js';
 import { initSettings } from './settings.js';
 import { initReferences } from './references.js';
+import { initChat } from './chat.js';
 import {
   initSync,
   isSyncEnabled,
@@ -60,7 +61,8 @@ async function init() {
     initSelling(),
     initDashboardActions(),
     initSettings(),
-    initReferences()
+    initReferences(),
+    initChat()
   ]);
 
   // Render dashboard stats
