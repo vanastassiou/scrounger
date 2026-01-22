@@ -4854,8 +4854,90 @@
 
 .chat-send:disabled { opacity: 0.5; }
 
+/* Microphone button */
+.chat-mic {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface-elevated);
+  border: 2px solid var(--color-border);
+  color: var(--color-text-muted);
+  transition: all 0.2s ease;
+}
+
+.chat-mic:hover {
+  border-color: var(--color-primary);
+  color: var(--color-text);
+}
+
+.chat-mic.recording {
+  background: var(--color-error);
+  border-color: var(--color-error);
+  color: white;
+  animation: pulse-recording 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-recording {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+.chat-mic[hidden] { display: none; }
+
+/* Knowledge Save Prompt */
+.chat-knowledge-prompt {
+  max-width: 100%;
+  margin: var(--space-md) 0;
+}
+
+.chat-knowledge-prompt .chat-bubble {
+  background: var(--bg-muted);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+}
+
+.knowledge-prompt-header {
+  font-weight: 600;
+  margin-bottom: var(--space-xs);
+  color: var(--text-primary);
+}
+
+.knowledge-prompt-brand {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: var(--primary-color);
+  margin-bottom: var(--space-xs);
+}
+
+.knowledge-prompt-notes {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
+  line-height: 1.4;
+}
+
+.knowledge-prompt-price {
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+  margin-bottom: var(--space-sm);
+}
+
+.knowledge-prompt-actions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border-color);
+}
+
 /* Desktop */
 @media (min-width: 640px) {
   .chat-message { max-width: 70%; }
   .chat-actions { justify-content: center; }
+  .chat-knowledge-prompt { max-width: 400px; }
 }

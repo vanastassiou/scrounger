@@ -8,6 +8,7 @@
  */
 
 import { _test } from '../chat.js';
+import * as db from '../db.js';
 
 const {
   getState,
@@ -20,7 +21,21 @@ const {
   MOCK_RESPONSES,
   persistState,
   loadPersistedState,
-  STORAGE_KEY
+  STORAGE_KEY,
+  isSpeechSupported,
+  getSpeechRecognition,
+  // Action handlers
+  handleAdvisorAction,
+  handleStartTripAction,
+  handleEndTripAction,
+  handleLogItemAction,
+  handleUpdateItemAction,
+  handleKnowledgeUpdate,
+  // Helper functions
+  mapActionToInventoryItem,
+  buildNestedUpdate,
+  findStoreByName,
+  buildContext
 } = _test;
 
 // Test utilities
@@ -421,6 +436,769 @@ export async function testMockResponsesStructure() {
 }
 
 // =============================================================================
+// SPEECH RECOGNITION TESTS
+// =============================================================================
+
+export async function testSpeechRecognition() {
+  logSection('SPEECH RECOGNITION TESTS');
+  resetState();
+
+  console.log('\n Testing isRecording initial state...');
+  let state = getState();
+  assert(state.isRecording === false, 'isRecording starts false');
+
+  console.log('\n Testing isRecording state changes...');
+  setState({ isRecording: true });
+  state = getState();
+  assert(state.isRecording === true, 'isRecording can be set to true');
+
+  setState({ isRecording: false });
+  state = getState();
+  assert(state.isRecording === false, 'isRecording can be set to false');
+
+  console.log('\n Testing resetState includes isRecording...');
+  setState({ isRecording: true });
+  resetState();
+  state = getState();
+  assert(state.isRecording === false, 'resetState resets isRecording');
+
+  console.log('\n Testing isSpeechSupported helper...');
+  const supported = isSpeechSupported();
+  assert(typeof supported === 'boolean', 'isSpeechSupported returns boolean');
+  // In Node.js environment, this will be false since there's no SpeechRecognition
+  console.log(`  Speech recognition supported: ${supported}`);
+
+  console.log('\n Testing getSpeechRecognition helper...');
+  const recognition = getSpeechRecognition();
+  // In Node.js without setup, this will be null
+  assert(recognition === null || typeof recognition === 'object', 'getSpeechRecognition returns null or object');
+
+  console.log('\n Testing isRecording persists with state...');
+  setState({
+    messages: [{ id: 'msg-1', role: 'user', content: 'Test', timestamp: Date.now() }],
+    isRecording: true
+  });
+  persistState();
+
+  // Note: isRecording is intentionally NOT persisted to localStorage
+  // (you don't want to restore a recording state on page reload)
+  // So after load, isRecording should be reset to false or undefined
+  resetState();
+  loadPersistedState();
+  state = getState();
+  // isRecording should not persist (or should be false after load)
+  assert(state.isRecording === false || state.isRecording === undefined, 'isRecording does not persist to storage');
+
+  // Cleanup
+  localStorage.removeItem(STORAGE_KEY);
+  resetState();
+
+  console.log('\n✅ Speech recognition tests passed!');
+  return true;
+}
+
+// =============================================================================
+// ACTION HANDLER TESTS
+// =============================================================================
+
+export async function testActionHandlers() {
+  logSection('ACTION HANDLER TESTS');
+  resetState();
+
+  console.log('\n Testing unknown action returns failure...');
+  const unknownResult = await handleAdvisorAction({ type: 'unknown_action', data: {} });
+  assert(unknownResult.success === false, 'Unknown action returns failure');
+  assert(unknownResult.message.includes('Unknown action'), 'Error message mentions unknown action');
+
+  console.log('\n Testing update_item fails without prior item...');
+  const updateWithoutItem = await handleUpdateItemAction({ field: 'purchaseCost', value: 25 });
+  assert(updateWithoutItem.success === false, 'update_item fails without prior item');
+  assert(updateWithoutItem.message.includes('No recent item'), 'Error mentions no recent item');
+
+  console.log('\n Testing update_item fails with missing field...');
+  setState({ lastLoggedItemId: 'test-item-123' });
+  const updateMissingField = await handleUpdateItemAction({ value: 25 });
+  assert(updateMissingField.success === false, 'update_item fails with missing field');
+  assert(updateMissingField.message.includes('Missing field'), 'Error mentions missing field');
+
+  console.log('\n Testing update_item fails with missing value...');
+  const updateMissingValue = await handleUpdateItemAction({ field: 'purchaseCost' });
+  assert(updateMissingValue.success === false, 'update_item fails with missing value');
+
+  console.log('\n Testing update_item fails with unknown field...');
+  const updateUnknownField = await handleUpdateItemAction({ field: 'unknownField', value: 'test' });
+  assert(updateUnknownField.success === false, 'update_item fails with unknown field');
+  assert(updateUnknownField.message.includes('Unknown field'), 'Error mentions unknown field');
+
+  console.log('\n Testing end_trip fails when no trip active...');
+  resetState();
+  const endWithoutTrip = await handleEndTripAction();
+  assert(endWithoutTrip.success === false, 'end_trip fails without active trip');
+  assert(endWithoutTrip.message.includes('No active trip'), 'Error mentions no active trip');
+
+  console.log('\n Testing start_trip fails without store name...');
+  const startWithoutStore = await handleStartTripAction({});
+  assert(startWithoutStore.success === false, 'start_trip fails without store name');
+  assert(startWithoutStore.message.includes('No store name'), 'Error mentions no store name');
+
+  console.log('\n Testing log_item fails with insufficient data...');
+  const logInsufficientData = await handleLogItemAction({});
+  assert(logInsufficientData.success === false, 'log_item fails with no data');
+  assert(logInsufficientData.message.includes('Insufficient'), 'Error mentions insufficient data');
+
+  resetState();
+
+  console.log('\n✅ Action handler tests passed!');
+  return true;
+}
+
+// =============================================================================
+// ACTION HANDLER INTEGRATION TESTS (with database)
+// =============================================================================
+
+export async function testStartTripAction() {
+  logSection('START TRIP ACTION TESTS');
+  resetState();
+
+  console.log('\n Testing start_trip creates trip record...');
+  const result = await handleStartTripAction({ storeName: 'Goodwill Downtown' });
+  assert(result.success === true, 'start_trip succeeds');
+  assert(result.message.includes('Trip started'), 'Success message confirms trip started');
+  assert(result.message.includes('Goodwill Downtown'), 'Message includes store name');
+
+  console.log('\n Testing state updated after start_trip...');
+  const state = getState();
+  assert(state.isOnTrip === true, 'isOnTrip is true');
+  assert(state.tripStore === 'Goodwill Downtown', 'tripStore set correctly');
+  assert(state.currentTripId !== null, 'currentTripId is set');
+  assert(state.tripItemCount === 0, 'tripItemCount starts at 0');
+  assert(state.tripItems.length === 0, 'tripItems is empty');
+  assert(state.tripStartedAt !== null, 'tripStartedAt is set');
+
+  console.log('\n Testing trip record created in database...');
+  const trip = await db.getTrip(state.currentTripId);
+  assert(trip !== null, 'Trip exists in database');
+  assert(trip.stores[0].storeName === 'Goodwill Downtown', 'Trip has correct store name');
+  assert(trip.stores[0].arrived !== null, 'Trip has arrived time');
+  assert(trip.startedAt !== null, 'Trip has startedAt timestamp');
+
+  // Clean up
+  await db.deleteTrip(state.currentTripId);
+  resetState();
+
+  console.log('\n✅ Start trip action tests passed!');
+  return true;
+}
+
+export async function testLogItemAction() {
+  logSection('LOG ITEM ACTION TESTS');
+  resetState();
+
+  console.log('\n Testing log_item creates inventory item...');
+  const itemData = {
+    brand: 'Pendleton',
+    category: 'clothing',
+    subcategory: 'shirt',
+    material: 'wool',
+    colour: 'red',
+    purchaseCost: 12.99,
+    suggestedPrice: { low: 35, high: 55 },
+    condition: 'excellent',
+    era: '1980s',
+    notes: 'Made in USA label'
+  };
+
+  const result = await handleLogItemAction(itemData);
+  assert(result.success === true, 'log_item succeeds');
+  assert(result.message.includes('Logged'), 'Success message confirms item logged');
+  assert(result.message.includes('Pendleton'), 'Message includes brand');
+  assert(result.message.includes('shirt'), 'Message includes subcategory');
+  assert(result.message.includes('$12.99'), 'Message includes price');
+
+  console.log('\n Testing state updated after log_item...');
+  let state = getState();
+  assert(state.tripItemCount === 1, 'tripItemCount incremented');
+  assert(state.lastLoggedItemId !== null, 'lastLoggedItemId is set');
+  assert(state.tripItems.length === 1, 'tripItems has 1 item');
+  assert(state.tripItems[0].brand === 'Pendleton', 'tripItems has correct brand');
+
+  console.log('\n Testing item created in database with correct schema...');
+  const item = await db.getInventoryItem(state.lastLoggedItemId);
+  assert(item !== null, 'Item exists in database');
+  assert(item.brand === 'Pendleton', 'Item has correct brand');
+  assert(item.category.primary === 'clothing', 'Item has nested category.primary');
+  assert(item.category.secondary === 'shirt', 'Item has nested category.secondary');
+  assert(item.material.primary === 'wool', 'Item has nested material.primary');
+  assert(item.colour.primary === 'red', 'Item has nested colour.primary');
+  assert(item.metadata.acquisition.price === 12.99, 'Item has nested acquisition price');
+  assert(item.pricing.minimum_acceptable_price === 35, 'Item has minimum price');
+  assert(item.pricing.estimated_resale_value === 55, 'Item has estimated resale value');
+  assert(item.condition.overall_condition === 'excellent', 'Item has nested condition');
+  assert(item.era === '1980s', 'Item has era');
+  assert(item.notes === 'Made in USA label', 'Item has notes');
+  assert(item.source === 'chat', 'Item source is chat');
+  assert(item.metadata.status === 'in_collection', 'Item status is in_collection');
+
+  console.log('\n Testing log_item with minimal data...');
+  const minimalResult = await handleLogItemAction({ purchaseCost: 5 });
+  assert(minimalResult.success === true, 'log_item with minimal data succeeds');
+
+  state = getState();
+  assert(state.tripItemCount === 2, 'tripItemCount incremented again');
+
+  const minimalItem = await db.getInventoryItem(state.lastLoggedItemId);
+  assert(minimalItem.category.primary === 'clothing', 'Default category is clothing');
+  assert(minimalItem.metadata.acquisition.price === 5, 'Price set correctly');
+
+  console.log('\n Testing log_item increments count correctly...');
+  await handleLogItemAction({ category: 'shoes', purchaseCost: 20 });
+  state = getState();
+  assert(state.tripItemCount === 3, 'tripItemCount is 3 after third item');
+  assert(state.tripItems.length === 3, 'tripItems has 3 items');
+
+  // Clean up
+  for (const tripItem of state.tripItems) {
+    await db.deleteInventoryItem(tripItem.id);
+  }
+  resetState();
+
+  console.log('\n✅ Log item action tests passed!');
+  return true;
+}
+
+export async function testUpdateItemAction() {
+  logSection('UPDATE ITEM ACTION TESTS');
+  resetState();
+
+  console.log('\n Setting up: log an item first...');
+  const logResult = await handleLogItemAction({
+    brand: 'Escada',
+    category: 'clothing',
+    subcategory: 'blazer',
+    purchaseCost: 15
+  });
+  assert(logResult.success === true, 'Initial item logged');
+  const itemId = getState().lastLoggedItemId;
+
+  console.log('\n Testing update_item changes purchaseCost...');
+  const updatePrice = await handleUpdateItemAction({ field: 'purchaseCost', value: 20 });
+  assert(updatePrice.success === true, 'update_item succeeds');
+  assert(updatePrice.message.includes('Updated purchaseCost'), 'Message confirms field updated');
+  assert(updatePrice.message.includes('20'), 'Message shows new value');
+
+  let item = await db.getInventoryItem(itemId);
+  assert(item.metadata.acquisition.price === 20, 'Price updated in database');
+
+  console.log('\n Testing update_item changes brand...');
+  const updateBrand = await handleUpdateItemAction({ field: 'brand', value: 'St. John' });
+  assert(updateBrand.success === true, 'brand update succeeds');
+
+  item = await db.getInventoryItem(itemId);
+  assert(item.brand === 'St. John', 'Brand updated in database');
+
+  console.log('\n Testing update_item changes condition...');
+  const updateCondition = await handleUpdateItemAction({ field: 'condition', value: 'good' });
+  assert(updateCondition.success === true, 'condition update succeeds');
+
+  item = await db.getInventoryItem(itemId);
+  assert(item.condition.overall_condition === 'good', 'Condition updated in database');
+
+  console.log('\n Testing update_item changes subcategory...');
+  const updateSubcat = await handleUpdateItemAction({ field: 'subcategory', value: 'dress' });
+  assert(updateSubcat.success === true, 'subcategory update succeeds');
+
+  item = await db.getInventoryItem(itemId);
+  assert(item.category.secondary === 'dress', 'Subcategory updated in database');
+
+  console.log('\n Testing update_item changes material...');
+  const updateMaterial = await handleUpdateItemAction({ field: 'material', value: 'silk' });
+  assert(updateMaterial.success === true, 'material update succeeds');
+
+  item = await db.getInventoryItem(itemId);
+  assert(item.material.primary === 'silk', 'Material updated in database');
+
+  console.log('\n Testing update_item changes colour...');
+  const updateColour = await handleUpdateItemAction({ field: 'colour', value: 'navy' });
+  assert(updateColour.success === true, 'colour update succeeds');
+
+  item = await db.getInventoryItem(itemId);
+  assert(item.colour.primary === 'navy', 'Colour updated in database');
+
+  console.log('\n Testing update_item changes era...');
+  const updateEra = await handleUpdateItemAction({ field: 'era', value: '1990s' });
+  assert(updateEra.success === true, 'era update succeeds');
+
+  item = await db.getInventoryItem(itemId);
+  assert(item.era === '1990s', 'Era updated in database');
+
+  console.log('\n Testing update_item changes notes...');
+  const updateNotes = await handleUpdateItemAction({ field: 'notes', value: 'New notes here' });
+  assert(updateNotes.success === true, 'notes update succeeds');
+
+  item = await db.getInventoryItem(itemId);
+  assert(item.notes === 'New notes here', 'Notes updated in database');
+
+  // Clean up
+  await db.deleteInventoryItem(itemId);
+  resetState();
+
+  console.log('\n✅ Update item action tests passed!');
+  return true;
+}
+
+export async function testEndTripAction() {
+  logSection('END TRIP ACTION TESTS');
+  resetState();
+
+  console.log('\n Setting up: start a trip and log items...');
+  const startResult = await handleStartTripAction({ storeName: 'Value Village' });
+  assert(startResult.success === true, 'Trip started');
+
+  const tripId = getState().currentTripId;
+
+  await handleLogItemAction({ brand: 'Coogi', category: 'clothing', purchaseCost: 50 });
+  await handleLogItemAction({ brand: 'Burberry', category: 'clothing', purchaseCost: 30 });
+
+  let state = getState();
+  assert(state.tripItemCount === 2, 'Two items logged');
+
+  console.log('\n Testing end_trip updates trip record...');
+  const endResult = await handleEndTripAction();
+  assert(endResult.success === true, 'end_trip succeeds');
+  assert(endResult.message.includes('Trip ended'), 'Message confirms trip ended');
+  assert(endResult.message.includes('2 item(s)'), 'Message includes item count');
+  assert(endResult.message.includes('Value Village'), 'Message includes store name');
+
+  console.log('\n Testing state reset after end_trip...');
+  state = getState();
+  assert(state.isOnTrip === false, 'isOnTrip is false');
+  assert(state.tripStore === null, 'tripStore is null');
+  assert(state.tripStoreId === null, 'tripStoreId is null');
+  assert(state.currentTripId === null, 'currentTripId is null');
+  assert(state.tripItemCount === 0, 'tripItemCount is 0');
+  assert(state.tripItems.length === 0, 'tripItems is empty');
+  assert(state.tripStartedAt === null, 'tripStartedAt is null');
+
+  console.log('\n Testing trip record updated in database...');
+  const trip = await db.getTrip(tripId);
+  assert(trip.endedAt !== null, 'Trip has endedAt timestamp');
+  assert(trip.stores[0].departed !== null, 'Trip has departed time');
+
+  // Clean up
+  await db.deleteTrip(tripId);
+  const allItems = await db.getAllInventory();
+  for (const item of allItems.filter(i => i.source === 'chat')) {
+    await db.deleteInventoryItem(item.id);
+  }
+  resetState();
+
+  console.log('\n✅ End trip action tests passed!');
+  return true;
+}
+
+export async function testFullTripFlow() {
+  logSection('FULL TRIP FLOW TESTS');
+  resetState();
+
+  console.log('\n Testing complete trip workflow...');
+
+  // Step 1: Start trip
+  const startResult = await handleStartTripAction({ storeName: 'Goodwill' });
+  assert(startResult.success === true, 'Step 1: Trip started');
+
+  let state = getState();
+  const tripId = state.currentTripId;
+
+  // Step 2: Log first item
+  const item1Result = await handleLogItemAction({
+    brand: 'Pendleton',
+    category: 'clothing',
+    subcategory: 'shirt',
+    purchaseCost: 8
+  });
+  assert(item1Result.success === true, 'Step 2: First item logged');
+  const item1Id = getState().lastLoggedItemId;
+
+  // Step 3: Correct the price
+  const updateResult = await handleUpdateItemAction({ field: 'purchaseCost', value: 10 });
+  assert(updateResult.success === true, 'Step 3: Price corrected');
+
+  // Verify correction applied
+  const item1 = await db.getInventoryItem(item1Id);
+  assert(item1.metadata.acquisition.price === 10, 'Price correction applied');
+
+  // Step 4: Log second item
+  const item2Result = await handleLogItemAction({
+    brand: 'Escada',
+    category: 'clothing',
+    subcategory: 'blazer',
+    purchaseCost: 15,
+    condition: 'excellent'
+  });
+  assert(item2Result.success === true, 'Step 4: Second item logged');
+  const item2Id = getState().lastLoggedItemId;
+
+  // Step 5: Log third item (shoes)
+  const item3Result = await handleLogItemAction({
+    brand: 'Cole Haan',
+    category: 'shoes',
+    subcategory: 'loafers',
+    purchaseCost: 12
+  });
+  assert(item3Result.success === true, 'Step 5: Third item logged');
+  const item3Id = getState().lastLoggedItemId;
+
+  // Verify state during trip
+  state = getState();
+  assert(state.tripItemCount === 3, 'Three items logged');
+  assert(state.tripItems.length === 3, 'tripItems has 3 entries');
+  assert(state.lastLoggedItemId === item3Id, 'lastLoggedItemId is third item');
+
+  // Step 6: End trip
+  const endResult = await handleEndTripAction();
+  assert(endResult.success === true, 'Step 6: Trip ended');
+  assert(endResult.message.includes('3 item(s)'), 'End message shows 3 items');
+
+  // Verify items linked to trip
+  const items = await db.getAllInventory();
+  const tripItems = items.filter(i => i.metadata?.acquisition?.trip_id === tripId);
+  assert(tripItems.length === 3, 'All 3 items linked to trip');
+
+  // Verify trip record
+  const trip = await db.getTrip(tripId);
+  assert(trip.startedAt !== null, 'Trip has start time');
+  assert(trip.endedAt !== null, 'Trip has end time');
+
+  // Clean up
+  await db.deleteTrip(tripId);
+  await db.deleteInventoryItem(item1Id);
+  await db.deleteInventoryItem(item2Id);
+  await db.deleteInventoryItem(item3Id);
+  resetState();
+
+  console.log('\n✅ Full trip flow tests passed!');
+  return true;
+}
+
+export async function testStoreMatching() {
+  logSection('STORE MATCHING TESTS');
+  resetState();
+
+  // Clean up any existing stores first to ensure isolation
+  const existingStores = await db.getAllUserStores();
+  for (const store of existingStores) {
+    await db.deleteUserStore(store.id);
+  }
+
+  console.log('\n Setting up: create test stores...');
+  const store1 = await db.createUserStore({ name: 'Goodwill Downtown', tier: 'budget' });
+  const store2 = await db.createUserStore({ name: 'Salvation Army', tier: 'budget' });
+  const store3 = await db.createUserStore({ name: 'Value Village Portland', tier: 'thrift' });
+
+  console.log('\n Testing exact store name matching...');
+  let result = await handleStartTripAction({ storeName: 'Goodwill Downtown' });
+  assert(result.success === true, 'Trip started with exact match');
+  let state = getState();
+  assert(state.tripStoreId === store1.id, 'Matched correct store ID');
+  let tripId = state.currentTripId;
+  await handleEndTripAction();
+  await db.deleteTrip(tripId);
+
+  console.log('\n Testing partial store name matching...');
+  result = await handleStartTripAction({ storeName: 'Salvation' });
+  assert(result.success === true, 'Trip started with partial match');
+  state = getState();
+  assert(state.tripStoreId === store2.id, 'Matched Salvation Army store');
+  tripId = state.currentTripId;
+  await handleEndTripAction();
+  await db.deleteTrip(tripId);
+
+  console.log('\n Testing case-insensitive matching...');
+  result = await handleStartTripAction({ storeName: 'goodwill downtown' });
+  assert(result.success === true, 'Trip started with lowercase');
+  state = getState();
+  assert(state.tripStoreId === store1.id, 'Matched despite case difference');
+  tripId = state.currentTripId;
+  await handleEndTripAction();
+  await db.deleteTrip(tripId);
+
+  console.log('\n Testing contains matching...');
+  result = await handleStartTripAction({ storeName: "I'm at Value Village Portland today" });
+  assert(result.success === true, 'Trip started with contains match');
+  state = getState();
+  assert(state.tripStoreId === store3.id, 'Matched Value Village');
+  tripId = state.currentTripId;
+  await handleEndTripAction();
+  await db.deleteTrip(tripId);
+
+  console.log('\n Testing unmatched store creates trip without storeId...');
+  result = await handleStartTripAction({ storeName: 'Random Thrift Store XYZ' });
+  assert(result.success === true, 'Trip started with unknown store');
+  state = getState();
+  assert(state.tripStoreId === null, 'storeId is null for unknown store');
+  assert(state.tripStore === 'Random Thrift Store XYZ', 'Store name preserved');
+  tripId = state.currentTripId;
+  await handleEndTripAction();
+  await db.deleteTrip(tripId);
+
+  // Clean up stores
+  await db.deleteUserStore(store1.id);
+  await db.deleteUserStore(store2.id);
+  await db.deleteUserStore(store3.id);
+  resetState();
+
+  console.log('\n✅ Store matching tests passed!');
+  return true;
+}
+
+export async function testContextBuilding() {
+  logSection('CONTEXT BUILDING TESTS');
+
+  // Clean up any existing trip state from previous tests
+  resetState();
+
+  // Clean up any trips in database that might affect context
+  const existingTrips = await db.getAllTrips();
+  for (const trip of existingTrips) {
+    if (!trip.endedAt) {
+      // End any unended trips
+      await db.updateTrip(trip.id, { endedAt: new Date().toISOString() });
+    }
+  }
+
+  console.log('\n Testing context when no trip active...');
+  let context = await buildContext();
+  const isNoActiveTrip = context.trip === null ||
+                         context.trip === undefined ||
+                         context.trip?.isActive !== true;
+  assert(isNoActiveTrip, 'No active trip in context');
+  assert(typeof context.inventory === 'object', 'Inventory context exists');
+  assert(typeof context.knowledge === 'object', 'Knowledge context exists');
+
+  console.log('\n Testing context during active trip...');
+  await handleStartTripAction({ storeName: 'Test Store Context' });
+  context = await buildContext();
+  assert(context.trip !== null, 'Trip context exists');
+  assert(context.trip.isActive === true, 'Trip marked as active');
+  assert(context.trip.store === 'Test Store Context', 'Trip has correct store');
+  assert(context.trip.itemCount === 0, 'Item count is 0');
+  assert(Array.isArray(context.trip.recentItems), 'recentItems is array');
+
+  console.log('\n Testing context includes recent trip items...');
+  await handleLogItemAction({ brand: 'Brand1', category: 'clothing', purchaseCost: 10 });
+  await handleLogItemAction({ brand: 'Brand2', category: 'clothing', purchaseCost: 20 });
+  await handleLogItemAction({ brand: 'Brand3', category: 'shoes', purchaseCost: 30 });
+
+  context = await buildContext();
+  assert(context.trip.itemCount === 3, 'Item count is 3');
+  assert(context.trip.recentItems.length === 3, 'recentItems has 3 items');
+  assert(context.trip.recentItems[0].brand === 'Brand1', 'First item is Brand1');
+  assert(context.trip.recentItems[2].brand === 'Brand3', 'Third item is Brand3');
+
+  console.log('\n Testing recentItems limited to 3...');
+  await handleLogItemAction({ brand: 'Brand4', category: 'clothing', purchaseCost: 40 });
+  await handleLogItemAction({ brand: 'Brand5', category: 'clothing', purchaseCost: 50 });
+
+  const state = getState();
+  assert(state.tripItems.length === 5, 'State has 5 items');
+
+  context = await buildContext();
+  assert(context.trip.recentItems.length === 3, 'recentItems still limited to 3');
+
+  // Clean up
+  const tripId = state.currentTripId;
+  const itemIds = state.tripItems.map(i => i.id);
+  await handleEndTripAction();
+
+  for (const itemId of itemIds) {
+    await db.deleteInventoryItem(itemId);
+  }
+  await db.deleteTrip(tripId);
+  resetState();
+
+  console.log('\n✅ Context building tests passed!');
+  return true;
+}
+
+// =============================================================================
+// HELPER FUNCTION TESTS
+// =============================================================================
+
+export async function testHelperFunctions() {
+  logSection('HELPER FUNCTION TESTS');
+
+  console.log('\n Testing buildNestedUpdate...');
+
+  // Test purchaseCost mapping
+  const purchaseCostUpdate = buildNestedUpdate('purchaseCost', 25);
+  assert(purchaseCostUpdate !== null, 'purchaseCost returns update object');
+  assert(purchaseCostUpdate.metadata?.acquisition?.price === 25, 'purchaseCost maps to metadata.acquisition.price');
+
+  // Test brand mapping
+  const brandUpdate = buildNestedUpdate('brand', 'Pendleton');
+  assert(brandUpdate !== null, 'brand returns update object');
+  assert(brandUpdate.brand === 'Pendleton', 'brand maps directly');
+
+  // Test condition mapping
+  const conditionUpdate = buildNestedUpdate('condition', 'excellent');
+  assert(conditionUpdate !== null, 'condition returns update object');
+  assert(conditionUpdate.condition?.overall_condition === 'excellent', 'condition maps to condition.overall_condition');
+
+  // Test subcategory mapping
+  const subcategoryUpdate = buildNestedUpdate('subcategory', 'blazer');
+  assert(subcategoryUpdate !== null, 'subcategory returns update object');
+  assert(subcategoryUpdate.category?.secondary === 'blazer', 'subcategory maps to category.secondary');
+
+  // Test unknown field
+  const unknownUpdate = buildNestedUpdate('unknown_field', 'value');
+  assert(unknownUpdate === null, 'Unknown field returns null');
+
+  console.log('\n Testing mapActionToInventoryItem...');
+
+  const actionData = {
+    brand: 'Escada',
+    category: 'clothing',
+    subcategory: 'blazer',
+    material: 'silk',
+    colour: 'red',
+    purchaseCost: 15.99,
+    suggestedPrice: { low: 50, high: 100 },
+    condition: 'excellent',
+    era: '1980s',
+    notes: 'Margaretha Ley era'
+  };
+
+  const item = mapActionToInventoryItem(actionData);
+
+  assert(item.brand === 'Escada', 'brand mapped correctly');
+  assert(item.category.primary === 'clothing', 'category.primary mapped correctly');
+  assert(item.category.secondary === 'blazer', 'category.secondary mapped correctly');
+  assert(item.material.primary === 'silk', 'material.primary mapped correctly');
+  assert(item.colour.primary === 'red', 'colour.primary mapped correctly');
+  assert(item.metadata.acquisition.price === 15.99, 'purchaseCost mapped to metadata.acquisition.price');
+  assert(item.pricing.minimum_acceptable_price === 50, 'suggestedPrice.low mapped to pricing.minimum_acceptable_price');
+  assert(item.pricing.estimated_resale_value === 100, 'suggestedPrice.high mapped to pricing.estimated_resale_value');
+  assert(item.condition.overall_condition === 'excellent', 'condition mapped correctly');
+  assert(item.era === '1980s', 'era mapped correctly');
+  assert(item.notes === 'Margaretha Ley era', 'notes mapped correctly');
+  assert(item.source === 'chat', 'source set to chat');
+  assert(item.metadata.status === 'in_collection', 'status defaults to in_collection');
+  assert(item.metadata.sync.unsynced === true, 'item marked as unsynced');
+
+  console.log('\n Testing mapActionToInventoryItem with minimal data...');
+
+  const minimalData = { purchaseCost: 5 };
+  const minimalItem = mapActionToInventoryItem(minimalData);
+
+  assert(minimalItem.brand === null, 'missing brand is null');
+  assert(minimalItem.category.primary === 'clothing', 'category defaults to clothing');
+  assert(minimalItem.metadata.acquisition.price === 5, 'purchaseCost mapped correctly');
+
+  console.log('\n Testing findStoreByName...');
+
+  const testStores = [
+    { id: 'store-1', name: 'Goodwill Downtown' },
+    { id: 'store-2', name: 'Salvation Army' },
+    { id: 'store-3', name: 'Value Village' }
+  ];
+
+  // Exact match
+  const exactMatch = findStoreByName(testStores, 'Goodwill Downtown');
+  assert(exactMatch?.id === 'store-1', 'Exact match works');
+
+  // Case insensitive
+  const caseMatch = findStoreByName(testStores, 'goodwill downtown');
+  assert(caseMatch?.id === 'store-1', 'Case insensitive match works');
+
+  // Partial match
+  const partialMatch = findStoreByName(testStores, 'Goodwill');
+  assert(partialMatch?.id === 'store-1', 'Partial match works');
+
+  // Contains match
+  const containsMatch = findStoreByName(testStores, "I'm at the Salvation Army store");
+  assert(containsMatch?.id === 'store-2', 'Contains match works');
+
+  // No match
+  const noMatch = findStoreByName(testStores, 'Unknown Store');
+  assert(noMatch === null, 'Returns null for no match');
+
+  console.log('\n✅ Helper function tests passed!');
+  return true;
+}
+
+// =============================================================================
+// TRIP STATE PERSISTENCE TESTS
+// =============================================================================
+
+export async function testTripStatePersistence() {
+  logSection('TRIP STATE PERSISTENCE TESTS');
+
+  // Clear any existing state
+  localStorage.removeItem(STORAGE_KEY);
+  resetState();
+
+  console.log('\n Testing new trip state fields persist...');
+
+  setState({
+    isOnTrip: true,
+    tripStore: 'Goodwill',
+    tripStoreId: 'store-123',
+    currentTripId: 'trip-456',
+    tripItemCount: 3,
+    tripItems: [
+      { id: 'item-1', brand: 'Pendleton', purchaseCost: 10 },
+      { id: 'item-2', brand: 'Escada', purchaseCost: 15 }
+    ],
+    lastLoggedItemId: 'item-2',
+    tripStartedAt: '2025-01-21T10:00:00Z'
+  });
+
+  persistState();
+
+  const stored = localStorage.getItem(STORAGE_KEY);
+  assert(stored !== null, 'State persisted to localStorage');
+
+  const parsed = JSON.parse(stored);
+  assert(parsed.tripStoreId === 'store-123', 'tripStoreId persisted');
+  assert(parsed.currentTripId === 'trip-456', 'currentTripId persisted');
+  assert(parsed.tripItems.length === 2, 'tripItems persisted');
+  assert(parsed.lastLoggedItemId === 'item-2', 'lastLoggedItemId persisted');
+
+  console.log('\n Testing new trip state fields load...');
+
+  resetState();
+  let state = getState();
+  assert(state.tripStoreId === null, 'State reset before load');
+
+  loadPersistedState();
+  state = getState();
+  assert(state.tripStoreId === 'store-123', 'tripStoreId loaded');
+  assert(state.currentTripId === 'trip-456', 'currentTripId loaded');
+  assert(state.tripItems.length === 2, 'tripItems loaded');
+  assert(state.lastLoggedItemId === 'item-2', 'lastLoggedItemId loaded');
+
+  console.log('\n Testing tripItems limited to 10...');
+
+  const manyItems = [];
+  for (let i = 0; i < 15; i++) {
+    manyItems.push({ id: `item-${i}`, brand: `Brand ${i}`, purchaseCost: i });
+  }
+  setState({ tripItems: manyItems });
+  persistState();
+
+  const storedAfter = JSON.parse(localStorage.getItem(STORAGE_KEY));
+  assert(storedAfter.tripItems.length === 10, 'tripItems limited to 10');
+  assert(storedAfter.tripItems[0].id === 'item-5', 'Oldest items dropped');
+
+  // Cleanup
+  localStorage.removeItem(STORAGE_KEY);
+  resetState();
+
+  console.log('\n✅ Trip state persistence tests passed!');
+  return true;
+}
+
+// =============================================================================
 // RUN ALL TESTS
 // =============================================================================
 
@@ -438,7 +1216,18 @@ export async function runAllTests() {
     { name: 'Persistence', fn: testPersistence },
     { name: 'Trip State', fn: testTripState },
     { name: 'Message Queue', fn: testMessageQueue },
-    { name: 'Mock Responses Structure', fn: testMockResponsesStructure }
+    { name: 'Mock Responses Structure', fn: testMockResponsesStructure },
+    { name: 'Speech Recognition', fn: testSpeechRecognition },
+    { name: 'Action Handlers', fn: testActionHandlers },
+    { name: 'Start Trip Action', fn: testStartTripAction },
+    { name: 'Log Item Action', fn: testLogItemAction },
+    { name: 'Update Item Action', fn: testUpdateItemAction },
+    { name: 'End Trip Action', fn: testEndTripAction },
+    { name: 'Full Trip Flow', fn: testFullTripFlow },
+    { name: 'Store Matching', fn: testStoreMatching },
+    { name: 'Context Building', fn: testContextBuilding },
+    { name: 'Helper Functions', fn: testHelperFunctions },
+    { name: 'Trip State Persistence', fn: testTripStatePersistence }
   ];
 
   for (const test of tests) {
@@ -472,6 +1261,17 @@ if (typeof window !== 'undefined') {
     testPersistence,
     testTripState,
     testMessageQueue,
-    testMockResponsesStructure
+    testMockResponsesStructure,
+    testSpeechRecognition,
+    testActionHandlers,
+    testStartTripAction,
+    testLogItemAction,
+    testUpdateItemAction,
+    testEndTripAction,
+    testFullTripFlow,
+    testStoreMatching,
+    testContextBuilding,
+    testHelperFunctions,
+    testTripStatePersistence
   };
 }

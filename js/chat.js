@@ -2,6 +2,27 @@
 // CHAT MODULE - Sourcing Advisor Interface
 // =============================================================================
 
+import {
+  getAllInventory,
+  getInventoryStats,
+  getAllTrips,
+  getKnowledge,
+  createTrip,
+  updateTrip,
+  createInventoryItem,
+  updateInventoryItem,
+  getAllUserStores,
+  upsertBrandKnowledge
+} from './db.js';
+
+// =============================================================================
+// CONFIGURATION
+// =============================================================================
+
+// Worker URL - update after deploying to Cloudflare
+// Set to null to use mock responses only
+const WORKER_URL = null; // e.g., 'https://thrifting-claude-proxy.<account>.workers.dev'
+
 // =============================================================================
 // STATE
 // =============================================================================
@@ -10,10 +31,21 @@ let state = {
   messages: [],
   isOnTrip: false,
   tripStore: null,
+  tripStoreId: null,         // Store ID for db linkage
+  currentTripId: null,       // Trip record ID in database
   tripItemCount: 0,
+  tripItems: [],             // Items logged this trip (for update_item context)
+  lastLoggedItemId: null,    // Most recent item ID for corrections
+  tripStartedAt: null,
   connectionStatus: 'online',
-  messageQueue: []
+  messageQueue: [],
+  isRecording: false,
+  isStreaming: false,
+  pendingKnowledgeUpdate: null  // Knowledge awaiting user confirmation
 };
+
+// Speech recognition instance (set up if supported)
+let speechRecognition = null;
 
 // =============================================================================
 // MOCK RESPONSES
@@ -70,6 +102,7 @@ export async function initChat() {
   loadPersistedState();
   setupEventHandlers();
   setupOnlineOfflineHandlers();
+  setupSpeechRecognition();
   renderMessages();
   updateUIState();
 }
@@ -104,16 +137,110 @@ function setupOnlineOfflineHandlers() {
 }
 
 // =============================================================================
+// SPEECH RECOGNITION
+// =============================================================================
+
+function setupSpeechRecognition() {
+  // Check for browser support
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    // Browser doesn't support speech recognition - button stays hidden
+    return;
+  }
+
+  // Show the mic button since speech is supported
+  const micBtn = document.getElementById('chat-mic');
+  if (micBtn) {
+    micBtn.hidden = false;
+    micBtn.addEventListener('click', handleMicClick);
+  }
+
+  // Create speech recognition instance
+  speechRecognition = new SpeechRecognition();
+  speechRecognition.continuous = false; // Single utterance mode
+  speechRecognition.interimResults = false; // Only final results
+  speechRecognition.lang = 'en-US';
+
+  // Handle successful transcription
+  speechRecognition.onresult = (event) => {
+    const transcript = event.results[0][0].transcript;
+    const input = document.getElementById('chat-input');
+    if (input) {
+      // Append to existing text with space if needed
+      const existing = input.value.trim();
+      input.value = existing ? `${existing} ${transcript}` : transcript;
+      input.focus();
+    }
+  };
+
+  // Handle end of recording
+  speechRecognition.onend = () => {
+    state.isRecording = false;
+    updateMicButtonState();
+  };
+
+  // Handle errors
+  speechRecognition.onerror = (event) => {
+    console.warn('Speech recognition error:', event.error);
+    state.isRecording = false;
+    updateMicButtonState();
+
+    // Show user-friendly message for common errors
+    if (event.error === 'not-allowed') {
+      addMessage({
+        id: generateId(),
+        role: 'system',
+        content: 'Microphone access denied. Please allow microphone access to use voice input.',
+        timestamp: Date.now()
+      });
+    }
+  };
+}
+
+function handleMicClick() {
+  if (!speechRecognition) return;
+
+  if (state.isRecording) {
+    // Stop recording
+    speechRecognition.stop();
+    state.isRecording = false;
+  } else {
+    // Start recording
+    try {
+      speechRecognition.start();
+      state.isRecording = true;
+    } catch (err) {
+      console.warn('Failed to start speech recognition:', err);
+      state.isRecording = false;
+    }
+  }
+
+  updateMicButtonState();
+}
+
+function updateMicButtonState() {
+  const micBtn = document.getElementById('chat-mic');
+  if (micBtn) {
+    micBtn.classList.toggle('recording', state.isRecording);
+    micBtn.setAttribute('aria-label', state.isRecording ? 'Stop recording' : 'Voice input');
+  }
+}
+
+// =============================================================================
 // MESSAGE HANDLING
 // =============================================================================
 
-function handleSendMessage(e) {
+async function handleSendMessage(e) {
   e.preventDefault();
 
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
 
   if (!text) return;
+
+  // Prevent sending while streaming
+  if (state.isStreaming) return;
 
   // Clear input
   input.value = '';
@@ -132,20 +259,25 @@ function handleSendMessage(e) {
     timestamp: Date.now()
   });
 
-  // Generate mock response after delay
-  showTypingIndicator();
-  const delay = 800 + Math.random() * 700; // 800-1500ms
+  // Try to use the Claude API proxy, fall back to mock responses
+  if (WORKER_URL) {
+    await sendToAdvisor(text);
+  } else {
+    // Generate mock response after delay
+    showTypingIndicator();
+    const delay = 800 + Math.random() * 700; // 800-1500ms
 
-  setTimeout(() => {
-    hideTypingIndicator();
-    const response = generateMockResponse(text);
-    addMessage({
-      id: generateId(),
-      role: 'assistant',
-      content: response,
-      timestamp: Date.now()
-    });
-  }, delay);
+    setTimeout(() => {
+      hideTypingIndicator();
+      const response = generateMockResponse(text);
+      addMessage({
+        id: generateId(),
+        role: 'assistant',
+        content: response,
+        timestamp: Date.now()
+      });
+    }, delay);
+  }
 }
 
 function addMessage(msg) {
@@ -253,6 +385,646 @@ function selectRandom(arr) {
 }
 
 // =============================================================================
+// CLAUDE API INTEGRATION
+// =============================================================================
+
+/**
+ * Send message to Claude API proxy and handle streaming response
+ * @param {string} userMessage - The user's message
+ */
+async function sendToAdvisor(userMessage) {
+  state.isStreaming = true;
+  showTypingIndicator();
+
+  try {
+    const context = await buildContext();
+
+    // Build messages for API (last 10 messages for context)
+    const apiMessages = state.messages
+      .filter(m => m.role === 'user' || m.role === 'assistant')
+      .slice(-10)
+      .map(m => ({ role: m.role, content: m.content }));
+
+    const response = await fetch(WORKER_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: apiMessages,
+        context
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    // Create a message element for streaming
+    hideTypingIndicator();
+    const msgId = generateId();
+    const streamMsg = {
+      id: msgId,
+      role: 'assistant',
+      content: '',
+      timestamp: Date.now()
+    };
+    addStreamingMessage(streamMsg);
+
+    // Read streaming response
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Parse SSE events from buffer
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.delta?.text) {
+              fullText += parsed.delta.text;
+              updateStreamingMessage(msgId, fullText);
+            } else if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+              fullText += parsed.delta.text;
+              updateStreamingMessage(msgId, fullText);
+            }
+          } catch {
+            // Skip unparseable lines
+          }
+        }
+      }
+    }
+
+    // Finalize the message
+    finalizeStreamingMessage(msgId, fullText);
+
+    // Try to parse JSON response for actions
+    tryParseAdvisorResponse(fullText);
+
+  } catch (error) {
+    console.error('Advisor error:', error);
+    hideTypingIndicator();
+
+    // Fall back to mock response
+    const response = generateMockResponse(userMessage);
+    addMessage({
+      id: generateId(),
+      role: 'assistant',
+      content: response,
+      timestamp: Date.now()
+    });
+  } finally {
+    state.isStreaming = false;
+  }
+}
+
+/**
+ * Build context object for the API
+ */
+async function buildContext() {
+  try {
+    const [allInventory, inventoryStats, allTrips, knowledge] = await Promise.all([
+      getAllInventory().catch(() => []),
+      getInventoryStats().catch(() => ({ byCategory: {} })),
+      getAllTrips().catch(() => []),
+      getKnowledge().catch(() => null)
+    ]);
+
+    // Get 10 most recent items (sorted by created date)
+    const recentItems = allInventory
+      .sort((a, b) => new Date(b.metadata?.created || 0) - new Date(a.metadata?.created || 0))
+      .slice(0, 10);
+
+    // Find current active trip (most recent trip from today that's not ended)
+    const today = new Date().toISOString().split('T')[0];
+    const currentTrip = allTrips.find(t =>
+      t.date === today && !t.endedAt
+    );
+
+    return {
+      trip: state.isOnTrip ? {
+        isActive: true,
+        store: state.tripStore,
+        itemCount: state.tripItemCount,
+        startedAt: state.tripStartedAt,
+        recentItems: state.tripItems.slice(-3)  // Last 3 items for update_item context
+      } : (currentTrip ? {
+        isActive: true,
+        store: currentTrip.stores?.[0]?.storeName || 'Unknown',
+        itemCount: 0,
+        startedAt: currentTrip.startedAt,
+        recentItems: []
+      } : null),
+      inventory: {
+        recentItems: recentItems.map(sanitizeItemForContext),
+        categoryStats: inventoryStats.byCategory || {}
+      },
+      knowledge: knowledge?.brands || {}
+    };
+  } catch (error) {
+    console.warn('Failed to build context:', error);
+    return {};
+  }
+}
+
+/**
+ * Sanitize an inventory item for sending to the API
+ */
+function sanitizeItemForContext(item) {
+  return {
+    brand: item.brand,
+    category: item.category,
+    status: item.status,
+    purchasePrice: item.purchasePrice,
+    listedPrice: item.listedPrice
+  };
+}
+
+/**
+ * Try to parse advisor response for structured actions
+ */
+function tryParseAdvisorResponse(text) {
+  try {
+    // Try to parse as JSON (advisor may return structured response)
+    const parsed = JSON.parse(text);
+    if (parsed.actions && Array.isArray(parsed.actions)) {
+      for (const action of parsed.actions) {
+        handleAdvisorAction(action);
+      }
+    }
+    if (parsed.knowledgeUpdate) {
+      handleKnowledgeUpdate(parsed.knowledgeUpdate);
+    }
+  } catch {
+    // Not JSON, that's fine - just plain text response
+  }
+}
+
+/**
+ * Handle an action suggested by the advisor
+ */
+async function handleAdvisorAction(action) {
+  const handlers = {
+    start_trip: handleStartTripAction,
+    end_trip: handleEndTripAction,
+    log_item: handleLogItemAction,
+    update_item: handleUpdateItemAction
+  };
+
+  const handler = handlers[action.type];
+  if (!handler) {
+    console.warn('Unknown action type:', action.type);
+    return { success: false, message: `Unknown action: ${action.type}` };
+  }
+
+  try {
+    const result = await handler(action.data || {});
+    if (result.success && result.message) {
+      addSystemConfirmation(result.message);
+    } else if (!result.success) {
+      addSystemConfirmation(result.message || `Could not ${action.type}`);
+    }
+    return result;
+  } catch (err) {
+    console.error(`Action ${action.type} failed:`, err);
+    addSystemConfirmation(`Could not ${action.type}: ${err.message}`);
+    return { success: false, message: err.message };
+  }
+}
+
+/**
+ * Add a system confirmation message to the chat
+ */
+function addSystemConfirmation(content) {
+  addMessage({
+    id: generateId(),
+    role: 'system',
+    content,
+    timestamp: Date.now()
+  });
+}
+
+/**
+ * Handle start_trip action
+ */
+async function handleStartTripAction(data) {
+  const storeName = data.storeName;
+  if (!storeName) {
+    return { success: false, message: 'No store name provided' };
+  }
+
+  // Try to match store by name
+  const stores = await getAllUserStores();
+  const matchedStore = findStoreByName(stores, storeName);
+
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+  const timeStr = now.toTimeString().slice(0, 5);
+
+  // Create trip record in database
+  const tripData = {
+    date: dateStr,
+    stores: [{
+      storeId: matchedStore?.id || null,
+      storeName: matchedStore?.name || storeName,
+      arrived: timeStr
+    }],
+    startedAt: now.toISOString()
+  };
+
+  const trip = await createTrip(tripData);
+
+  // Update local state
+  state.isOnTrip = true;
+  state.tripStore = matchedStore?.name || storeName;
+  state.tripStoreId = matchedStore?.id || null;
+  state.currentTripId = trip.id;
+  state.tripItemCount = 0;
+  state.tripItems = [];
+  state.tripStartedAt = now.toISOString();
+
+  updateUIState();
+  persistState();
+
+  return { success: true, message: `Trip started at ${state.tripStore}` };
+}
+
+/**
+ * Handle end_trip action
+ */
+async function handleEndTripAction() {
+  if (!state.isOnTrip) {
+    return { success: false, message: 'No active trip to end' };
+  }
+
+  const storeName = state.tripStore;
+  const itemCount = state.tripItemCount;
+
+  // Update trip record with end time
+  if (state.currentTripId) {
+    const now = new Date();
+    const timeStr = now.toTimeString().slice(0, 5);
+
+    await updateTrip(state.currentTripId, {
+      endedAt: now.toISOString(),
+      stores: [{
+        storeId: state.tripStoreId,
+        storeName: state.tripStore,
+        departed: timeStr
+      }]
+    });
+  }
+
+  // Reset trip state
+  state.isOnTrip = false;
+  state.tripStore = null;
+  state.tripStoreId = null;
+  state.currentTripId = null;
+  state.tripItemCount = 0;
+  state.tripItems = [];
+  state.tripStartedAt = null;
+
+  updateUIState();
+  persistState();
+
+  return {
+    success: true,
+    message: `Trip ended. ${itemCount} item(s) logged at ${storeName}.`
+  };
+}
+
+/**
+ * Handle log_item action
+ */
+async function handleLogItemAction(data) {
+  if (!data.category && !data.purchaseCost) {
+    return { success: false, message: 'Insufficient item data' };
+  }
+
+  // Map flat action data to nested inventory schema
+  const itemData = mapActionToInventoryItem(data);
+
+  // Link to current trip if active
+  if (state.currentTripId) {
+    itemData.metadata.acquisition.trip_id = state.currentTripId;
+  }
+  if (state.tripStoreId) {
+    itemData.metadata.acquisition.store_id = state.tripStoreId;
+  }
+
+  const item = await createInventoryItem(itemData);
+
+  // Track for update_item context
+  state.tripItemCount++;
+  state.lastLoggedItemId = item.id;
+  state.tripItems.push({
+    id: item.id,
+    brand: data.brand,
+    category: data.category,
+    subcategory: data.subcategory,
+    purchaseCost: data.purchaseCost
+  });
+
+  persistState();
+
+  const brandLabel = data.brand || '';
+  const typeLabel = data.subcategory || data.category || 'item';
+  const priceLabel = data.purchaseCost ? `$${data.purchaseCost}` : '';
+
+  return {
+    success: true,
+    message: `Logged: ${brandLabel} ${typeLabel}${priceLabel ? ' - ' + priceLabel : ''}`
+  };
+}
+
+/**
+ * Handle update_item action
+ */
+async function handleUpdateItemAction(data) {
+  if (!state.lastLoggedItemId) {
+    return { success: false, message: 'No recent item to update' };
+  }
+
+  const { field, value } = data;
+  if (!field || value === undefined) {
+    return { success: false, message: 'Missing field or value' };
+  }
+
+  // Map flat field to nested update
+  const updates = buildNestedUpdate(field, value);
+  if (!updates) {
+    return { success: false, message: `Unknown field: ${field}` };
+  }
+
+  await updateInventoryItem(state.lastLoggedItemId, updates);
+
+  // Update local tracking
+  const tripItem = state.tripItems.find(i => i.id === state.lastLoggedItemId);
+  if (tripItem && field in tripItem) {
+    tripItem[field] = value;
+  }
+
+  persistState();
+
+  return { success: true, message: `Updated ${field} to ${value}` };
+}
+
+/**
+ * Map action data (flat) to nested inventory item schema
+ */
+function mapActionToInventoryItem(data) {
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+
+  return {
+    brand: data.brand || null,
+    category: {
+      primary: data.category || 'clothing',
+      secondary: data.subcategory || null
+    },
+    colour: {
+      primary: data.colour || null,
+      secondary: null
+    },
+    material: {
+      primary: data.material || null,
+      secondary: null
+    },
+    era: data.era || null,
+    notes: data.notes || null,
+    condition: {
+      overall_condition: data.condition || null,
+      flaws: null,
+      repairs_completed: null,
+      repairs_needed: null,
+      condition_notes: null
+    },
+    pricing: {
+      estimated_resale_value: data.suggestedPrice?.high || null,
+      minimum_acceptable_price: data.suggestedPrice?.low || null,
+      brand_premium_multiplier: null
+    },
+    metadata: {
+      acquisition: {
+        date: dateStr,
+        price: data.purchaseCost || null,
+        store_id: null,
+        trip_id: null,
+        packaging: null
+      },
+      status: 'in_collection',
+      sync: { unsynced: true, synced_at: null }
+    },
+    source: 'chat'
+  };
+}
+
+/**
+ * Build nested update object from flat field name
+ */
+function buildNestedUpdate(field, value) {
+  const fieldMap = {
+    brand: { brand: value },
+    category: { category: { primary: value } },
+    subcategory: { category: { secondary: value } },
+    material: { material: { primary: value } },
+    colour: { colour: { primary: value } },
+    purchaseCost: { metadata: { acquisition: { price: value } } },
+    condition: { condition: { overall_condition: value } },
+    era: { era: value },
+    notes: { notes: value }
+  };
+
+  return fieldMap[field] || null;
+}
+
+/**
+ * Find a store by name (case-insensitive, partial match)
+ */
+function findStoreByName(stores, name) {
+  const lower = name.toLowerCase();
+
+  // Try exact match first
+  let match = stores.find(s => s.name?.toLowerCase() === lower);
+  if (match) return match;
+
+  // Try partial match
+  match = stores.find(s => s.name?.toLowerCase().includes(lower));
+  if (match) return match;
+
+  // Try if input contains store name
+  match = stores.find(s => lower.includes(s.name?.toLowerCase()));
+  return match || null;
+}
+
+/**
+ * Handle a knowledge update from the advisor
+ */
+function handleKnowledgeUpdate(update) {
+  if (!update || !update.brand) return;
+
+  state.pendingKnowledgeUpdate = update;
+  showKnowledgeSavePrompt(update);
+  persistState();
+}
+
+/**
+ * Show knowledge save confirmation prompt in chat
+ */
+function showKnowledgeSavePrompt(update) {
+  const container = document.getElementById('chat-messages');
+  if (!container) return;
+
+  // Remove any existing prompt
+  const existing = container.querySelector('.chat-knowledge-prompt');
+  if (existing) existing.remove();
+
+  const promptEl = document.createElement('div');
+  promptEl.className = 'chat-message chat-message--system chat-knowledge-prompt';
+
+  const brandName = update.info?.name || update.brand;
+  const notes = update.info?.notes || '';
+  const priceRange = update.info?.priceRange
+    ? `$${update.info.priceRange.low}-$${update.info.priceRange.high}`
+    : '';
+
+  promptEl.innerHTML = `
+    <div class="chat-bubble knowledge-prompt-content">
+      <div class="knowledge-prompt-header">Save this brand info?</div>
+      <div class="knowledge-prompt-brand">${escapeHtml(brandName)}</div>
+      ${notes ? `<div class="knowledge-prompt-notes">${escapeHtml(notes)}</div>` : ''}
+      ${priceRange ? `<div class="knowledge-prompt-price">Price range: ${priceRange}</div>` : ''}
+      <div class="knowledge-prompt-actions">
+        <button class="btn btn--sm btn--outline" data-action="dismiss">Dismiss</button>
+        <button class="btn btn--sm btn--primary" data-action="save">Save to Knowledge</button>
+      </div>
+    </div>
+  `;
+
+  // Event handlers
+  promptEl.querySelector('[data-action="save"]')?.addEventListener('click', async () => {
+    await saveKnowledgeUpdate();
+    promptEl.remove();
+  });
+
+  promptEl.querySelector('[data-action="dismiss"]')?.addEventListener('click', () => {
+    state.pendingKnowledgeUpdate = null;
+    persistState();
+    promptEl.remove();
+  });
+
+  container.appendChild(promptEl);
+  scrollToBottom();
+}
+
+/**
+ * Save the pending knowledge update to the database
+ */
+async function saveKnowledgeUpdate() {
+  const update = state.pendingKnowledgeUpdate;
+  if (!update) return;
+
+  const brandKey = update.brand.toLowerCase().replace(/\s+/g, '-');
+
+  try {
+    await upsertBrandKnowledge(brandKey, update.info || {});
+    addSystemConfirmation(`Saved ${update.info?.name || update.brand} to knowledge base`);
+  } catch (err) {
+    console.error('Failed to save knowledge:', err);
+    addSystemConfirmation(`Failed to save knowledge: ${err.message}`);
+  }
+
+  state.pendingKnowledgeUpdate = null;
+  persistState();
+}
+
+/**
+ * Add a message element for streaming (content will be updated)
+ */
+function addStreamingMessage(msg) {
+  state.messages.push(msg);
+
+  const welcome = document.getElementById('chat-welcome');
+  if (welcome) welcome.hidden = true;
+
+  const container = document.getElementById('chat-messages');
+  if (!container) return;
+
+  const msgEl = document.createElement('div');
+  msgEl.className = 'chat-message chat-message--assistant chat-message--streaming';
+  msgEl.dataset.id = msg.id;
+
+  const time = new Date(msg.timestamp).toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+
+  msgEl.innerHTML = `
+    <div class="chat-bubble"></div>
+    <span class="chat-time">${time}</span>
+  `;
+
+  container.appendChild(msgEl);
+  scrollToBottom();
+}
+
+/**
+ * Update a streaming message's content
+ */
+function updateStreamingMessage(msgId, text) {
+  const msgEl = document.querySelector(`.chat-message[data-id="${msgId}"]`);
+  const bubble = msgEl?.querySelector('.chat-bubble');
+  if (bubble) {
+    // Try to extract just the message if it's JSON
+    let displayText = text;
+    try {
+      const parsed = JSON.parse(text);
+      if (parsed.message) displayText = parsed.message;
+    } catch {
+      // Not valid JSON yet, show as-is
+    }
+    bubble.textContent = displayText;
+    scrollToBottom();
+  }
+}
+
+/**
+ * Finalize a streaming message
+ */
+function finalizeStreamingMessage(msgId, finalText) {
+  const msgEl = document.querySelector(`.chat-message[data-id="${msgId}"]`);
+  if (msgEl) {
+    msgEl.classList.remove('chat-message--streaming');
+  }
+
+  // Update state with final content
+  const msg = state.messages.find(m => m.id === msgId);
+  if (msg) {
+    // Try to extract message from JSON response
+    let displayText = finalText;
+    try {
+      const parsed = JSON.parse(finalText);
+      if (parsed.message) displayText = parsed.message;
+    } catch {
+      // Not JSON, use as-is
+    }
+    msg.content = displayText;
+    persistState();
+  }
+}
+
+// =============================================================================
 // TYPING INDICATOR
 // =============================================================================
 
@@ -296,6 +1068,7 @@ async function handleStartTrip() {
   state.isOnTrip = true;
   state.tripStore = store;
   state.tripItemCount = 0;
+  state.tripStartedAt = new Date().toISOString();
 
   // Add system message
   addMessage({
@@ -347,6 +1120,7 @@ function handleEndTrip() {
   state.isOnTrip = false;
   state.tripStore = null;
   state.tripItemCount = 0;
+  state.tripStartedAt = null;
 
   updateUIState();
   persistState();
@@ -462,7 +1236,12 @@ function persistState() {
       messages: state.messages.slice(-50), // Keep last 50
       isOnTrip: state.isOnTrip,
       tripStore: state.tripStore,
+      tripStoreId: state.tripStoreId,
+      currentTripId: state.currentTripId,
       tripItemCount: state.tripItemCount,
+      tripItems: state.tripItems.slice(-10), // Keep last 10 items
+      lastLoggedItemId: state.lastLoggedItemId,
+      tripStartedAt: state.tripStartedAt,
       messageQueue: state.messageQueue
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -479,7 +1258,12 @@ function loadPersistedState() {
       state.messages = data.messages || [];
       state.isOnTrip = data.isOnTrip || false;
       state.tripStore = data.tripStore || null;
+      state.tripStoreId = data.tripStoreId || null;
+      state.currentTripId = data.currentTripId || null;
       state.tripItemCount = data.tripItemCount || 0;
+      state.tripItems = data.tripItems || [];
+      state.lastLoggedItemId = data.lastLoggedItemId || null;
+      state.tripStartedAt = data.tripStartedAt || null;
       state.messageQueue = data.messageQueue || [];
     }
   } catch (e) {
@@ -513,9 +1297,17 @@ export const _test = {
     state.messages = [];
     state.isOnTrip = false;
     state.tripStore = null;
+    state.tripStoreId = null;
+    state.currentTripId = null;
     state.tripItemCount = 0;
+    state.tripItems = [];
+    state.lastLoggedItemId = null;
+    state.tripStartedAt = null;
     state.connectionStatus = 'online';
     state.messageQueue = [];
+    state.isRecording = false;
+    state.isStreaming = false;
+    state.pendingKnowledgeUpdate = null;
   },
   generateMockResponse,
   selectRandom,
@@ -524,5 +1316,23 @@ export const _test = {
   MOCK_RESPONSES,
   persistState,
   loadPersistedState,
-  STORAGE_KEY
+  STORAGE_KEY,
+  WORKER_URL,
+  // Speech recognition helpers
+  isSpeechSupported: () => !!(window.SpeechRecognition || window.webkitSpeechRecognition),
+  getSpeechRecognition: () => speechRecognition,
+  // API integration helpers
+  buildContext,
+  sanitizeItemForContext,
+  // Action handlers for testing
+  handleAdvisorAction,
+  handleStartTripAction,
+  handleEndTripAction,
+  handleLogItemAction,
+  handleUpdateItemAction,
+  handleKnowledgeUpdate,
+  // Helper functions for testing
+  mapActionToInventoryItem,
+  buildNestedUpdate,
+  findStoreByName
 };
