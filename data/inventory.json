@@ -4661,14 +4661,369 @@
           "synced_at": null
         }
       }
+    },
+    {
+      "id": "vintage-unbranded-burgundy-handbag-b1756",
+      "brand": "Vintage (Unbranded)",
+      "category": {
+        "primary": "accessories",
+        "secondary": "handbag"
+      },
+      "colour": {
+        "primary": "burgundy",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": null
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": "Recommended platform: eBay or Etsy. Estimated sale price: $55-75 CAD.",
+      "description": null,
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": "55-75",
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Vintage (Unbranded) burgundy handbag",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-22",
+          "price": 7.4,
+          "store_id": "rch_auxiliary",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-22T00:16:46.873Z",
+        "updated": "2026-01-22T00:16:46.873Z",
+        "sync": {
+          "unsynced": true,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "miz-mooz-black-flats-19745",
+      "brand": "Miz Mooz",
+      "category": {
+        "primary": "shoes",
+        "secondary": "flats"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": null
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": "Recommended platform: Poshmark. Estimated sale price: $55-60 CAD.",
+      "description": null,
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": "55-60",
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null,
+        "heel_height": null
+      },
+      "photos": null,
+      "title": "Miz Mooz black flats",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-22",
+          "price": 13.32,
+          "store_id": "rch_auxiliary",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-22T00:16:46.873Z",
+        "updated": "2026-01-22T00:16:46.873Z",
+        "sync": {
+          "unsynced": true,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "cole-haan-black-ankle_boots-7d744",
+      "brand": "Cole Haan",
+      "category": {
+        "primary": "shoes",
+        "secondary": "ankle_boots"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": null
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": "Recommended platform: Poshmark. Estimated sale price: $70-75 CAD.",
+      "description": null,
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": "70-75",
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null,
+        "heel_height": null
+      },
+      "photos": null,
+      "title": "Cole Haan black ankle boots",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-22",
+          "price": 11.1,
+          "store_id": "rch_auxiliary",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-22T00:16:46.873Z",
+        "updated": "2026-01-22T00:16:46.873Z",
+        "sync": {
+          "unsynced": true,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "finn-comfort-black-boots-4f29d",
+      "brand": "Finn Comfort",
+      "category": {
+        "primary": "shoes",
+        "secondary": "boots"
+      },
+      "colour": {
+        "primary": "black",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": null
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": "Recommended platform: eBay. Estimated sale price: $165-190 CAD.",
+      "description": null,
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": "165-190",
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": {
+        "width": null,
+        "heel_height": null
+      },
+      "photos": null,
+      "title": "Finn Comfort black boots",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-22",
+          "price": 11.1,
+          "store_id": "rch_auxiliary",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-22T00:16:46.873Z",
+        "updated": "2026-01-22T00:16:46.873Z",
+        "sync": {
+          "unsynced": true,
+          "synced_at": null
+        }
+      }
+    },
+    {
+      "id": "etro-grey-skirt-771bd",
+      "brand": "Etro",
+      "category": {
+        "primary": "clothing",
+        "secondary": "skirt"
+      },
+      "colour": {
+        "primary": "grey",
+        "secondary": null
+      },
+      "material": {
+        "primary": null,
+        "secondary": null
+      },
+      "size": {
+        "label": {
+          "gender": null,
+          "value": null
+        },
+        "measurements": null
+      },
+      "country_of_manufacture": null,
+      "era": null,
+      "notes": "Recommended platform: eBay. Estimated sale price: $70-95 CAD.",
+      "description": null,
+      "condition": {
+        "overall_condition": null,
+        "flaws": null,
+        "repairs_completed": null,
+        "repairs_needed": null,
+        "condition_notes": null
+      },
+      "intent": null,
+      "pricing": {
+        "estimated_resale_value": "70-95",
+        "minimum_acceptable_price": null,
+        "brand_premium_multiplier": null
+      },
+      "listing_status": {
+        "listing_date": null,
+        "sold_date": null,
+        "sold_price": null,
+        "sold_platform": null,
+        "shipping_cost": null,
+        "platform_fees": null
+      },
+      "jewelry_specific": null,
+      "shoes_specific": null,
+      "photos": null,
+      "title": "Etro grey skirt",
+      "source": null,
+      "tax_paid": null,
+      "metadata": {
+        "acquisition": {
+          "date": "2026-01-22",
+          "price": 3.7,
+          "store_id": "rch_auxiliary",
+          "packaging": null
+        },
+        "status": "in_collection",
+        "created": "2026-01-22T00:16:46.873Z",
+        "updated": "2026-01-22T00:16:46.873Z",
+        "sync": {
+          "unsynced": true,
+          "synced_at": null
+        }
+      }
     }
   ],
   "meta": {
     "created": "2026-01-12",
     "document_type": "inventory_data",
-    "item_count": 64,
+    "item_count": 69,
     "note": "v2.0: Migrated to nested schema matching db.js:migrateItemToNestedSchema()",
     "version": "2.0",
-    "migrated_at": "2026-01-17T00:26:28.989Z"
+    "migrated_at": "2026-01-17T00:26:28.989Z",
+    "updated": "2026-01-22T00:16:46.873Z"
   }
 }
