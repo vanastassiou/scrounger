@@ -3,7 +3,7 @@
 // =============================================================================
 
 import { state } from './state.js';
-import { getAllInventory, getInventoryStats, getSellingAnalytics, getInventoryItem, createInventoryItem, updateInventoryItem, deleteInventoryItem, createAttachment, getAttachmentsByItem } from './db.js';
+import { getAllInventory, getInventoryStats, getSellingAnalytics, getInventoryItem, createInventoryItem, updateInventoryItem, deleteInventoryItem, createAttachment, getAttachmentsByItem, getAllTrips, getTripsByDate } from './db.js';
 import { showToast, createModalController } from './ui.js';
 import {
   $, $$, formatCurrency, formatDate, capitalize, formatStatus, formatPackaging, escapeHtml,
@@ -248,6 +248,12 @@ function setupEventHandlers() {
     flawSelect.addEventListener('change', handleAddFlaw);
   }
 
+  // Date change - update trip dropdown to show matching trips
+  const dateInput = $('#item-acquisition-date');
+  if (dateInput) {
+    dateInput.addEventListener('change', handleAcquisitionDateChange);
+  }
+
   // Secondary materials - add material button
   const addMaterialBtn = $('#add-secondary-material');
   if (addMaterialBtn) {
@@ -334,6 +340,71 @@ function populateStoreSelect() {
     storeSelector: '#item-store',
     getAllStores: () => state.getAllStores()
   }, createChainStoreDropdown);
+}
+
+/**
+ * Populate trip dropdown with trips, optionally filtered by date.
+ * @param {string} [dateFilter] - Optional date to filter trips (YYYY-MM-DD)
+ * @param {string} [selectedTripId] - Optional trip ID to pre-select
+ */
+async function populateTripDropdown(dateFilter = null, selectedTripId = null) {
+  const tripSelect = $('#item-trip');
+  if (!tripSelect) return;
+
+  // Get trips - either filtered by date or all
+  let trips;
+  if (dateFilter) {
+    trips = await getTripsByDate(dateFilter);
+  } else {
+    trips = await getAllTrips();
+  }
+
+  // Build options
+  tripSelect.innerHTML = '<option value="">No trip linked</option>';
+
+  // Sort by date descending (most recent first)
+  trips.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  // Limit to recent trips (last 30 days or 20 trips max)
+  const recentTrips = trips.slice(0, 20);
+
+  for (const trip of recentTrips) {
+    const opt = document.createElement('option');
+    opt.value = trip.id;
+
+    // Build display text: date + store names
+    const storeNames = (trip.stores || [])
+      .map(s => {
+        const store = state.getStore(s.storeId);
+        return store?.name || s.storeId;
+      })
+      .join(', ');
+    opt.textContent = `${formatDate(trip.date)}${storeNames ? ` - ${storeNames}` : ''}`;
+
+    if (selectedTripId && trip.id === selectedTripId) {
+      opt.selected = true;
+    }
+    tripSelect.appendChild(opt);
+  }
+
+  // If selected trip not in list, add it
+  if (selectedTripId && !recentTrips.find(t => t.id === selectedTripId)) {
+    const trips = await getAllTrips();
+    const selectedTrip = trips.find(t => t.id === selectedTripId);
+    if (selectedTrip) {
+      const opt = document.createElement('option');
+      opt.value = selectedTrip.id;
+      const storeNames = (selectedTrip.stores || [])
+        .map(s => {
+          const store = state.getStore(s.storeId);
+          return store?.name || s.storeId;
+        })
+        .join(', ');
+      opt.textContent = `${formatDate(selectedTrip.date)}${storeNames ? ` - ${storeNames}` : ''}`;
+      opt.selected = true;
+      tripSelect.appendChild(opt);
+    }
+  }
 }
 
 function renderCheckboxGroup(selector, options, namePrefix, formatter) {
@@ -545,6 +616,17 @@ function handleSubcategoryChange(e) {
   if (ringSizeGroup) {
     ringSizeGroup.hidden = !(category === 'jewelry' && subcategory === 'ring');
   }
+}
+
+/**
+ * Handle acquisition date change - filter trip dropdown to show matching trips.
+ */
+async function handleAcquisitionDateChange(e) {
+  const selectedDate = e.target.value;
+  const currentTripId = $('#item-trip')?.value || null;
+
+  // Populate trips, prioritizing those matching the selected date
+  await populateTripDropdown(selectedDate, currentTripId);
 }
 
 function renderMeasurementsGrid(category) {
@@ -815,6 +897,9 @@ const addItemModal = createLazyModal('#add-item-dialog', {
   onOpen: () => {
     // Ensure stores are populated (may have loaded after initial setup)
     populateStoreSelect();
+    // Populate trips dropdown with recent trips
+    const dateInput = $('#item-acquisition-date');
+    populateTripDropdown(dateInput?.value || null);
   }
 });
 
@@ -831,7 +916,11 @@ export function openAddItemModal(context = null) {
   // Apply context if provided (from visit workflow)
   // Hide store/date fields and store context values for submission
   if (context?.storeId && context?.date) {
-    visitContext = { storeId: context.storeId, date: context.date };
+    visitContext = {
+      storeId: context.storeId,
+      date: context.date,
+      tripId: context.tripId || null
+    };
 
     const storeGroup = $('#store-field-group');
     const dateGroup = $('#date-field-group');
@@ -857,6 +946,14 @@ export function openAddItemModal(context = null) {
       dateInput.value = context.date;
       dateInput.removeAttribute('required');
     }
+
+    // Hide trip field if tripId is provided in context
+    const tripGroup = $('#trip-field-group');
+    if (context.tripId && tripGroup) {
+      tripGroup.hidden = true;
+    }
+    // Populate trip dropdown with context tripId pre-selected
+    populateTripDropdown(context.date, context.tripId);
   }
 
   addItemModal.open();
@@ -957,6 +1054,11 @@ function populateFormWithItem(item) {
   setValue('#item-price', item.metadata?.acquisition?.price);
   setValue('#item-tax', item.tax_paid);
 
+  // Trip linkage (populate dropdown and select)
+  const tripId = item.metadata?.acquisition?.trip_id;
+  const acqDate = item.metadata?.acquisition?.date;
+  populateTripDropdown(acqDate, tripId);
+
   // Sizing (nested under size)
   setValue('#item-labeled-size', item.size?.label?.value);
   setValue('#item-size-gender', item.size?.label?.gender);
@@ -1050,15 +1152,17 @@ function resetItemForm() {
 
   form.reset();
 
-  // Clear visit context and restore store/date field visibility
+  // Clear visit context and restore store/date/trip field visibility
   visitContext = null;
   const storeGroup = $('#store-field-group');
   const dateGroup = $('#date-field-group');
+  const tripGroup = $('#trip-field-group');
   const chainSelect = $('#item-chain');
   const storeSelect = $('#item-store');
   const dateInput = $('#item-acquisition-date');
   if (storeGroup) storeGroup.hidden = false;
   if (dateGroup) dateGroup.hidden = false;
+  if (tripGroup) tripGroup.hidden = false;
   if (chainSelect) {
     chainSelect.value = '';
     chainSelect.setAttribute('required', '');
@@ -1071,6 +1175,12 @@ function resetItemForm() {
   if (dateInput) {
     dateInput.disabled = false;
     dateInput.setAttribute('required', '');
+  }
+
+  // Reset trip dropdown
+  const tripSelect = $('#item-trip');
+  if (tripSelect) {
+    tripSelect.innerHTML = '<option value="">No trip linked</option>';
   }
 
   // Reset flaws
@@ -1216,6 +1326,7 @@ async function handleItemSubmit(e) {
     metadata: {
       acquisition: {
         store_id: visitContext?.storeId || formData.get('store_id'),
+        trip_id: visitContext?.tripId || formData.get('trip_id') || null,
         date: visitContext?.date || formData.get('acquisition_date') || new Date().toISOString().split('T')[0],
         price: parseFloat(formData.get('purchase_price')) || 0,
         packaging: formData.get('packaging') || null

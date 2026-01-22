@@ -118,6 +118,7 @@ function migrateItemToNestedSchema(item) {
         date: item.acquisition_date || null,
         price: item.purchase_price || null,
         store_id: item.store_id || null,
+        trip_id: item.trip_id || null,
         packaging: item.packaging || null
       },
       status: item.status || 'in_collection',
