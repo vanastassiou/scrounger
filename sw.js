@@ -2,23 +2,60 @@
 // SERVICE WORKER
 // =============================================================================
 
-const CACHE_NAME = 'thrift-inventory-v4';
+const CACHE_NAME = 'thrift-inventory-v5';
 const ASSETS = [
+  // Core
   '/',
   '/index.html',
+  '/offline.html',
   '/styles.css',
   '/manifest.json',
+
+  // Main JS modules
   '/js/app.js',
   '/js/config.js',
   '/js/db.js',
-  '/js/inventory.js',
   '/js/state.js',
-  '/js/stores.js',
-  '/js/sync.js',
   '/js/ui.js',
   '/js/utils.js',
+  '/js/components.js',
+  '/js/data-loaders.js',
+
+  // Feature modules
+  '/js/inventory.js',
+  '/js/stores.js',
   '/js/visits.js',
-  '/data/stores.json'
+  '/js/selling.js',
+  '/js/settings.js',
+  '/js/references.js',
+  '/js/dashboard-actions.js',
+
+  // Selling helpers
+  '/js/recommendations.js',
+  '/js/fees.js',
+  '/js/seasonal.js',
+
+  // Media handling
+  '/js/photos.js',
+  '/js/camera.js',
+
+  // Sync infrastructure
+  '/js/sync.js',
+  '/js/google-config.js',
+  '/js/core/oauth.js',
+  '/js/core/google-drive.js',
+  '/js/core/google-picker.js',
+  '/js/core/sync-engine.js',
+
+  // Reference data (read-only)
+  '/data/stores.json',
+  '/data/brands-clothing-shoes.json',
+  '/data/brands-jewelry-hallmarks.json',
+  '/data/materials.json',
+  '/data/platforms.json',
+  '/data/seasonal-selling.json',
+  '/data/inventory-form-schema.json',
+  '/data/rotation-logic.json'
 ];
 
 // Install: cache assets
@@ -58,8 +95,8 @@ self.addEventListener('fetch', (event) => {
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request, { redirect: 'follow' }).catch(() => {
-        // Fall back to cached index.html if network fails
-        return caches.match('/index.html');
+        // Fall back to offline page if network fails
+        return caches.match('/offline.html');
       })
     );
     return;
@@ -92,4 +129,43 @@ self.addEventListener('fetch', (event) => {
       });
     })
   );
+});
+
+// =============================================================================
+// BACKGROUND SYNC
+// =============================================================================
+
+const SYNC_TAG = 'thrift-sync';
+
+// Handle background sync event
+self.addEventListener('sync', (event) => {
+  if (event.tag === SYNC_TAG) {
+    event.waitUntil(doBackgroundSync());
+  }
+});
+
+// Process queued sync operations
+async function doBackgroundSync() {
+  try {
+    // Notify all clients to perform sync
+    const clients = await self.clients.matchAll();
+    for (const client of clients) {
+      client.postMessage({ type: 'SYNC_REQUESTED' });
+    }
+  } catch (err) {
+    console.error('Background sync failed:', err);
+    throw err; // Causes retry
+  }
+}
+
+// Listen for messages from main thread
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'REGISTER_SYNC') {
+    // Register for background sync when online
+    if (self.registration.sync) {
+      self.registration.sync.register(SYNC_TAG).catch((err) => {
+        console.warn('Background sync registration failed:', err);
+      });
+    }
+  }
 });

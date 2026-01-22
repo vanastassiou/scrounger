@@ -309,13 +309,21 @@ async function main() {
     console.log(`  TEST RESULTS: ${passed} passed, ${failed} failed`);
     console.log('='.repeat(50) + '\n');
 
-    // Also run schema extension tests if requested
+    // Also run additional tests if requested
     if (process.argv.includes('--all')) {
+      // Schema extension tests
       console.log('\n\n');
       const schemaTests = await import('./schema-extensions.test.js');
       const schemaResults = await schemaTests.runAllTests();
       passed += schemaResults.passed;
       failed += schemaResults.failed;
+
+      // PWA tests
+      console.log('\n\n');
+      const pwaTests = await import('./pwa.test.js');
+      const pwaResults = await pwaTests.runAllTests();
+      passed += pwaResults.passed;
+      failed += pwaResults.failed;
 
       console.log('\n' + '='.repeat(50));
       console.log(`  COMBINED RESULTS: ${passed} passed, ${failed} failed`);

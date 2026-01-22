@@ -81,6 +81,9 @@ export async function initSync() {
       showToast(email ? `Connected as ${email}` : 'Connected to Google Drive');
     }
 
+    // Listen for background sync messages from service worker
+    setupBackgroundSyncListener();
+
     return true;
   } catch (err) {
     console.error('Failed to initialize sync:', err);
@@ -507,6 +510,56 @@ export async function importFromDrive(fileId) {
   }
 
   return provider.downloadFile(fileId);
+}
+
+// =============================================================================
+// BACKGROUND SYNC
+// =============================================================================
+
+/**
+ * Setup listener for background sync messages from service worker.
+ */
+function setupBackgroundSyncListener() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', async (event) => {
+      if (event.data?.type === 'SYNC_REQUESTED') {
+        console.log('Background sync triggered by service worker');
+        try {
+          if (syncEngine?.canSync()) {
+            await syncEngine.sync();
+            await syncAttachments();
+            await syncChatLogs();
+          }
+        } catch (err) {
+          console.error('Background sync failed:', err);
+        }
+      }
+    });
+  }
+}
+
+/**
+ * Request background sync when coming back online.
+ * Call this when data changes while offline.
+ */
+export async function requestBackgroundSync() {
+  if ('serviceWorker' in navigator && 'sync' in window.SyncManager?.prototype) {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      if (registration.sync) {
+        await registration.sync.register('thrift-sync');
+      }
+    } catch (err) {
+      // Background sync not supported or failed, fall back to immediate sync
+      console.warn('Background sync registration failed:', err);
+      if (navigator.onLine && syncEngine?.canSync()) {
+        queueSync();
+      }
+    }
+  } else if (navigator.onLine && syncEngine?.canSync()) {
+    // No background sync support, do immediate sync
+    queueSync();
+  }
 }
 
 // =============================================================================
