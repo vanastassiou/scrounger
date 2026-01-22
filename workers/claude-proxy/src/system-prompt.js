@@ -123,7 +123,18 @@ function buildTripContext(trip) {
 You are helping during an active sourcing trip.
 - Store: ${trip.store || 'Unknown store'}
 - Items logged so far: ${trip.itemCount || 0}
+- Running spend: $${(trip.runningSpend || 0).toFixed(2)}
 - Trip duration: ${duration}`;
+
+  // Include store performance stats if available
+  if (trip.storeStats) {
+    context += `
+
+Store Performance:
+- Hit rate: ${((trip.storeStats.hit_rate || 0) * 100).toFixed(0)}%
+- Total visits: ${trip.storeStats.total_visits || 0}
+- Avg spend/visit: $${(trip.storeStats.avg_spend_per_visit || 0).toFixed(2)}`;
+  }
 
   // Include recent items for update_item context
   if (trip.recentItems && trip.recentItems.length > 0) {
@@ -155,6 +166,8 @@ If user says "actually...", "correction...", or similar, use update_item action 
 function buildInventoryContext(inventory) {
   const items = inventory.recentItems || [];
   const stats = inventory.categoryStats || {};
+  const similarItems = inventory.similarItems || [];
+  const historicalSales = inventory.historicalSales || [];
 
   let context = 'INVENTORY CONTEXT:\n';
 
@@ -172,9 +185,36 @@ function buildInventoryContext(inventory) {
     context += 'Recent items (avoid suggesting duplicates):\n';
     for (const item of items.slice(0, 5)) {
       const brand = item.brand || 'Unknown brand';
-      const category = item.category || 'item';
+      const category = item.category?.primary || item.category || 'item';
       context += `- ${brand} ${category}`;
       if (item.status) context += ` (${item.status})`;
+      context += '\n';
+    }
+  }
+
+  // Similar items user already owns (filtered by mentioned brand/category)
+  if (similarItems.length > 0) {
+    context += '\nSimilar items you own:\n';
+    for (const item of similarItems) {
+      const brand = item.brand || 'Unknown';
+      const category = item.category?.primary || item.category || 'item';
+      context += `- ${brand} ${category}`;
+      if (item.purchasePrice) context += ` ($${item.purchasePrice})`;
+      context += '\n';
+    }
+  }
+
+  // Historical sales data (user's past performance with similar items)
+  if (historicalSales.length > 0) {
+    context += '\nYour past sales of similar items:\n';
+    for (const sale of historicalSales) {
+      const brand = sale.brand || 'Unknown';
+      const purchasePrice = sale.purchasePrice || 0;
+      const soldPrice = sale.soldPrice || 0;
+      const roi = purchasePrice > 0 ? ((soldPrice - purchasePrice) / purchasePrice * 100).toFixed(0) : null;
+      context += `- ${brand}: $${purchasePrice} → $${soldPrice}`;
+      if (roi) context += ` (${roi}% ROI)`;
+      if (sale.soldPlatform) context += ` on ${sale.soldPlatform}`;
       context += '\n';
     }
   }
@@ -184,21 +224,53 @@ function buildInventoryContext(inventory) {
 
 /**
  * Build knowledge base context
+ * Uses pre-filtered data from client (only relevant brands included)
  */
 function buildKnowledgeContext(knowledge) {
-  const brands = Object.keys(knowledge);
-  if (brands.length === 0) return '';
+  // Handle new filtered structure
+  const brands = knowledge.relevantBrands || knowledge;
+  const hasPlatformIntent = knowledge.hasPlatformIntent || false;
+  const platformTips = knowledge.platformTips || null;
 
-  let context = 'KNOWLEDGE BASE (reference for brand info):\n';
+  // Check if we have any relevant data to inject
+  const hasBrands = typeof brands === 'object' && Object.keys(brands).length > 0;
+  if (!hasBrands && !hasPlatformIntent) {
+    return '';  // Nothing relevant to inject
+  }
 
-  for (const [brandKey, info] of Object.entries(knowledge)) {
-    context += `\n${info.name || brandKey}:\n`;
-    if (info.notes) context += `  Notes: ${info.notes}\n`;
-    if (info.priceRange) {
-      context += `  Typical range: $${info.priceRange.low}-$${info.priceRange.high}\n`;
+  let context = '';
+
+  // Add relevant brand knowledge
+  if (hasBrands) {
+    context += 'BRAND KNOWLEDGE:\n';
+    for (const [brandKey, info] of Object.entries(brands)) {
+      // Skip if this is a metadata field
+      if (brandKey === 'relevantBrands' || brandKey === 'hasPlatformIntent' || brandKey === 'platformTips') {
+        continue;
+      }
+      context += `\n${info.name || brandKey}:\n`;
+      if (info.notes) context += `  ${info.notes}\n`;
+      if (info.priceRange) {
+        context += `  Typical range: $${info.priceRange.low}-$${info.priceRange.high}\n`;
+      }
+      if (info.authentication) {
+        context += `  Auth tips: ${info.authentication}\n`;
+      }
     }
-    if (info.authentication) {
-      context += `  Auth tips: ${info.authentication}\n`;
+  }
+
+  // Add platform tips if user has selling/listing intent
+  if (hasPlatformIntent && platformTips && Object.keys(platformTips).length > 0) {
+    context += '\nPLATFORM TIPS:\n';
+    for (const [platform, tips] of Object.entries(platformTips)) {
+      if (typeof tips === 'string') {
+        context += `${platform}: ${tips}\n`;
+      } else if (typeof tips === 'object') {
+        context += `${platform}:\n`;
+        for (const [key, value] of Object.entries(tips)) {
+          context += `  ${key}: ${value}\n`;
+        }
+      }
     }
   }
 

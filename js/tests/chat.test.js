@@ -35,7 +35,10 @@ const {
   mapActionToInventoryItem,
   buildNestedUpdate,
   findStoreByName,
-  buildContext
+  buildContext,
+  // Context extraction helpers
+  extractMentionsFromMessage,
+  calculateRunningSpend
 } = _test;
 
 // Test utilities
@@ -1127,6 +1130,189 @@ export async function testHelperFunctions() {
 }
 
 // =============================================================================
+// CONTEXT EXTRACTION TESTS
+// =============================================================================
+
+export async function testContextExtraction() {
+  logSection('CONTEXT EXTRACTION TESTS');
+
+  const testBrands = ['pendleton', 'escada', 'st-john', 'coogi', 'burberry'];
+
+  console.log('\n Testing extractMentionsFromMessage - brand extraction...');
+
+  // Test single brand extraction
+  let result = extractMentionsFromMessage('Found a Pendleton shirt', testBrands);
+  assert(result.mentionedBrands.includes('pendleton'), 'Extracts pendleton brand');
+  assert(result.mentionedBrands.length === 1, 'Only one brand extracted');
+
+  // Test hyphenated brand name (st-john)
+  result = extractMentionsFromMessage('Is this St John knit worth it?', testBrands);
+  assert(result.mentionedBrands.includes('st-john'), 'Extracts hyphenated brand (st-john)');
+
+  // Test multiple brands
+  result = extractMentionsFromMessage('Pendleton or Escada, which is better?', testBrands);
+  assert(result.mentionedBrands.includes('pendleton'), 'Extracts first brand');
+  assert(result.mentionedBrands.includes('escada'), 'Extracts second brand');
+  assert(result.mentionedBrands.length === 2, 'Two brands extracted');
+
+  // Test no brand match
+  result = extractMentionsFromMessage('Found a nice coat', testBrands);
+  assert(result.mentionedBrands.length === 0, 'No brands extracted when none mentioned');
+
+  console.log('\n Testing extractMentionsFromMessage - category extraction...');
+
+  // Test category extraction
+  result = extractMentionsFromMessage('Looking at shoes', testBrands);
+  assert(result.mentionedCategories.includes('shoes'), 'Extracts shoes category');
+
+  result = extractMentionsFromMessage('Found some jewelry and clothing', testBrands);
+  assert(result.mentionedCategories.includes('jewelry'), 'Extracts jewelry category');
+  assert(result.mentionedCategories.includes('clothing'), 'Extracts clothing category');
+  assert(result.mentionedCategories.length === 2, 'Two categories extracted');
+
+  // Test no category match
+  result = extractMentionsFromMessage('What do you think?', testBrands);
+  assert(result.mentionedCategories.length === 0, 'No categories when none mentioned');
+
+  console.log('\n Testing extractMentionsFromMessage - platform intent...');
+
+  // Test platform intent detection
+  result = extractMentionsFromMessage('Should I list this on eBay?', testBrands);
+  assert(result.hasPlatformIntent === true, 'Detects eBay platform intent');
+
+  result = extractMentionsFromMessage('How much should I sell this for?', testBrands);
+  assert(result.hasPlatformIntent === true, 'Detects sell intent');
+
+  result = extractMentionsFromMessage('What price should I list at?', testBrands);
+  assert(result.hasPlatformIntent === true, 'Detects price + list intent');
+
+  result = extractMentionsFromMessage('Which platform is best?', testBrands);
+  assert(result.hasPlatformIntent === true, 'Detects platform keyword');
+
+  result = extractMentionsFromMessage('Is this Poshmark material?', testBrands);
+  assert(result.hasPlatformIntent === true, 'Detects poshmark platform');
+
+  result = extractMentionsFromMessage('Found a nice sweater', testBrands);
+  assert(result.hasPlatformIntent === false, 'No platform intent for general message');
+
+  console.log('\n Testing extractMentionsFromMessage - combined extraction...');
+
+  result = extractMentionsFromMessage('Found a Pendleton shirt, should I sell on eBay?', testBrands);
+  assert(result.mentionedBrands.includes('pendleton'), 'Extracts brand in combined message');
+  assert(result.hasPlatformIntent === true, 'Detects platform intent in combined message');
+
+  console.log('\n Testing calculateRunningSpend...');
+
+  // Test empty array
+  let spend = calculateRunningSpend([]);
+  assert(spend === 0, 'Empty array returns 0');
+
+  // Test with items
+  spend = calculateRunningSpend([
+    { purchaseCost: 10 },
+    { purchaseCost: 20 },
+    { purchaseCost: 15 }
+  ]);
+  assert(spend === 45, 'Calculates total spend correctly');
+
+  // Test with missing purchaseCost
+  spend = calculateRunningSpend([
+    { purchaseCost: 10 },
+    { brand: 'No price' },
+    { purchaseCost: 20 }
+  ]);
+  assert(spend === 30, 'Handles missing purchaseCost');
+
+  // Test with undefined
+  spend = calculateRunningSpend(undefined);
+  assert(spend === 0, 'Handles undefined input');
+
+  console.log('\n✅ Context extraction tests passed!');
+  return true;
+}
+
+// =============================================================================
+// ENHANCED CONTEXT BUILDING TESTS
+// =============================================================================
+
+export async function testEnhancedContext() {
+  logSection('ENHANCED CONTEXT BUILDING TESTS');
+
+  // Clean up any existing state
+  resetState();
+
+  // Clean up any existing trips
+  const existingTrips = await db.getAllTrips();
+  for (const trip of existingTrips) {
+    if (!trip.endedAt) {
+      await db.updateTrip(trip.id, { endedAt: new Date().toISOString() });
+    }
+  }
+
+  console.log('\n Testing context with user message filtering...');
+
+  // Save a brand to knowledge base for testing
+  await db.upsertBrandKnowledge('pendleton', {
+    name: 'Pendleton',
+    notes: 'Classic American brand',
+    priceRange: { low: 30, high: 80 }
+  });
+
+  // Test that knowledge is filtered by message
+  let context = await buildContext('Found a Pendleton shirt');
+  assert(typeof context.knowledge === 'object', 'Knowledge context exists');
+  assert(typeof context.knowledge.relevantBrands === 'object', 'relevantBrands exists');
+  assert('pendleton' in context.knowledge.relevantBrands, 'Pendleton brand included when mentioned');
+
+  // Test that unmentioned brands are not included
+  context = await buildContext('Found a nice coat');
+  assert(typeof context.knowledge.relevantBrands === 'object', 'relevantBrands exists');
+  assert(!('pendleton' in context.knowledge.relevantBrands), 'Pendleton not included when not mentioned');
+
+  console.log('\n Testing platform intent detection in context...');
+
+  context = await buildContext('Should I sell this on eBay?');
+  assert(context.knowledge.hasPlatformIntent === true, 'Platform intent detected in context');
+
+  context = await buildContext('Found a nice shirt');
+  assert(context.knowledge.hasPlatformIntent === false, 'No platform intent for general message');
+
+  console.log('\n Testing trip context includes running spend and store stats...');
+
+  // Start a trip
+  await handleStartTripAction({ storeName: 'Test Store Enhanced' });
+
+  // Log some items
+  await handleLogItemAction({ brand: 'Brand1', category: 'clothing', purchaseCost: 15 });
+  await handleLogItemAction({ brand: 'Brand2', category: 'clothing', purchaseCost: 25 });
+
+  context = await buildContext('What should I look for?');
+  assert(context.trip !== null, 'Trip context exists');
+  assert(context.trip.runningSpend === 40, 'Running spend calculated correctly');
+  assert(context.trip.itemCount === 2, 'Item count is correct');
+
+  // Clean up
+  const state = getState();
+  const tripId = state.currentTripId;
+  const itemIds = state.tripItems.map(i => i.id);
+
+  await handleEndTripAction();
+
+  for (const itemId of itemIds) {
+    await db.deleteInventoryItem(itemId);
+  }
+  await db.deleteTrip(tripId);
+
+  // Clean up knowledge
+  await db.deleteBrandKnowledge('pendleton');
+
+  resetState();
+
+  console.log('\n✅ Enhanced context building tests passed!');
+  return true;
+}
+
+// =============================================================================
 // TRIP STATE PERSISTENCE TESTS
 // =============================================================================
 
@@ -1227,6 +1413,8 @@ export async function runAllTests() {
     { name: 'Store Matching', fn: testStoreMatching },
     { name: 'Context Building', fn: testContextBuilding },
     { name: 'Helper Functions', fn: testHelperFunctions },
+    { name: 'Context Extraction', fn: testContextExtraction },
+    { name: 'Enhanced Context', fn: testEnhancedContext },
     { name: 'Trip State Persistence', fn: testTripStatePersistence }
   ];
 
@@ -1272,6 +1460,8 @@ if (typeof window !== 'undefined') {
     testStoreMatching,
     testContextBuilding,
     testHelperFunctions,
+    testContextExtraction,
+    testEnhancedContext,
     testTripStatePersistence
   };
 }

@@ -12,7 +12,8 @@ import {
   createInventoryItem,
   updateInventoryItem,
   getAllUserStores,
-  upsertBrandKnowledge
+  upsertBrandKnowledge,
+  getStoreStats
 } from './db.js';
 
 // =============================================================================
@@ -397,7 +398,7 @@ async function sendToAdvisor(userMessage) {
   showTypingIndicator();
 
   try {
-    const context = await buildContext();
+    const context = await buildContext(userMessage);
 
     // Build messages for API (last 10 messages for context)
     const apiMessages = state.messages
@@ -491,14 +492,17 @@ async function sendToAdvisor(userMessage) {
 
 /**
  * Build context object for the API
+ * @param {string} userMessage - The user's message (for extracting relevant context)
  */
-async function buildContext() {
+async function buildContext(userMessage = '') {
   try {
-    const [allInventory, inventoryStats, allTrips, knowledge] = await Promise.all([
+    // Fetch data in parallel, including store stats if on trip
+    const [allInventory, inventoryStats, allTrips, knowledge, storeStats] = await Promise.all([
       getAllInventory().catch(() => []),
       getInventoryStats().catch(() => ({ byCategory: {} })),
       getAllTrips().catch(() => []),
-      getKnowledge().catch(() => null)
+      getKnowledge().catch(() => null),
+      state.isOnTrip && state.tripStoreId ? getStoreStats(state.tripStoreId).catch(() => null) : Promise.resolve(null)
     ]);
 
     // Get 10 most recent items (sorted by created date)
@@ -512,25 +516,85 @@ async function buildContext() {
       t.date === today && !t.endedAt
     );
 
+    // Extract mentions from user message for filtering
+    const brandKeys = Object.keys(knowledge?.brands || {});
+    const mentions = extractMentionsFromMessage(userMessage, brandKeys);
+
+    // Find similar items based on mentioned brands/categories
+    const similarItems = (mentions.mentionedBrands.length || mentions.mentionedCategories.length)
+      ? allInventory.filter(item => {
+        const itemBrand = item.brand?.toLowerCase() || '';
+        const matchesBrand = mentions.mentionedBrands.some(b =>
+          itemBrand.includes(b.replace(/-/g, ' '))
+        );
+        const matchesCategory = mentions.mentionedCategories.includes(item.category?.primary);
+        return matchesBrand || matchesCategory;
+      }).slice(0, 5).map(sanitizeItemForContext)
+      : [];
+
+    // Find historical sales for mentioned brands/categories
+    const historicalSales = (mentions.mentionedBrands.length || mentions.mentionedCategories.length)
+      ? allInventory
+        .filter(i => i.metadata?.status === 'sold')
+        .filter(item => {
+          const itemBrand = item.brand?.toLowerCase() || '';
+          const matchesBrand = mentions.mentionedBrands.some(b =>
+            itemBrand.includes(b.replace(/-/g, ' '))
+          );
+          const matchesCategory = mentions.mentionedCategories.includes(item.category?.primary);
+          return matchesBrand || matchesCategory;
+        })
+        .slice(0, 3)
+        .map(item => ({
+          brand: item.brand,
+          category: item.category?.primary,
+          purchasePrice: item.metadata?.acquisition?.price,
+          soldPrice: item.listing_status?.sold_price,
+          soldPlatform: item.listing_status?.sold_platform
+        }))
+      : [];
+
+    // Filter knowledge to only relevant brands (reduces payload size)
+    const relevantBrands = {};
+    for (const key of mentions.mentionedBrands) {
+      if (knowledge?.brands?.[key]) {
+        relevantBrands[key] = knowledge.brands[key];
+      }
+    }
+
     return {
       trip: state.isOnTrip ? {
         isActive: true,
         store: state.tripStore,
+        storeStats: storeStats ? {
+          hit_rate: storeStats.hit_rate,
+          total_visits: storeStats.total_visits,
+          avg_spend_per_visit: storeStats.avg_spend_per_visit
+        } : null,
         itemCount: state.tripItemCount,
+        runningSpend: calculateRunningSpend(state.tripItems),
         startedAt: state.tripStartedAt,
         recentItems: state.tripItems.slice(-3)  // Last 3 items for update_item context
       } : (currentTrip ? {
         isActive: true,
         store: currentTrip.stores?.[0]?.storeName || 'Unknown',
+        storeStats: null,
         itemCount: 0,
+        runningSpend: 0,
         startedAt: currentTrip.startedAt,
         recentItems: []
       } : null),
       inventory: {
         recentItems: recentItems.map(sanitizeItemForContext),
-        categoryStats: inventoryStats.byCategory || {}
+        categoryStats: inventoryStats.byCategory || {},
+        similarItems,
+        historicalSales
       },
-      knowledge: knowledge?.brands || {}
+      knowledge: {
+        relevantBrands,
+        platformTips: mentions.hasPlatformIntent ? knowledge?.platformTips : null,
+        hasPlatformIntent: mentions.hasPlatformIntent
+      }
     };
   } catch (error) {
     console.warn('Failed to build context:', error);
@@ -545,10 +609,45 @@ function sanitizeItemForContext(item) {
   return {
     brand: item.brand,
     category: item.category,
-    status: item.status,
-    purchasePrice: item.purchasePrice,
-    listedPrice: item.listedPrice
+    status: item.metadata?.status,
+    purchasePrice: item.metadata?.acquisition?.price,
+    listedPrice: item.pricing?.estimated_resale_value
   };
+}
+
+/**
+ * Extract brand/category/platform mentions from user message
+ * @param {string} text - User message
+ * @param {string[]} brandKeys - Array of known brand keys
+ * @returns {{mentionedBrands: string[], mentionedCategories: string[], hasPlatformIntent: boolean}}
+ */
+function extractMentionsFromMessage(text, brandKeys = []) {
+  const lower = text.toLowerCase();
+
+  // Find mentioned brands (both hyphenated key and space-separated name)
+  const mentionedBrands = brandKeys.filter(key => {
+    const brandName = key.replace(/-/g, ' ');
+    return lower.includes(key) || lower.includes(brandName);
+  });
+
+  // Check for category mentions
+  const categories = ['clothing', 'shoes', 'jewelry', 'accessories'];
+  const mentionedCategories = categories.filter(cat => lower.includes(cat));
+
+  // Check for platform/selling intent
+  const platformKeywords = ['ebay', 'poshmark', 'etsy', 'sell', 'list', 'platform', 'price'];
+  const hasPlatformIntent = platformKeywords.some(kw => lower.includes(kw));
+
+  return { mentionedBrands, mentionedCategories, hasPlatformIntent };
+}
+
+/**
+ * Calculate running spend from trip items
+ * @param {Object[]} tripItems - Array of trip items with purchaseCost
+ * @returns {number} Total spend
+ */
+function calculateRunningSpend(tripItems = []) {
+  return tripItems.reduce((sum, item) => sum + (item.purchaseCost || 0), 0);
 }
 
 /**
@@ -1324,6 +1423,9 @@ export const _test = {
   // API integration helpers
   buildContext,
   sanitizeItemForContext,
+  // Context extraction helpers
+  extractMentionsFromMessage,
+  calculateRunningSpend,
   // Action handlers for testing
   handleAdvisorAction,
   handleStartTripAction,
