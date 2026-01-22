@@ -2,10 +2,15 @@
   "name": "thrifting",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "description": "Thrift store inventory tracker",
   "scripts": {
     "start": "npx serve -l 8080",
-    "test": "echo \"No tests configured\" && exit 0"
+    "test": "node js/tests/run-node-tests.mjs",
+    "test:all": "node js/tests/run-node-tests.mjs --all"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "fake-indexeddb": "^6.2.5",
+    "puppeteer": "^24.35.0"
+  }
 }

@@ -3,7 +3,7 @@
 // =============================================================================
 
 export const DB_NAME = 'ThriftInventory';
-export const DB_VERSION = 5;
+export const DB_VERSION = 7;
 
 // Size gender options for clothing/shoes (required) and jewelry/accessories (optional)
 export const SIZE_GENDER_OPTIONS = ['women', 'men', 'unisex'];
@@ -419,6 +419,14 @@ export const FLAW_TYPES = [
 ];
 
 export const FLAW_SEVERITY = ['minor', 'moderate', 'significant'];
+
+export const EXPENSE_CATEGORIES = [
+  'fuel',
+  'packaging',
+  'shipping_supplies',
+  'platform_fees',
+  'other'
+];
 
 export const WIDTH_OPTIONS = ['narrow', 'standard', 'wide', 'extra_wide'];
 

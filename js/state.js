@@ -5,6 +5,8 @@
 
 let _stores = [];
 let _storesIndex = null;
+let _trips = [];
+let _tripsIndex = null;
 let _selectedDate = new Date().toISOString().split('T')[0];
 let _syncState = {
   lastSyncAt: null,
@@ -16,6 +18,11 @@ let _syncState = {
 function rebuildStoresIndex() {
   _storesIndex = new Map();
   _stores.forEach(s => _storesIndex.set(s.id, s));
+}
+
+function rebuildTripsIndex() {
+  _tripsIndex = new Map();
+  _trips.forEach(t => _tripsIndex.set(t.id, t));
 }
 
 export const state = {
@@ -47,6 +54,23 @@ export const state = {
   // Get all stores
   getAllStores() {
     return _stores;
+  },
+
+  // All trips (from IndexedDB, synced from Google Drive)
+  get trips() { return _trips; },
+  set trips(data) {
+    _trips = data || [];
+    rebuildTripsIndex();
+  },
+
+  // Quick lookup for trip by ID
+  getTrip(id) {
+    return _tripsIndex?.get(id) ?? null;
+  },
+
+  // Get all trips
+  getAllTrips() {
+    return _trips;
   },
 
   // Selected date for visit logging

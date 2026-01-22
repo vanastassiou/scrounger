@@ -30,6 +30,7 @@ export function createGoogleDriveProvider(config) {
   let fileId = null;
   let attachmentsFolderId = null;
   let backupsFolderId = null;
+  let chatLogsFolderId = null;
 
   /**
    * Check if connected to Google Drive
@@ -62,6 +63,7 @@ export function createGoogleDriveProvider(config) {
     fileId = null;
     attachmentsFolderId = null;
     backupsFolderId = null;
+    chatLogsFolderId = null;
   }
 
   /**
@@ -272,6 +274,116 @@ export function createGoogleDriveProvider(config) {
     }
 
     return backupsFolderId;
+  }
+
+  /**
+   * Get or create chat-logs folder.
+   * Structure: {selected-folder}/chat-logs/
+   */
+  async function getOrCreateChatLogsFolder() {
+    if (chatLogsFolderId) return chatLogsFolderId;
+
+    const folder = getSavedFolder(domain);
+    if (!folder) {
+      throw new Error('No folder selected. Please select a folder in Settings.');
+    }
+
+    const query = `name='chat-logs' and '${folder.id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+    const result = await apiRequest(`/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name)`);
+
+    if (result?.files?.length > 0) {
+      chatLogsFolderId = result.files[0].id;
+    } else {
+      const createResult = await apiRequest('/drive/v3/files', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: 'chat-logs',
+          parents: [folder.id],
+          mimeType: 'application/vnd.google-apps.folder'
+        })
+      });
+      chatLogsFolderId = createResult.id;
+    }
+
+    return chatLogsFolderId;
+  }
+
+  /**
+   * List all chat log files in Drive.
+   * @returns {Promise<Array>} List of chat log files with id, name, modifiedTime
+   */
+  async function listChatLogFiles() {
+    const folderId = await getOrCreateChatLogsFolder();
+    const query = `'${folderId}' in parents and mimeType='application/json' and trashed=false`;
+    const result = await apiRequest(
+      `/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,modifiedTime)&orderBy=name desc`
+    );
+    return result?.files || [];
+  }
+
+  /**
+   * Get chat log file ID for a date (returns null if not exists).
+   * @param {string} dateStr - ISO date (YYYY-MM-DD)
+   */
+  async function getChatLogFileId(dateStr) {
+    const folderId = await getOrCreateChatLogsFolder();
+    const filename = `${dateStr}.json`;
+    const query = `name='${filename}' and '${folderId}' in parents and trashed=false`;
+    const result = await apiRequest(`/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id)`);
+    return result?.files?.[0]?.id || null;
+  }
+
+  /**
+   * Download chat log for a date.
+   * @param {string} dateStr - ISO date (YYYY-MM-DD)
+   * @returns {Promise<Object|null>} Chat log data or null if not found
+   */
+  async function downloadChatLog(dateStr) {
+    const fileId = await getChatLogFileId(dateStr);
+    if (!fileId) return null;
+
+    return await apiRequest(`/drive/v3/files/${fileId}?alt=media`);
+  }
+
+  /**
+   * Upload/update chat log for a date.
+   * @param {string} dateStr - ISO date (YYYY-MM-DD)
+   * @param {Object} data - Chat log data
+   * @returns {Promise<Object>} Google Drive file response
+   */
+  async function uploadChatLog(dateStr, data) {
+    const folderId = await getOrCreateChatLogsFolder();
+    const filename = `${dateStr}.json`;
+    const existingId = await getChatLogFileId(dateStr);
+
+    const content = JSON.stringify(data, null, 2);
+    const blob = new Blob([content], { type: 'application/json' });
+
+    const metadata = existingId
+      ? { mimeType: 'application/json' }
+      : { name: filename, parents: [folderId], mimeType: 'application/json' };
+
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', blob);
+
+    const token = getToken('google');
+    const url = existingId
+      ? `https://www.googleapis.com/upload/drive/v3/files/${existingId}?uploadType=multipart`
+      : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+
+    const response = await fetch(url, {
+      method: existingId ? 'PATCH' : 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: form
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to upload chat log: ${response.status}`);
+    }
+
+    return await response.json();
   }
 
   /**
@@ -596,7 +708,11 @@ export function createGoogleDriveProvider(config) {
     uploadBackup,
     listBackups,
     listRootFiles,
-    downloadFile
+    downloadFile,
+    // Chat logs
+    listChatLogFiles,
+    downloadChatLog,
+    uploadChatLog
   };
 }
 

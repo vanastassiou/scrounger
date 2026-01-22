@@ -22,7 +22,7 @@ export function resetDB() {
 export async function clearAllData() {
   try {
     const db = await openDB();
-    const stores = ['inventory', 'visits', 'stores', 'settings', 'attachments', 'archive'];
+    const stores = ['inventory', 'visits', 'stores', 'settings', 'attachments', 'archive', 'trips', 'expenses', 'knowledge', 'chatLogs'];
     const tx = db.transaction(stores, 'readwrite');
 
     const clearStoreInTx = (storeName) => new Promise((resolve, reject) => {
@@ -313,6 +313,32 @@ export function openDB() {
 
       if (!db.objectStoreNames.contains('archive')) {
         db.createObjectStore('archive', { keyPath: 'id' });
+      }
+
+      // TRIPS STORE
+      if (!db.objectStoreNames.contains('trips')) {
+        const tripsStore = db.createObjectStore('trips', { keyPath: 'id' });
+        tripsStore.createIndex('date', 'date', { unique: false });
+      }
+
+      // EXPENSES STORE
+      if (!db.objectStoreNames.contains('expenses')) {
+        const expensesStore = db.createObjectStore('expenses', { keyPath: 'id' });
+        expensesStore.createIndex('date', 'date', { unique: false });
+        expensesStore.createIndex('category', 'category', { unique: false });
+        expensesStore.createIndex('tripId', 'tripId', { unique: false });
+        expensesStore.createIndex('itemId', 'itemId', { unique: false });
+      }
+
+      // KNOWLEDGE STORE
+      if (!db.objectStoreNames.contains('knowledge')) {
+        db.createObjectStore('knowledge', { keyPath: 'id' });
+      }
+
+      // CHAT LOGS STORE (local cache of daily files)
+      if (!db.objectStoreNames.contains('chatLogs')) {
+        const chatLogsStore = db.createObjectStore('chatLogs', { keyPath: 'date' });
+        chatLogsStore.createIndex('updatedAt', 'updatedAt', { unique: false });
       }
 
       // Migrate from v4 to v5: Update indexes and migrate items
@@ -1201,13 +1227,19 @@ export async function exportAllData() {
     const inventory = await getAllFromStore('inventory');
     const stores = await getAllFromStore('stores');
     const archive = await getAllFromStore('archive');
+    const trips = await getAllFromStore('trips');
+    const expenses = await getAllFromStore('expenses');
+    const knowledge = await getByKey('knowledge', 'knowledge-base');
 
     return {
       version: 2,
       exported_at: nowISO(),
       inventory,
       stores,
-      archive
+      archive,
+      trips,
+      expenses,
+      knowledge
     };
   } catch (err) {
     console.error('Failed to export data:', err);
@@ -1222,16 +1254,22 @@ export async function importData(data, merge = false) {
 
   try {
     const db = await openDB();
-    const tx = db.transaction(['inventory', 'stores', 'archive'], 'readwrite');
+    const tx = db.transaction(['inventory', 'stores', 'archive', 'trips', 'expenses', 'knowledge'], 'readwrite');
 
     const inventoryStore = tx.objectStore('inventory');
     const storesStore = tx.objectStore('stores');
     const archiveStore = tx.objectStore('archive');
+    const tripsStore = tx.objectStore('trips');
+    const expensesStore = tx.objectStore('expenses');
+    const knowledgeStore = tx.objectStore('knowledge');
 
     if (!merge) {
       await promisify(inventoryStore.clear());
       await promisify(storesStore.clear());
       await promisify(archiveStore.clear());
+      await promisify(tripsStore.clear());
+      await promisify(expensesStore.clear());
+      await promisify(knowledgeStore.clear());
     }
 
     if (data.inventory) {
@@ -1254,6 +1292,22 @@ export async function importData(data, merge = false) {
         const migrated = migrateItemToNestedSchema(item);
         archiveStore.put(migrated);
       }
+    }
+
+    if (data.trips) {
+      for (const trip of data.trips) {
+        tripsStore.put(trip);
+      }
+    }
+
+    if (data.expenses) {
+      for (const expense of data.expenses) {
+        expensesStore.put(expense);
+      }
+    }
+
+    if (data.knowledge) {
+      knowledgeStore.put(data.knowledge);
     }
 
     await new Promise((resolve, reject) => {
@@ -1512,4 +1566,603 @@ export async function exportArchive() {
     console.error('Failed to export archive:', err);
     throw err;
   }
+}
+
+// =============================================================================
+// TRIPS CRUD
+// =============================================================================
+
+/**
+ * Create a new trip record.
+ * @param {Object} data - Trip data { date, stores: [{storeId, arrived, departed}], notes }
+ */
+export async function createTrip(data) {
+  try {
+    const now = nowISO();
+    const trip = {
+      ...data,
+      id: generateId(),
+      created_at: now,
+      updated_at: now,
+      unsynced: true
+    };
+    await addRecord('trips', trip);
+    return trip;
+  } catch (err) {
+    console.error('Failed to create trip:', err);
+    showToast('Failed to save trip');
+    throw err;
+  }
+}
+
+/**
+ * Update an existing trip.
+ */
+export async function updateTrip(id, updates) {
+  try {
+    const store = await getStore('trips', 'readwrite');
+    const existing = await promisify(store.get(id));
+    if (!existing) throw new Error('Trip not found');
+
+    const updated = {
+      ...existing,
+      ...updates,
+      updated_at: nowISO(),
+      unsynced: true
+    };
+    await promisify(store.put(updated));
+    return updated;
+  } catch (err) {
+    console.error('Failed to update trip:', err);
+    showToast('Failed to update trip');
+    throw err;
+  }
+}
+
+/**
+ * Delete a trip record.
+ */
+export async function deleteTrip(id) {
+  try {
+    await deleteRecord('trips', id);
+  } catch (err) {
+    console.error('Failed to delete trip:', err);
+    showToast('Failed to delete trip');
+    throw err;
+  }
+}
+
+/**
+ * Get a single trip by ID.
+ */
+export async function getTrip(id) {
+  try {
+    return await getByKey('trips', id);
+  } catch (err) {
+    return handleError(err, `Failed to get trip ${id}`, null);
+  }
+}
+
+/**
+ * Get all trips sorted by date descending.
+ */
+export async function getAllTrips() {
+  try {
+    const trips = await getAllFromStore('trips');
+    return trips.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  } catch (err) {
+    return handleError(err, 'Failed to get trips', []);
+  }
+}
+
+/**
+ * Get trips by date.
+ */
+export async function getTripsByDate(date) {
+  try {
+    const store = await getStore('trips');
+    const index = store.index('date');
+    return promisify(index.getAll(date));
+  } catch (err) {
+    return handleError(err, `Failed to get trips for date ${date}`, []);
+  }
+}
+
+/**
+ * Get unsynced trips.
+ */
+export async function getUnsyncedTrips() {
+  const trips = await getAllFromStore('trips');
+  return trips.filter(t => t.unsynced);
+}
+
+/**
+ * Mark trips as synced.
+ */
+export async function markTripsSynced(ids) {
+  const db = await openDB();
+  const tx = db.transaction('trips', 'readwrite');
+  const store = tx.objectStore('trips');
+
+  for (const id of ids) {
+    const trip = await promisify(store.get(id));
+    if (trip) {
+      trip.unsynced = false;
+      trip.synced_at = nowISO();
+      store.put(trip);
+    }
+  }
+
+  await new Promise((resolve, reject) => {
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// =============================================================================
+// EXPENSES CRUD
+// =============================================================================
+
+/**
+ * Create a new expense record.
+ * @param {Object} data - Expense data { date, category, amount, tripId?, itemId?, notes }
+ */
+export async function createExpense(data) {
+  try {
+    const now = nowISO();
+    const expense = {
+      ...data,
+      id: generateId(),
+      created_at: now,
+      updated_at: now,
+      unsynced: true
+    };
+    await addRecord('expenses', expense);
+    return expense;
+  } catch (err) {
+    console.error('Failed to create expense:', err);
+    showToast('Failed to save expense');
+    throw err;
+  }
+}
+
+/**
+ * Update an existing expense.
+ */
+export async function updateExpense(id, updates) {
+  try {
+    const store = await getStore('expenses', 'readwrite');
+    const existing = await promisify(store.get(id));
+    if (!existing) throw new Error('Expense not found');
+
+    const updated = {
+      ...existing,
+      ...updates,
+      updated_at: nowISO(),
+      unsynced: true
+    };
+    await promisify(store.put(updated));
+    return updated;
+  } catch (err) {
+    console.error('Failed to update expense:', err);
+    showToast('Failed to update expense');
+    throw err;
+  }
+}
+
+/**
+ * Delete an expense record.
+ */
+export async function deleteExpense(id) {
+  try {
+    await deleteRecord('expenses', id);
+  } catch (err) {
+    console.error('Failed to delete expense:', err);
+    showToast('Failed to delete expense');
+    throw err;
+  }
+}
+
+/**
+ * Get a single expense by ID.
+ */
+export async function getExpense(id) {
+  try {
+    return await getByKey('expenses', id);
+  } catch (err) {
+    return handleError(err, `Failed to get expense ${id}`, null);
+  }
+}
+
+/**
+ * Get all expenses sorted by date descending.
+ */
+export async function getAllExpenses() {
+  try {
+    const expenses = await getAllFromStore('expenses');
+    return expenses.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  } catch (err) {
+    return handleError(err, 'Failed to get expenses', []);
+  }
+}
+
+/**
+ * Get expenses by category.
+ */
+export async function getExpensesByCategory(category) {
+  try {
+    const store = await getStore('expenses');
+    const index = store.index('category');
+    return promisify(index.getAll(category));
+  } catch (err) {
+    return handleError(err, `Failed to get expenses for category ${category}`, []);
+  }
+}
+
+/**
+ * Get expenses by trip ID.
+ */
+export async function getExpensesByTrip(tripId) {
+  try {
+    const store = await getStore('expenses');
+    const index = store.index('tripId');
+    return promisify(index.getAll(tripId));
+  } catch (err) {
+    return handleError(err, `Failed to get expenses for trip ${tripId}`, []);
+  }
+}
+
+/**
+ * Get expenses by item ID.
+ */
+export async function getExpensesByItem(itemId) {
+  try {
+    const store = await getStore('expenses');
+    const index = store.index('itemId');
+    return promisify(index.getAll(itemId));
+  } catch (err) {
+    return handleError(err, `Failed to get expenses for item ${itemId}`, []);
+  }
+}
+
+/**
+ * Get expenses within a date range.
+ */
+export async function getExpensesByDateRange(startDate, endDate) {
+  try {
+    const expenses = await getAllFromStore('expenses');
+    return expenses.filter(e => {
+      const date = e.date;
+      return date && date >= startDate && date <= endDate;
+    }).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  } catch (err) {
+    return handleError(err, 'Failed to get expenses by date range', []);
+  }
+}
+
+/**
+ * Get unsynced expenses.
+ */
+export async function getUnsyncedExpenses() {
+  const expenses = await getAllFromStore('expenses');
+  return expenses.filter(e => e.unsynced);
+}
+
+/**
+ * Mark expenses as synced.
+ */
+export async function markExpensesSynced(ids) {
+  const db = await openDB();
+  const tx = db.transaction('expenses', 'readwrite');
+  const store = tx.objectStore('expenses');
+
+  for (const id of ids) {
+    const expense = await promisify(store.get(id));
+    if (expense) {
+      expense.unsynced = false;
+      expense.synced_at = nowISO();
+      store.put(expense);
+    }
+  }
+
+  await new Promise((resolve, reject) => {
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// =============================================================================
+// KNOWLEDGE CRUD
+// =============================================================================
+
+const DEFAULT_KNOWLEDGE = {
+  id: 'knowledge-base',
+  brands: {},
+  platformTips: {},
+  stores: {},
+  created_at: null,
+  updated_at: null,
+  unsynced: false
+};
+
+/**
+ * Get the knowledge base document.
+ * Returns default structure if not found.
+ */
+export async function getKnowledge() {
+  try {
+    const doc = await getByKey('knowledge', 'knowledge-base');
+    return doc || { ...DEFAULT_KNOWLEDGE, created_at: nowISO() };
+  } catch (err) {
+    return handleError(err, 'Failed to get knowledge base', { ...DEFAULT_KNOWLEDGE });
+  }
+}
+
+/**
+ * Update the knowledge base with deep merge.
+ */
+export async function updateKnowledge(updates) {
+  try {
+    const existing = await getKnowledge();
+    const now = nowISO();
+
+    const updated = {
+      ...existing,
+      brands: { ...existing.brands, ...updates.brands },
+      platformTips: { ...existing.platformTips, ...updates.platformTips },
+      stores: { ...existing.stores, ...updates.stores },
+      updated_at: now,
+      unsynced: true
+    };
+
+    await putRecord('knowledge', updated);
+    return updated;
+  } catch (err) {
+    console.error('Failed to update knowledge base:', err);
+    throw err;
+  }
+}
+
+/**
+ * Add or update a brand entry in the knowledge base.
+ */
+export async function upsertBrandKnowledge(brandKey, brandData) {
+  try {
+    const existing = await getKnowledge();
+    const now = nowISO();
+
+    const updated = {
+      ...existing,
+      brands: {
+        ...existing.brands,
+        [brandKey]: {
+          ...existing.brands[brandKey],
+          ...brandData,
+          updated_at: now
+        }
+      },
+      updated_at: now,
+      unsynced: true
+    };
+
+    await putRecord('knowledge', updated);
+    return updated.brands[brandKey];
+  } catch (err) {
+    console.error('Failed to upsert brand knowledge:', err);
+    throw err;
+  }
+}
+
+/**
+ * Get a specific brand from the knowledge base.
+ */
+export async function getBrandKnowledge(brandKey) {
+  try {
+    const knowledge = await getKnowledge();
+    return knowledge.brands[brandKey] || null;
+  } catch (err) {
+    return handleError(err, `Failed to get brand knowledge for ${brandKey}`, null);
+  }
+}
+
+/**
+ * Delete a brand entry from the knowledge base.
+ */
+export async function deleteBrandKnowledge(brandKey) {
+  try {
+    const existing = await getKnowledge();
+    const { [brandKey]: removed, ...remainingBrands } = existing.brands;
+
+    const updated = {
+      ...existing,
+      brands: remainingBrands,
+      updated_at: nowISO(),
+      unsynced: true
+    };
+
+    await putRecord('knowledge', updated);
+    return true;
+  } catch (err) {
+    console.error('Failed to delete brand knowledge:', err);
+    throw err;
+  }
+}
+
+/**
+ * Get unsynced knowledge (returns array with single doc if unsynced).
+ */
+export async function getUnsyncedKnowledge() {
+  const doc = await getKnowledge();
+  return doc.unsynced ? [doc] : [];
+}
+
+/**
+ * Mark knowledge as synced.
+ */
+export async function markKnowledgeSynced() {
+  try {
+    const existing = await getKnowledge();
+    const updated = {
+      ...existing,
+      unsynced: false,
+      synced_at: nowISO()
+    };
+    await putRecord('knowledge', updated);
+  } catch (err) {
+    console.error('Failed to mark knowledge synced:', err);
+  }
+}
+
+// =============================================================================
+// CHAT LOGS (Append-only daily files)
+// =============================================================================
+
+/**
+ * Get chat log for a specific date.
+ * @param {string} dateStr - ISO date (YYYY-MM-DD)
+ */
+export async function getChatLog(dateStr) {
+  try {
+    return await getByKey('chatLogs', dateStr);
+  } catch (err) {
+    return handleError(err, `Failed to get chat log for ${dateStr}`, null);
+  }
+}
+
+/**
+ * Get or create chat log for a date.
+ */
+export async function getOrCreateChatLog(dateStr) {
+  const existing = await getChatLog(dateStr);
+  if (existing) return existing;
+
+  const newLog = {
+    date: dateStr,
+    conversations: [],
+    createdAt: nowISO(),
+    updatedAt: nowISO(),
+    unsynced: false
+  };
+  await putRecord('chatLogs', newLog);
+  return newLog;
+}
+
+/**
+ * Append a conversation to a daily log.
+ * @param {string} dateStr - ISO date
+ * @param {Object} conversation - { id, started, ended?, messages[], linkedItems[], tripId?, extractedKnowledge[] }
+ */
+export async function appendConversation(dateStr, conversation) {
+  try {
+    const log = await getOrCreateChatLog(dateStr);
+
+    // Ensure conversation has required fields
+    const conv = {
+      ...conversation,
+      id: conversation.id || generateId(),
+      started: conversation.started || nowISO()
+    };
+
+    // Check for duplicate (by ID)
+    const existingIndex = log.conversations.findIndex(c => c.id === conv.id);
+    if (existingIndex >= 0) {
+      // Update existing conversation (e.g., adding messages)
+      log.conversations[existingIndex] = conv;
+    } else {
+      log.conversations.push(conv);
+    }
+
+    log.updatedAt = nowISO();
+    log.unsynced = true;
+
+    await putRecord('chatLogs', log);
+    return conv;
+  } catch (err) {
+    console.error('Failed to append conversation:', err);
+    throw err;
+  }
+}
+
+/**
+ * Get all conversations for a date.
+ */
+export async function getConversationsByDate(dateStr) {
+  const log = await getChatLog(dateStr);
+  return log?.conversations || [];
+}
+
+/**
+ * Get a specific conversation by ID.
+ */
+export async function getConversation(conversationId) {
+  // Extract date from ID format: chat-2025-01-21-001
+  const match = conversationId.match(/chat-(\d{4}-\d{2}-\d{2})-/);
+  if (!match) return null;
+
+  const dateStr = match[1];
+  const log = await getChatLog(dateStr);
+  return log?.conversations.find(c => c.id === conversationId) || null;
+}
+
+/**
+ * Get recent chat logs (last N days).
+ */
+export async function getRecentChatLogs(days = 7) {
+  try {
+    const logs = await getAllFromStore('chatLogs');
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    const cutoffStr = cutoff.toISOString().split('T')[0];
+
+    return logs
+      .filter(log => log.date >= cutoffStr)
+      .sort((a, b) => b.date.localeCompare(a.date));
+  } catch (err) {
+    return handleError(err, 'Failed to get recent chat logs', []);
+  }
+}
+
+/**
+ * Get unsynced chat logs.
+ */
+export async function getUnsyncedChatLogs() {
+  const logs = await getAllFromStore('chatLogs');
+  return logs.filter(log => log.unsynced);
+}
+
+/**
+ * Mark a chat log as synced.
+ */
+export async function markChatLogSynced(dateStr) {
+  const log = await getChatLog(dateStr);
+  if (log) {
+    log.unsynced = false;
+    log.syncedAt = nowISO();
+    await putRecord('chatLogs', log);
+  }
+}
+
+/**
+ * Import chat log from Drive (merge conversations by ID).
+ */
+export async function importChatLog(dateStr, remoteData) {
+  const local = await getOrCreateChatLog(dateStr);
+
+  // Merge conversations by ID, remote wins for same ID
+  const merged = new Map();
+  for (const conv of local.conversations) {
+    merged.set(conv.id, conv);
+  }
+  for (const conv of (remoteData.conversations || [])) {
+    merged.set(conv.id, conv);
+  }
+
+  local.conversations = Array.from(merged.values())
+    .sort((a, b) => (a.started || '').localeCompare(b.started || ''));
+  local.updatedAt = nowISO();
+  local.unsynced = false;
+  local.syncedAt = nowISO();
+
+  await putRecord('chatLogs', local);
+  return local;
 }

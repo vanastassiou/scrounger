@@ -13,7 +13,11 @@ import {
   markAttachmentSynced,
   getAllAttachments,
   upsertAttachmentFromSync,
-  getInventoryItem
+  getInventoryItem,
+  getUnsyncedChatLogs,
+  markChatLogSynced,
+  importChatLog,
+  getChatLog
 } from './db.js';
 import { updateSyncStatus, showToast } from './ui.js';
 
@@ -241,8 +245,9 @@ export async function syncNow() {
   const result = await syncEngine.sync();
 
   if (result.success) {
-    // Sync attachments after data sync
+    // Sync attachments and chat logs after data sync
     await syncAttachments();
+    await syncChatLogs();
     showToast('Sync complete');
   } else {
     showToast('Sync failed: ' + result.error);
@@ -264,6 +269,7 @@ export function queueSync() {
     try {
       await syncEngine.sync();
       await syncAttachments();
+      await syncChatLogs();
     } catch (err) {
       console.error('Auto-sync failed:', err);
     }
@@ -281,6 +287,7 @@ export async function syncOnOpen() {
   try {
     await syncEngine.sync();
     await syncAttachments();
+    await syncChatLogs();
   } catch (err) {
     console.error('Sync on open failed:', err);
   }
@@ -350,6 +357,77 @@ async function syncAttachments() {
 }
 
 // =============================================================================
+// CHAT LOG SYNC
+// =============================================================================
+
+/**
+ * Sync chat logs with Google Drive.
+ * - Push unsynced local logs
+ * - Pull remote logs not in local cache
+ */
+async function syncChatLogs() {
+  if (!provider || !provider.isFolderConfigured()) {
+    return;
+  }
+
+  try {
+    // 1. Push unsynced local logs
+    const unsyncedLogs = await getUnsyncedChatLogs();
+    for (const log of unsyncedLogs) {
+      try {
+        // Download remote version first for merge
+        const remote = await provider.downloadChatLog(log.date);
+
+        if (remote) {
+          // Merge: combine conversations by ID
+          const mergedConvs = new Map();
+          for (const c of remote.conversations || []) mergedConvs.set(c.id, c);
+          for (const c of log.conversations || []) mergedConvs.set(c.id, c);
+
+          log.conversations = Array.from(mergedConvs.values())
+            .sort((a, b) => (a.started || '').localeCompare(b.started || ''));
+        }
+
+        await provider.uploadChatLog(log.date, {
+          date: log.date,
+          conversations: log.conversations,
+          updatedAt: new Date().toISOString()
+        });
+
+        await markChatLogSynced(log.date);
+      } catch (err) {
+        console.error(`Failed to sync chat log ${log.date}:`, err);
+      }
+    }
+
+    // 2. Pull recent remote logs (last 7 days)
+    const remoteFiles = await provider.listChatLogFiles();
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 7);
+    const cutoffStr = cutoff.toISOString().split('T')[0];
+
+    for (const file of remoteFiles) {
+      const dateStr = file.name.replace('.json', '');
+      if (dateStr < cutoffStr) continue;
+
+      const local = await getChatLog(dateStr);
+      if (!local || new Date(file.modifiedTime) > new Date(local.syncedAt || 0)) {
+        try {
+          const remoteData = await provider.downloadChatLog(dateStr);
+          if (remoteData) {
+            await importChatLog(dateStr, remoteData);
+          }
+        } catch (err) {
+          console.error(`Failed to pull chat log ${dateStr}:`, err);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Chat log sync failed:', err);
+  }
+}
+
+// =============================================================================
 // INTERNAL
 // =============================================================================
 
@@ -364,7 +442,10 @@ async function importMergedData(data) {
     inventory: data.inventory || [],
     visits: data.visits || [],
     stores: data.stores || [],
-    archive: data.archive || []
+    archive: data.archive || [],
+    trips: data.trips || [],
+    expenses: data.expenses || [],
+    knowledge: data.knowledge || null
   }, false);
 }
 
