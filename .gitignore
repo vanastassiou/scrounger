@@ -5,3 +5,4 @@ dist/
 
 # Google API credentials (keep example, ignore actual config)
 js/google-config.js
+.certs/

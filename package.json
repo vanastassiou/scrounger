@@ -6,6 +6,9 @@
   "description": "Thrift store inventory tracker",
   "scripts": {
     "start": "npx serve -l 8080",
+    "start:https": "npx serve -l 8443 --ssl-cert .certs/localhost.pem --ssl-key .certs/localhost-key.pem",
+    "start:tailscale": "tailscale serve https / http://localhost:8080",
+    "certs:generate": "mkcert -install && mkcert -cert-file .certs/localhost.pem -key-file .certs/localhost-key.pem localhost 127.0.0.1 ::1",
     "test": "node js/tests/run-node-tests.mjs",
     "test:all": "node js/tests/run-node-tests.mjs --all"
   },
