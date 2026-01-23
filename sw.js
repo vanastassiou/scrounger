@@ -2,7 +2,7 @@
 // SERVICE WORKER
 // =============================================================================
 
-const CACHE_NAME = 'thrift-inventory-v6';
+const CACHE_NAME = 'thrift-inventory-v7';
 const ASSETS = [
   // Core
   '/',
@@ -10,6 +10,11 @@ const ASSETS = [
   '/offline.html',
   '/styles.css',
   '/manifest.json',
+
+  // PWA icons
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon-maskable-512.png',
 
   // Main JS modules
   '/js/app.js',
@@ -40,6 +45,8 @@ const ASSETS = [
   '/js/settings.js',
   '/js/references.js',
   '/js/dashboard-actions.js',
+  '/js/chat.js',
+  '/js/location.js',
 
   // Selling helpers
   '/js/recommendations.js',
