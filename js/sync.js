@@ -26,6 +26,7 @@ let googleConfig = null;
 let provider = null;
 let syncEngine = null;
 let syncTimeout = null;
+let isSyncing = false;
 
 const SYNC_DEBOUNCE_MS = 30000; // 30 seconds
 const DOMAIN = 'thrifting';
@@ -232,6 +233,11 @@ export function getSyncStatus() {
  * Perform sync now
  */
 export async function syncNow() {
+  if (isSyncing) {
+    console.log('Sync already in progress, skipping');
+    return { success: false, error: 'Sync already in progress' };
+  }
+
   if (!syncEngine) {
     showToast('Sync not configured');
     return { success: false, error: 'Sync not configured' };
@@ -245,18 +251,23 @@ export async function syncNow() {
     return { success: false, error };
   }
 
-  const result = await syncEngine.sync();
+  isSyncing = true;
+  try {
+    const result = await syncEngine.sync();
 
-  if (result.success) {
-    // Sync attachments and chat logs after data sync
-    await syncAttachments();
-    await syncChatLogs();
-    showToast('Sync complete');
-  } else {
-    showToast('Sync failed: ' + result.error);
+    if (result.success) {
+      // Sync attachments and chat logs after data sync
+      await syncAttachments();
+      await syncChatLogs();
+      showToast('Sync complete');
+    } else {
+      showToast('Sync failed: ' + result.error);
+    }
+
+    return result;
+  } finally {
+    isSyncing = false;
   }
-
-  return result;
 }
 
 /**
@@ -269,12 +280,20 @@ export function queueSync() {
 
   clearTimeout(syncTimeout);
   syncTimeout = setTimeout(async () => {
+    if (isSyncing) {
+      console.log('Sync already in progress, skipping queued sync');
+      return;
+    }
+
+    isSyncing = true;
     try {
       await syncEngine.sync();
       await syncAttachments();
       await syncChatLogs();
     } catch (err) {
       console.error('Auto-sync failed:', err);
+    } finally {
+      isSyncing = false;
     }
   }, SYNC_DEBOUNCE_MS);
 }
@@ -287,12 +306,20 @@ export async function syncOnOpen() {
     return;
   }
 
+  if (isSyncing) {
+    console.log('Sync already in progress, skipping sync on open');
+    return;
+  }
+
+  isSyncing = true;
   try {
     await syncEngine.sync();
     await syncAttachments();
     await syncChatLogs();
   } catch (err) {
     console.error('Sync on open failed:', err);
+  } finally {
+    isSyncing = false;
   }
 }
 

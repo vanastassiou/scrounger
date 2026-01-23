@@ -9,6 +9,7 @@
 
 import { _test } from '../chat.js';
 import * as db from '../db.js';
+import { escapeHtml } from '../utils.js';
 
 const {
   getState,
@@ -17,7 +18,6 @@ const {
   generateMockResponse,
   selectRandom,
   generateId,
-  escapeHtml,
   MOCK_RESPONSES,
   persistState,
   loadPersistedState,

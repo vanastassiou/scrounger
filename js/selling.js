@@ -54,6 +54,7 @@ let currentDeliveryItem = null;
 let feesManuallyEdited = false;
 let currentFeeResult = null; // Track fee calculation result for waterfall display
 let pendingDeliveryScreenshot = null;
+let isValidatingPhotos = false; // Guard against recursive photo validation calls
 
 // =============================================================================
 // VALIDATION FUNCTIONS
@@ -1176,6 +1177,12 @@ const markAsListedModal = createLazyModal('#mark-listed-dialog', {
 
 async function openMarkAsListedModal(itemId, options = {}) {
   const { skipValidation = false } = options;
+
+  // Guard against recursive calls from photo validation callbacks
+  if (isValidatingPhotos) {
+    return;
+  }
+
   const item = await getInventoryItem(itemId);
   if (!item) {
     showToast('Item not found');
@@ -1189,13 +1196,15 @@ async function openMarkAsListedModal(itemId, options = {}) {
     const photoValidation = validatePhotosComplete(item, attachments);
 
     if (!photoValidation.valid) {
+      isValidatingPhotos = true;
       // Show photo required modal
       showPhotoRequiredModal(item, photoValidation.missing, async () => {
         await openPhotoManager(itemId, {
           onComplete: async (status) => {
+            isValidatingPhotos = false;
             if (status.complete) {
               // Re-attempt listing after photos complete
-              await openMarkAsListedModal(itemId);
+              await openMarkAsListedModal(itemId, { skipValidation: true });
             }
           }
         });
@@ -1204,6 +1213,7 @@ async function openMarkAsListedModal(itemId, options = {}) {
     }
   }
 
+  isValidatingPhotos = false;
   markAsListedModal.open({ item });
 }
 

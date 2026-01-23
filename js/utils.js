@@ -2,6 +2,8 @@
 // UTILITIES
 // =============================================================================
 
+import { showToast } from './ui.js';
+
 /**
  * Generate a UUID v4.
  * @returns {string}
@@ -260,8 +262,8 @@ export function getItemTitle(item) {
   }
 
   // Size
-  if (item.sizing?.labeled_size) {
-    parts.push(item.sizing.labeled_size);
+  if (item.size?.label?.value) {
+    parts.push(item.size.label.value);
   }
 
   return parts.join(' ') || 'Untitled item';
@@ -328,6 +330,17 @@ export function $$(selector, context = document) {
 export function handleError(err, message, fallback) {
   console.error(message, err);
   return fallback;
+}
+
+/**
+ * Handle error with console logging and toast notification.
+ * Use this for user-facing errors where a toast is appropriate.
+ * @param {Error} error - The error object
+ * @param {string} context - What operation failed (shown to user)
+ */
+export function handleErrorWithToast(error, context) {
+  console.error(`${context}:`, error);
+  showToast(context);
 }
 
 /**
@@ -554,14 +567,14 @@ export function createMobileSortDropdown(table, { getState, setState, onSort }) 
 
 /**
  * Generic sort comparator with custom column value extraction.
- * @param {Array} data - Array to sort (sorts in place)
+ * @param {Array} data - Array to sort
  * @param {string} sortColumn
  * @param {string} sortDirection - 'asc' or 'desc'
  * @param {Function} getColumnValue - (item, column) => value
- * @returns {Array} Sorted array (same reference)
+ * @returns {Array} New sorted array (does not mutate original)
  */
 export function sortData(data, sortColumn, sortDirection, getColumnValue) {
-  return data.sort((a, b) => {
+  return [...data].sort((a, b) => {
     let aVal = getColumnValue(a, sortColumn);
     let bVal = getColumnValue(b, sortColumn);
 

@@ -25,6 +25,7 @@ import {
 } from './sync.js';
 import { getItemsNotInPipeline, migrateRemoveTitle } from './db.js';
 import { getItemTitle } from './utils.js';
+import './seed.js'; // Registers window.seedDatabase and window.clearAllData
 
 // =============================================================================
 // INITIALIZATION

@@ -15,6 +15,7 @@ import {
   upsertBrandKnowledge,
   getStoreStats
 } from './db.js';
+import { escapeHtml } from './utils.js';
 
 // =============================================================================
 // CONFIGURATION
@@ -1378,12 +1379,6 @@ function generateId() {
   return `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
 // =============================================================================
 // TEST EXPORTS
 // =============================================================================
@@ -1411,7 +1406,6 @@ export const _test = {
   generateMockResponse,
   selectRandom,
   generateId,
-  escapeHtml,
   MOCK_RESPONSES,
   persistState,
   loadPersistedState,
