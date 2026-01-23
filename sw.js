@@ -2,7 +2,7 @@
 // SERVICE WORKER
 // =============================================================================
 
-const CACHE_NAME = 'thrift-inventory-v5';
+const CACHE_NAME = 'thrift-inventory-v6';
 const ASSETS = [
   // Core
   '/',
@@ -14,14 +14,25 @@ const ASSETS = [
   // Main JS modules
   '/js/app.js',
   '/js/config.js',
-  '/js/db.js',
   '/js/state.js',
   '/js/ui.js',
   '/js/utils.js',
   '/js/components.js',
   '/js/data-loaders.js',
 
-  // Feature modules
+  // Database modules
+  '/js/db/core.js',
+  '/js/db/inventory.js',
+  '/js/db/stores.js',
+  '/js/db/visits.js',
+  '/js/db/attachments.js',
+  '/js/db/trips.js',
+  '/js/db/expenses.js',
+  '/js/db/knowledge.js',
+  '/js/db/chat-logs.js',
+  '/js/db/export.js',
+
+  // Feature modules (UI)
   '/js/inventory.js',
   '/js/stores.js',
   '/js/visits.js',

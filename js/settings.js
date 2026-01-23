@@ -24,7 +24,8 @@ import {
   listDriveFiles,
   importFromDrive
 } from './sync.js';
-import { clearAllData, exportAllData, importData } from './db.js';
+import { clearAllData } from './db/core.js';
+import { exportAllData, importData } from './db/export.js';
 import { showToast, createModalController } from './ui.js';
 import { formatRelativeTime } from './utils.js';
 

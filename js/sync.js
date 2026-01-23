@@ -6,19 +6,10 @@
 import { createGoogleDriveProvider } from './core/google-drive.js';
 import { createSyncEngine, SyncStatus } from './core/sync-engine.js';
 import { hasOAuthCallback } from './core/oauth.js';
-import {
-  exportAllData,
-  importData,
-  getPendingAttachments,
-  markAttachmentSynced,
-  getAllAttachments,
-  upsertAttachmentFromSync,
-  getInventoryItem,
-  getUnsyncedChatLogs,
-  markChatLogSynced,
-  importChatLog,
-  getChatLog
-} from './db.js';
+import { exportAllData, importData } from './db/export.js';
+import { getPendingAttachments, markAttachmentSynced, getAllAttachments, upsertAttachmentFromSync } from './db/attachments.js';
+import { getInventoryItem } from './db/inventory.js';
+import { getUnsyncedChatLogs, markChatLogSynced, importChatLog, getChatLog } from './db/chat-logs.js';
 import { updateSyncStatus, showToast } from './ui.js';
 
 // Configuration - will be loaded dynamically

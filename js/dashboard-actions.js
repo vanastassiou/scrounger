@@ -2,7 +2,8 @@
 // DASHBOARD ACTION ITEMS MODULE
 // =============================================================================
 
-import { getInventoryInPipeline, getAllInventory, getItemsNeedingMigration, migrateItemToSlug } from './db.js';
+import { getInventoryInPipeline, getAllInventory } from './db/inventory.js';
+import { getItemsNeedingMigration, migrateItemToSlug } from './db/core.js';
 import { $, $$, escapeHtml, isUuidFormat, getItemTitle } from './utils.js';
 import { createModalController, showToast } from './ui.js';
 import { setVisible } from './components.js';

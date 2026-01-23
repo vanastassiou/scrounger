@@ -15,7 +15,9 @@ import {
   updateTrip,
   deleteTrip,
   getUnsyncedTrips,
-  markTripsSynced,
+  markTripsSynced
+} from '../db/trips.js';
+import {
   createExpense,
   getExpense,
   getAllExpenses,
@@ -26,16 +28,18 @@ import {
   updateExpense,
   deleteExpense,
   getUnsyncedExpenses,
-  markExpensesSynced,
+  markExpensesSynced
+} from '../db/expenses.js';
+import {
   getKnowledge,
   updateKnowledge,
   upsertBrandKnowledge,
   getBrandKnowledge,
   deleteBrandKnowledge,
   getUnsyncedKnowledge,
-  markKnowledgeSynced,
-  exportAllData
-} from '../db.js';
+  markKnowledgeSynced
+} from '../db/knowledge.js';
+import { exportAllData } from '../db/export.js';
 
 // Test utilities
 function assert(condition, message) {

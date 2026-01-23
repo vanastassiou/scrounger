@@ -3,7 +3,8 @@
 // Camera access, MediaStream viewfinder, and guided photo capture
 // =============================================================================
 
-import { getInventoryItem, getAttachmentsByItem, createAttachment } from './db.js';
+import { getInventoryItem } from './db/inventory.js';
+import { getAttachmentsByItem, createAttachment } from './db/attachments.js';
 import { showToast } from './ui.js';
 import { $ } from './utils.js';
 import { REQUIRED_PHOTO_TYPES, getOptionalPhotoTypes, getPhotoHint } from './config.js';

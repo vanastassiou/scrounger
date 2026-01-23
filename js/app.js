@@ -23,7 +23,8 @@ import {
   selectFolder,
   syncOnOpen
 } from './sync.js';
-import { getItemsNotInPipeline, migrateRemoveTitle } from './db.js';
+import { getItemsNotInPipeline } from './db/inventory.js';
+import { migrateRemoveTitle } from './db/core.js';
 import { getItemTitle } from './utils.js';
 import './seed.js'; // Registers window.seedDatabase and window.clearAllData
 

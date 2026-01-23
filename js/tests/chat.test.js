@@ -8,8 +8,27 @@
  */
 
 import { _test } from '../chat.js';
-import * as db from '../db.js';
+import { getInventoryItem, deleteInventoryItem, getAllInventory } from '../db/inventory.js';
+import { getTrip, deleteTrip, getAllTrips, updateTrip } from '../db/trips.js';
+import { getAllUserStores, deleteUserStore, createUserStore } from '../db/stores.js';
+import { upsertBrandKnowledge, deleteBrandKnowledge } from '../db/knowledge.js';
 import { escapeHtml } from '../utils.js';
+
+// Create db namespace for compatibility
+const db = {
+  getInventoryItem,
+  deleteInventoryItem,
+  getAllInventory,
+  getTrip,
+  deleteTrip,
+  getAllTrips,
+  updateTrip,
+  getAllUserStores,
+  deleteUserStore,
+  createUserStore,
+  upsertBrandKnowledge,
+  deleteBrandKnowledge
+};
 
 const {
   getState,

@@ -3,14 +3,12 @@
 // =============================================================================
 // Generates realistic test data for development and testing.
 
-import {
-  createInventoryItem,
-  createTrip,
-  createExpense,
-  createUserStore,
-  upsertBrandKnowledge,
-  clearAllData
-} from './db.js';
+import { createInventoryItem } from './db/inventory.js';
+import { createTrip } from './db/trips.js';
+import { createExpense } from './db/expenses.js';
+import { createUserStore } from './db/stores.js';
+import { upsertBrandKnowledge } from './db/knowledge.js';
+import { clearAllData } from './db/core.js';
 import { showToast } from './ui.js';
 
 // =============================================================================

@@ -2,14 +2,7 @@
 // SELLING MODULE
 // =============================================================================
 
-import {
-  getInventoryInPipeline,
-  getItemsNotInPipeline,
-  markItemAsSold,
-  getInventoryItem,
-  updateInventoryItem,
-  archiveItem
-} from './db.js';
+import { getInventoryInPipeline, getItemsNotInPipeline, markItemAsSold, getInventoryItem, updateInventoryItem, archiveItem } from './db/inventory.js';
 import { showToast } from './ui.js';
 import {
   $,
@@ -31,7 +24,7 @@ import {
   REQUIRED_PHOTO_TYPES,
   CONDITIONS_REQUIRING_FLAWS
 } from './config.js';
-import { getAttachmentsByItem, createAttachment } from './db.js';
+import { getAttachmentsByItem, createAttachment } from './db/attachments.js';
 import { openViewItemModal, openEditItemModal } from './inventory.js';
 import { openPhotoManager } from './photos.js';
 import { initFees, calculatePlatformFees, calculateEstimatedReturns } from './fees.js';

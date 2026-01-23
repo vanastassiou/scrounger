@@ -16,9 +16,9 @@ import {
   getRecentChatLogs,
   getUnsyncedChatLogs,
   markChatLogSynced,
-  importChatLog,
-  clearAllData
-} from '../db.js';
+  importChatLog
+} from '../db/chat-logs.js';
+import { clearAllData } from '../db/core.js';
 
 // Test utilities
 function assert(condition, message) {

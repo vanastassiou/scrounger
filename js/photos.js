@@ -3,7 +3,8 @@
 // Centralized photo management with multiple entry points
 // =============================================================================
 
-import { getInventoryItem, getAttachmentsByItem, createAttachment, deleteAttachment } from './db.js';
+import { getInventoryItem } from './db/inventory.js';
+import { getAttachmentsByItem, createAttachment, deleteAttachment } from './db/attachments.js';
 import { showToast } from './ui.js';
 import { $, capitalize, escapeHtml, getItemTitle } from './utils.js';
 import { createLazyModal } from './components.js';

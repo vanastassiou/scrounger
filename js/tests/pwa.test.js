@@ -70,7 +70,7 @@ export async function runAllTests() {
       '/styles.css',
       '/manifest.json',
       '/js/app.js',
-      '/js/db.js',
+      '/js/db/core.js',
       '/js/config.js'
     ];
 

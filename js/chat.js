@@ -2,20 +2,11 @@
 // CHAT MODULE - Sourcing Advisor Interface
 // =============================================================================
 
-import {
-  getAllInventory,
-  getInventoryStats,
-  getAllTrips,
-  getKnowledge,
-  createTrip,
-  updateTrip,
-  createInventoryItem,
-  updateInventoryItem,
-  getAllUserStores,
-  upsertBrandKnowledge,
-  getStoreStats,
-  createUserStore
-} from './db.js';
+import { getAllInventory, getInventoryStats, createInventoryItem, updateInventoryItem } from './db/inventory.js';
+import { getAllTrips, createTrip, updateTrip } from './db/trips.js';
+import { getKnowledge, upsertBrandKnowledge } from './db/knowledge.js';
+import { getAllUserStores, createUserStore } from './db/stores.js';
+import { getStoreStats } from './db/visits.js';
 import { escapeHtml } from './utils.js';
 import {
   getCurrentPosition,

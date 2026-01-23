@@ -55,8 +55,8 @@ async function main() {
   console.log('Using fake-indexeddb for IndexedDB emulation\n');
 
   try {
-    // Import db functions
-    const db = await import('../db.js');
+    // Import db functions from split modules
+    const db = await import('../db/chat-logs.js');
 
     // Test utilities
     function assert(condition, message) {
