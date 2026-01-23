@@ -8,6 +8,7 @@ import {
   putRecord
 } from './core.js';
 import { generateId, nowISO, handleError } from '../utils.js';
+import { showToast } from '../ui.js';
 
 // =============================================================================
 // CHAT LOGS CRUD
@@ -35,8 +36,8 @@ export async function getOrCreateChatLog(dateStr) {
   const newLog = {
     date: dateStr,
     conversations: [],
-    createdAt: nowISO(),
-    updatedAt: nowISO(),
+    created_at: nowISO(),
+    updated_at: nowISO(),
     unsynced: false
   };
   await putRecord('chatLogs', newLog);
@@ -65,13 +66,14 @@ export async function appendConversation(dateStr, conversation) {
       log.conversations.push(conv);
     }
 
-    log.updatedAt = nowISO();
+    log.updated_at = nowISO();
     log.unsynced = true;
 
     await putRecord('chatLogs', log);
     return conv;
   } catch (err) {
     console.error('Failed to append conversation:', err);
+    showToast('Failed to save conversation');
     throw err;
   }
 }
@@ -128,7 +130,7 @@ export async function markChatLogSynced(dateStr) {
   const log = await getChatLog(dateStr);
   if (log) {
     log.unsynced = false;
-    log.syncedAt = nowISO();
+    log.synced_at = nowISO();
     await putRecord('chatLogs', log);
   }
 }
@@ -149,9 +151,9 @@ export async function importChatLog(dateStr, remoteData) {
 
   local.conversations = Array.from(merged.values())
     .sort((a, b) => (a.started || '').localeCompare(b.started || ''));
-  local.updatedAt = nowISO();
+  local.updated_at = nowISO();
   local.unsynced = false;
-  local.syncedAt = nowISO();
+  local.synced_at = nowISO();
 
   await putRecord('chatLogs', local);
   return local;

@@ -412,7 +412,7 @@ async function syncChatLogs() {
         await provider.uploadChatLog(log.date, {
           date: log.date,
           conversations: log.conversations,
-          updatedAt: new Date().toISOString()
+          updated_at: new Date().toISOString()
         });
 
         await markChatLogSynced(log.date);
@@ -432,7 +432,7 @@ async function syncChatLogs() {
       if (dateStr < cutoffStr) continue;
 
       const local = await getChatLog(dateStr);
-      if (!local || new Date(file.modifiedTime) > new Date(local.syncedAt || 0)) {
+      if (!local || new Date(file.modifiedTime) > new Date(local.synced_at || 0)) {
         try {
           const remoteData = await provider.downloadChatLog(dateStr);
           if (remoteData) {

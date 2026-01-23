@@ -11,6 +11,7 @@ import {
   deleteRecord
 } from './core.js';
 import { generateId, nowISO, handleError } from '../utils.js';
+import { showToast } from '../ui.js';
 
 // =============================================================================
 // ATTACHMENTS CRUD
@@ -35,6 +36,7 @@ export async function createAttachment(itemId, filename, blob, mimeType, type = 
     return attachment;
   } catch (err) {
     console.error('Failed to create attachment:', err);
+    showToast('Failed to save attachment');
     throw err;
   }
 }
@@ -113,6 +115,7 @@ export async function markAttachmentSynced(id, driveFileId) {
     return updated;
   } catch (err) {
     console.error('Failed to mark attachment synced:', err);
+    showToast('Failed to update attachment');
     throw err;
   }
 }
@@ -122,6 +125,7 @@ export async function deleteAttachment(id) {
     await deleteRecord('attachments', id);
   } catch (err) {
     console.error('Failed to delete attachment:', err);
+    showToast('Failed to delete attachment');
     throw err;
   }
 }
