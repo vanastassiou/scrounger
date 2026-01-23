@@ -1,6 +1,24 @@
 /**
  * Node.js test runner using fake-indexeddb
- * Run with: node js/tests/run-node-tests.mjs
+ *
+ * Usage:
+ *   node js/tests/run-node-tests.mjs          # Run chat-logs tests only
+ *   node js/tests/run-node-tests.mjs --all    # Run all test modules
+ *   node js/tests/run-node-tests.mjs --fees   # Run specific module
+ *
+ * Available test modules:
+ *   --schema          Schema extensions (trips, expenses, knowledge)
+ *   --pwa             PWA manifest and service worker
+ *   --chat            Chat UI and actions
+ *   --inventory       Inventory CRUD, pipeline, archive
+ *   --selling         Selling pipeline validation
+ *   --sync            Sync engine and merge logic
+ *   --stores          Store CRUD and stats
+ *   --visits          Visits CRUD and computed stats
+ *   --recommendations Pricing recommendations
+ *   --fees            Platform fee calculations
+ *
+ * Multiple modules: node js/tests/run-node-tests.mjs --fees --inventory
  */
 
 import 'fake-indexeddb/auto';
@@ -337,28 +355,68 @@ async function main() {
     console.log(`  TEST RESULTS: ${passed} passed, ${failed} failed`);
     console.log('='.repeat(50) + '\n');
 
-    // Also run additional tests if requested
-    if (process.argv.includes('--all')) {
-      // Schema extension tests
-      console.log('\n\n');
-      const schemaTests = await import('./schema-extensions.test.js');
-      const schemaResults = await schemaTests.runAllTests();
-      passed += schemaResults.passed;
-      failed += schemaResults.failed;
+    // Run specific test module if requested
+    const testModules = {
+      '--schema': './schema-extensions.test.js',
+      '--pwa': './pwa.test.js',
+      '--chat': './chat.test.js',
+      '--inventory': './inventory.test.js',
+      '--selling': './selling.test.js',
+      '--sync': './sync.test.js',
+      '--stores': './stores.test.js',
+      '--visits': './visits.test.js',
+      '--recommendations': './recommendations.test.js',
+      '--fees': './fees.test.js'
+    };
 
-      // PWA tests
-      console.log('\n\n');
-      const pwaTests = await import('./pwa.test.js');
-      const pwaResults = await pwaTests.runAllTests();
-      passed += pwaResults.passed;
-      failed += pwaResults.failed;
+    // Check for specific module flags
+    const requestedModules = Object.keys(testModules).filter(flag => process.argv.includes(flag));
 
-      // Chat module tests
-      console.log('\n\n');
-      const chatTests = await import('./chat.test.js');
-      const chatResults = await chatTests.runAllTests();
-      passed += chatResults.passed;
-      failed += chatResults.failed;
+    if (requestedModules.length > 0) {
+      // Run only the requested modules
+      for (const flag of requestedModules) {
+        console.log('\n\n');
+        try {
+          const testModule = await import(testModules[flag]);
+          const results = await testModule.runAllTests();
+          passed += results.passed;
+          failed += results.failed;
+        } catch (err) {
+          console.error(`Failed to run ${flag} tests:`, err.message);
+          failed++;
+        }
+      }
+
+      console.log('\n' + '='.repeat(50));
+      console.log(`  COMBINED RESULTS: ${passed} passed, ${failed} failed`);
+      console.log('='.repeat(50) + '\n');
+    } else if (process.argv.includes('--all')) {
+      // Run all test modules
+      const allModules = [
+        { name: 'Schema Extensions', module: './schema-extensions.test.js' },
+        { name: 'PWA', module: './pwa.test.js' },
+        { name: 'Chat', module: './chat.test.js' },
+        { name: 'Inventory', module: './inventory.test.js' },
+        { name: 'Selling', module: './selling.test.js' },
+        { name: 'Sync', module: './sync.test.js' },
+        { name: 'Stores', module: './stores.test.js' },
+        { name: 'Visits', module: './visits.test.js' },
+        { name: 'Recommendations', module: './recommendations.test.js' },
+        { name: 'Fees', module: './fees.test.js' }
+      ];
+
+      for (const { name, module } of allModules) {
+        console.log('\n\n');
+        try {
+          const testModule = await import(module);
+          const results = await testModule.runAllTests();
+          passed += results.passed;
+          failed += results.failed;
+        } catch (err) {
+          console.error(`Failed to run ${name} tests:`, err.message);
+          failed++;
+        }
+      }
 
       console.log('\n' + '='.repeat(50));
       console.log(`  COMBINED RESULTS: ${passed} passed, ${failed} failed`);

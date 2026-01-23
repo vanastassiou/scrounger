@@ -19,6 +19,20 @@
           "required": true,
           "type": "currency"
         },
+        "source_type": {
+          "options": [
+            "thrift",
+            "consignment",
+            "estate_sale",
+            "garage_sale",
+            "online",
+            "gift",
+            "other"
+          ],
+          "required": false,
+          "type": "enum",
+          "notes": "Type of source where item was acquired"
+        },
         "store_id": {
           "references": "stores.json",
           "required": true,

@@ -18,6 +18,26 @@ import { showToast } from '../ui.js';
 // EXPENSES CRUD
 // =============================================================================
 
+/**
+ * Expense record schema:
+ * @typedef {Object} Expense
+ * @property {string} id - Auto-generated unique ID
+ * @property {string} date - ISO date string (YYYY-MM-DD)
+ * @property {string} category - Expense category: fuel | packaging | shipping_supplies | platform_fees | repairs | storage | other
+ * @property {number} amount - Expense amount in CAD
+ * @property {string} [tripId] - Optional linked trip ID
+ * @property {string} [itemId] - Optional linked inventory item ID
+ * @property {string} [notes] - Optional notes/description for the expense
+ * @property {string} created_at - Auto-set creation timestamp
+ * @property {string} updated_at - Auto-set update timestamp
+ * @property {boolean} unsynced - Sync status flag
+ */
+
+/**
+ * Create a new expense record.
+ * @param {Partial<Expense>} data - Expense data (id, timestamps, unsynced auto-set)
+ * @returns {Promise<Expense>} Created expense
+ */
 export async function createExpense(data) {
   try {
     const now = nowISO();

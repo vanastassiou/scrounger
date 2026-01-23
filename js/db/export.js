@@ -90,7 +90,8 @@ function migrateItemToNestedSchema(item) {
         price: item.purchase_price || null,
         store_id: item.store_id || null,
         trip_id: item.trip_id || null,
-        packaging: item.packaging || null
+        packaging: item.packaging || null,
+        source_type: item.source_type || item.metadata?.acquisition?.source_type || null
       },
       status: item.status || 'in_collection',
       created: item.created_at || new Date().toISOString(),
