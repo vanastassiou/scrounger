@@ -13,6 +13,7 @@ const CLAUDE_API_URL = 'https://api.anthropic.com/v1/messages';
 const CLAUDE_MODEL = 'claude-sonnet-4-20250514';
 const CLAUDE_MAX_TOKENS = 1024;
 const ANTHROPIC_VERSION = '2023-06-01';
+const UPSTREAM_TIMEOUT_MS = 25000; // 25 seconds (less than client's 30s)
 
 // =============================================================================
 // MAIN HANDLER
@@ -30,13 +31,14 @@ export default {
       return jsonError('Method not allowed', 405);
     }
 
-    try {
-      // Validate origin
-      const origin = request.headers.get('Origin');
-      const allowedOrigins = (env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim());
+    // Validate origin early so we can include it in error responses
+    const origin = request.headers.get('Origin');
+    const allowedOrigins = (env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim());
+    const validOrigin = origin && allowedOrigins.includes(origin) ? origin : null;
 
-      if (!origin || !allowedOrigins.includes(origin)) {
-        return jsonError('Forbidden', 403);
+    try {
+      if (!validOrigin) {
+        return jsonError('Forbidden', 403, {}, null);
       }
 
       // Check rate limit
@@ -50,7 +52,7 @@ export default {
         return jsonError('Rate limited', 429, {
           retryAfter: rateLimitResult.resetIn,
           remaining: 0
-        });
+        }, validOrigin);
       }
 
       // Periodic cleanup (non-blocking)
@@ -61,12 +63,12 @@ export default {
       try {
         body = await request.json();
       } catch {
-        return jsonError('Invalid JSON body', 400);
+        return jsonError('Invalid JSON body', 400, {}, validOrigin);
       }
 
       // Validate request structure
       if (!body.messages || !Array.isArray(body.messages)) {
-        return jsonError('Invalid request: messages array required', 400);
+        return jsonError('Invalid request: messages array required', 400, {}, validOrigin);
       }
 
       // Build system prompt with context
@@ -74,25 +76,41 @@ export default {
 
       // Check for API key
       if (!env.ANTHROPIC_API_KEY) {
-        return jsonError('Server configuration error: API key not set', 500);
+        return jsonError('Server configuration error: API key not set', 500, {}, validOrigin);
       }
 
-      // Forward to Claude API with streaming
-      const claudeResponse = await fetch(CLAUDE_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': env.ANTHROPIC_API_KEY,
-          'anthropic-version': ANTHROPIC_VERSION
-        },
-        body: JSON.stringify({
-          model: CLAUDE_MODEL,
-          max_tokens: CLAUDE_MAX_TOKENS,
-          stream: true,
-          system: systemPrompt,
-          messages: sanitizeMessages(body.messages)
-        })
-      });
+      // Forward to Claude API with streaming and timeout
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), UPSTREAM_TIMEOUT_MS);
+
+      let claudeResponse;
+      try {
+        claudeResponse = await fetch(CLAUDE_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': env.ANTHROPIC_API_KEY,
+            'anthropic-version': ANTHROPIC_VERSION
+          },
+          body: JSON.stringify({
+            model: CLAUDE_MODEL,
+            max_tokens: CLAUDE_MAX_TOKENS,
+            stream: true,
+            system: systemPrompt,
+            messages: sanitizeMessages(body.messages)
+          }),
+          signal: controller.signal
+        });
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          return jsonError('Upstream timeout', 504, {
+            details: 'Claude API did not respond in time'
+          }, validOrigin);
+        }
+        throw err;
+      } finally {
+        clearTimeout(timeout);
+      }
 
       // Check for upstream errors
       if (!claudeResponse.ok) {
@@ -101,13 +119,13 @@ export default {
 
         return jsonError('Upstream error', 502, {
           details: `Claude API returned ${claudeResponse.status}`
-        });
+        }, validOrigin);
       }
 
       // Forward the stream to client with CORS headers
       return new Response(claudeResponse.body, {
         headers: {
-          ...getCorsHeaders(origin),
+          ...getCorsHeaders(validOrigin),
           'Content-Type': 'text/event-stream',
           'Cache-Control': 'no-cache',
           'X-RateLimit-Remaining': rateLimitResult.remaining.toString(),
@@ -117,7 +135,7 @@ export default {
 
     } catch (error) {
       console.error('Worker error:', error);
-      return jsonError('Internal error', 500);
+      return jsonError('Internal error', 500, {}, validOrigin);
     }
   }
 };
@@ -158,18 +176,25 @@ function getCorsHeaders(origin) {
 }
 
 /**
- * Return a JSON error response
+ * Return a JSON error response with proper CORS headers
+ * @param {string} message - Error message
+ * @param {number} status - HTTP status code
+ * @param {Object} extra - Additional response data
+ * @param {string|null} origin - Validated origin for CORS (null = no CORS header)
  */
-function jsonError(message, status, extra = {}) {
+function jsonError(message, status, extra = {}, origin = null) {
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+
+  // Only add CORS header for validated origins
+  if (origin) {
+    headers['Access-Control-Allow-Origin'] = origin;
+  }
+
   return new Response(
     JSON.stringify({ error: message, ...extra }),
-    {
-      status,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*' // Allow error responses from any origin
-      }
-    }
+    { status, headers }
   );
 }
 

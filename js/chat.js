@@ -8,6 +8,7 @@ import { getKnowledge, upsertBrandKnowledge } from './db/knowledge.js';
 import { getAllUserStores, createUserStore } from './db/stores.js';
 import { getStoreStats } from './db/visits.js';
 import { escapeHtml } from './utils.js';
+import { showToast } from './ui.js';
 import {
   getCurrentPosition,
   findNearbyStores,
@@ -405,6 +406,70 @@ function selectRandom(arr) {
 // CLAUDE API INTEGRATION
 // =============================================================================
 
+// API timeout and retry configuration
+const API_TIMEOUT_MS = 30000; // 30 seconds
+const MAX_RETRIES = 3;
+const RETRY_BASE_DELAY_MS = 1000;
+
+/**
+ * Fetch with timeout using AbortController
+ * @param {string} url - URL to fetch
+ * @param {RequestInit} options - Fetch options
+ * @param {number} timeoutMs - Timeout in milliseconds
+ * @returns {Promise<Response>}
+ */
+async function fetchWithTimeout(url, options, timeoutMs = API_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
+ * Fetch with exponential backoff retry for transient errors
+ * @param {string} url - URL to fetch
+ * @param {RequestInit} options - Fetch options
+ * @param {number} maxRetries - Maximum retry attempts
+ * @returns {Promise<Response>}
+ */
+async function fetchWithRetry(url, options, maxRetries = MAX_RETRIES) {
+  let lastError;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetchWithTimeout(url, options);
+
+      // Return immediately for non-5xx errors (they won't be fixed by retry)
+      if (response.ok || response.status < 500) {
+        return response;
+      }
+
+      // 5xx error - will retry
+      lastError = new Error(`Server error: ${response.status}`);
+
+    } catch (err) {
+      lastError = err;
+
+      // Don't retry on abort (timeout) if this is the last attempt
+      if (err.name === 'AbortError' && attempt === maxRetries - 1) {
+        throw new Error('Request timed out');
+      }
+    }
+
+    // Wait before retrying (exponential backoff: 1s, 2s, 4s, ...)
+    if (attempt < maxRetries - 1) {
+      await new Promise(r => setTimeout(r, RETRY_BASE_DELAY_MS * Math.pow(2, attempt)));
+    }
+  }
+
+  throw lastError;
+}
+
 /**
  * Send message to Claude API proxy and handle streaming response
  * @param {string} userMessage - The user's message
@@ -422,7 +487,7 @@ async function sendToAdvisor(userMessage) {
       .slice(-10)
       .map(m => ({ role: m.role, content: m.content }));
 
-    const response = await fetch(WORKER_URL, {
+    const response = await fetchWithRetry(WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -430,6 +495,13 @@ async function sendToAdvisor(userMessage) {
         context
       })
     });
+
+    // Handle rate limiting
+    if (response.status === 429) {
+      const errorBody = await response.json().catch(() => ({}));
+      const retryAfter = errorBody.retryAfter || 60;
+      throw new Error(`Rate limited. Try again in ${retryAfter} seconds.`);
+    }
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
@@ -451,6 +523,7 @@ async function sendToAdvisor(userMessage) {
     const decoder = new TextDecoder();
     let fullText = '';
     let buffer = '';
+    let consecutiveParseFailures = 0;
 
     while (true) {
       const { done, value } = await reader.read();
@@ -469,6 +542,8 @@ async function sendToAdvisor(userMessage) {
 
           try {
             const parsed = JSON.parse(data);
+            consecutiveParseFailures = 0; // Reset on successful parse
+
             if (parsed.delta?.text) {
               fullText += parsed.delta.text;
               updateStreamingMessage(msgId, fullText);
@@ -477,7 +552,10 @@ async function sendToAdvisor(userMessage) {
               updateStreamingMessage(msgId, fullText);
             }
           } catch {
-            // Skip unparseable lines
+            consecutiveParseFailures++;
+            if (consecutiveParseFailures > 3) {
+              console.warn('Stream degraded: multiple consecutive parse failures');
+            }
           }
         }
       }
@@ -493,18 +571,69 @@ async function sendToAdvisor(userMessage) {
     console.error('Advisor error:', error);
     hideTypingIndicator();
 
-    // Fall back to mock response
-    const response = generateMockResponse(userMessage);
+    // Show user-friendly error message
+    const userMessage = userFriendlyError(error);
+
+    // Fall back to mock response with error context
+    const mockResponse = generateMockResponse(userMessage);
     addMessage({
       id: generateId(),
       role: 'assistant',
-      content: response,
+      content: mockResponse,
       timestamp: Date.now()
     });
+
+    // Add system message about the error if it was a rate limit or timeout
+    if (error.message.includes('Rate limited') || error.message.includes('timed out')) {
+      addMessage({
+        id: generateId(),
+        role: 'system',
+        content: userMessage,
+        timestamp: Date.now()
+      });
+    }
   } finally {
     state.isStreaming = false;
   }
 }
+
+/**
+ * Convert internal errors to user-friendly messages
+ * @param {Error} err - The error object
+ * @returns {string} User-friendly error message
+ */
+function userFriendlyError(err) {
+  if (err.name === 'AbortError' || err.message.includes('timed out')) {
+    return 'Connection timed out. Please try again.';
+  }
+  if (err.message.includes('Rate limited')) {
+    return err.message; // Already user-friendly
+  }
+  if (err.name === 'QuotaExceededError') {
+    return 'Storage full. Please clear some data.';
+  }
+  if (err.message.includes('network') || err.message.includes('fetch')) {
+    return 'Connection lost. Please check your network.';
+  }
+  if (err.message.includes('500') || err.message.includes('502') || err.message.includes('503')) {
+    return 'Service temporarily unavailable. Please try again.';
+  }
+  return 'Something went wrong. Using offline mode.';
+}
+
+/**
+ * Estimate token count for a text string
+ * Uses ~4 characters per token as a rough approximation
+ * @param {string} text - Text to estimate tokens for
+ * @returns {number} Estimated token count
+ */
+function estimateTokens(text) {
+  if (!text) return 0;
+  return Math.ceil(text.length / 4);
+}
+
+// Maximum context tokens to send to API (conservative limit)
+const MAX_CONTEXT_TOKENS = 50000;
 
 /**
  * Build context object for the API
@@ -578,7 +707,8 @@ async function buildContext(userMessage = '') {
       }
     }
 
-    return {
+    // Build context object
+    let context = {
       trip: state.isOnTrip ? {
         isActive: true,
         store: state.tripStore,
@@ -612,6 +742,33 @@ async function buildContext(userMessage = '') {
         hasPlatformIntent: mentions.hasPlatformIntent
       }
     };
+
+    // Estimate context size and reduce if too large
+    let contextTokens = estimateTokens(JSON.stringify(context));
+    if (contextTokens > MAX_CONTEXT_TOKENS) {
+      console.warn(`Context too large (${contextTokens} tokens), reducing...`);
+
+      // Reduce in priority order: historicalSales -> similarItems -> recentItems
+      context.inventory.historicalSales = [];
+      contextTokens = estimateTokens(JSON.stringify(context));
+
+      if (contextTokens > MAX_CONTEXT_TOKENS) {
+        context.inventory.similarItems = [];
+        contextTokens = estimateTokens(JSON.stringify(context));
+      }
+
+      if (contextTokens > MAX_CONTEXT_TOKENS) {
+        context.inventory.recentItems = context.inventory.recentItems.slice(0, 5);
+        contextTokens = estimateTokens(JSON.stringify(context));
+      }
+
+      if (contextTokens > MAX_CONTEXT_TOKENS) {
+        // Last resort: clear platform tips
+        context.knowledge.platformTips = null;
+      }
+    }
+
+    return context;
   } catch (error) {
     console.warn('Failed to build context:', error);
     return {};
@@ -667,6 +824,11 @@ function calculateRunningSpend(tripItems = []) {
 }
 
 /**
+ * Valid action types that the advisor can suggest
+ */
+const VALID_ACTION_TYPES = ['start_trip', 'end_trip', 'log_item', 'update_item'];
+
+/**
  * Try to parse advisor response for structured actions
  */
 function tryParseAdvisorResponse(text) {
@@ -675,6 +837,15 @@ function tryParseAdvisorResponse(text) {
     const parsed = JSON.parse(text);
     if (parsed.actions && Array.isArray(parsed.actions)) {
       for (const action of parsed.actions) {
+        // Validate action structure before processing
+        if (!action || typeof action !== 'object') {
+          console.warn('Invalid action: not an object');
+          continue;
+        }
+        if (!VALID_ACTION_TYPES.includes(action.type)) {
+          console.warn('Unknown action type:', action.type);
+          continue;
+        }
         handleAdvisorAction(action);
       }
     }
@@ -699,6 +870,7 @@ async function handleAdvisorAction(action) {
 
   const handler = handlers[action.type];
   if (!handler) {
+    // Shouldn't happen since we validate in tryParseAdvisorResponse, but defensive
     console.warn('Unknown action type:', action.type);
     return { success: false, message: `Unknown action: ${action.type}` };
   }
@@ -713,8 +885,10 @@ async function handleAdvisorAction(action) {
     return result;
   } catch (err) {
     console.error(`Action ${action.type} failed:`, err);
-    addSystemConfirmation(`Could not ${action.type}: ${err.message}`);
-    return { success: false, message: err.message };
+    // Use user-friendly error message
+    const friendlyMessage = userFriendlyError(err);
+    addSystemConfirmation(`Could not ${action.type}: ${friendlyMessage}`);
+    return { success: false, message: friendlyMessage };
   }
 }
 
@@ -791,14 +965,20 @@ async function handleEndTripAction() {
     const now = new Date();
     const timeStr = now.toTimeString().slice(0, 5);
 
-    await updateTrip(state.currentTripId, {
-      endedAt: now.toISOString(),
-      stores: [{
-        storeId: state.tripStoreId,
-        storeName: state.tripStore,
-        departed: timeStr
-      }]
-    });
+    try {
+      await updateTrip(state.currentTripId, {
+        endedAt: now.toISOString(),
+        stores: [{
+          storeId: state.tripStoreId,
+          storeName: state.tripStore,
+          departed: timeStr
+        }]
+      });
+    } catch (err) {
+      console.error('Failed to update trip record:', err);
+      // Continue with local state reset even if DB update fails
+      // The trip will be marked as incomplete in the database
+    }
   }
 
   // Reset trip state
@@ -1503,6 +1683,7 @@ async function confirmTripStart() {
         }
       } catch (err) {
         console.warn('Failed to save new store:', err);
+        showToast('Store not saved - you may need to add it again next time');
         // Continue without saving - trip still works
       }
     }
@@ -1527,6 +1708,8 @@ async function confirmTripStart() {
         }
       } catch (err) {
         console.warn('Failed to save new store:', err);
+        showToast('Store not saved - you may need to add it again next time');
+        // Continue without saving - trip still works
       }
     }
   } else {
@@ -1837,6 +2020,14 @@ export const _test = {
   // API integration helpers
   buildContext,
   sanitizeItemForContext,
+  fetchWithTimeout,
+  fetchWithRetry,
+  userFriendlyError,
+  estimateTokens,
+  VALID_ACTION_TYPES,
+  API_TIMEOUT_MS,
+  MAX_RETRIES,
+  MAX_CONTEXT_TOKENS,
   // Context extraction helpers
   extractMentionsFromMessage,
   calculateRunningSpend,
