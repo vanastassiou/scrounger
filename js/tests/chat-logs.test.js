@@ -51,13 +51,13 @@ export async function testChatLogCrud() {
 
   assert(log.date === TODAY, 'Chat log has correct date');
   assert(Array.isArray(log.conversations), 'Chat log has conversations array');
-  assert(log.createdAt, 'Chat log has createdAt timestamp');
-  assert(log.updatedAt, 'Chat log has updatedAt timestamp');
+  assert(log.created_at, 'Chat log has created_at timestamp');
+  assert(log.updated_at, 'Chat log has updated_at timestamp');
 
   // Get same log (should not create new)
   console.log('\n Getting existing chat log...');
   const sameLog = await getOrCreateChatLog(TODAY);
-  assert(sameLog.createdAt === log.createdAt, 'Returns existing log, not new');
+  assert(sameLog.created_at === log.created_at, 'Returns existing log, not new');
 
   // Get chat log directly
   console.log('\n Getting chat log by date...');
@@ -193,7 +193,7 @@ export async function testSyncTracking() {
 
   const afterSync = await getChatLog(TODAY);
   assert(afterSync.unsynced === false, 'Chat log marked as synced');
-  assert(afterSync.syncedAt, 'Chat log has syncedAt timestamp');
+  assert(afterSync.synced_at, 'Chat log has synced_at timestamp');
 
   // Verify not in unsynced list
   console.log('\n Verifying synced status...');
@@ -256,7 +256,7 @@ export async function testImportMerge() {
 
   assert(merged.conversations.length === 2, 'Merged log has 2 conversations');
   assert(merged.unsynced === false, 'Merged log marked as synced');
-  assert(merged.syncedAt, 'Merged log has syncedAt');
+  assert(merged.synced_at, 'Merged log has synced_at');
 
   // Verify remote conversation added
   const remoteConv = merged.conversations.find(c => c.id === `chat-${YESTERDAY}-remote`);

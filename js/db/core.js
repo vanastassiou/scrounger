@@ -421,7 +421,7 @@ export function openDB() {
 
       if (!db.objectStoreNames.contains('chatLogs')) {
         const chatLogsStore = db.createObjectStore('chatLogs', { keyPath: 'date' });
-        chatLogsStore.createIndex('updatedAt', 'updatedAt', { unique: false });
+        chatLogsStore.createIndex('updated_at', 'updated_at', { unique: false });
       }
 
       // Migrate from v4 to v5

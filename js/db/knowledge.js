@@ -7,6 +7,7 @@ import {
   putRecord
 } from './core.js';
 import { nowISO, handleError } from '../utils.js';
+import { showToast } from '../ui.js';
 
 // =============================================================================
 // KNOWLEDGE CRUD
@@ -55,6 +56,7 @@ export async function updateKnowledge(updates) {
     return updated;
   } catch (err) {
     console.error('Failed to update knowledge base:', err);
+    showToast('Failed to update knowledge');
     throw err;
   }
 }
@@ -85,6 +87,7 @@ export async function upsertBrandKnowledge(brandKey, brandData) {
     return updated.brands[brandKey];
   } catch (err) {
     console.error('Failed to upsert brand knowledge:', err);
+    showToast('Failed to save brand knowledge');
     throw err;
   }
 }
@@ -120,6 +123,7 @@ export async function deleteBrandKnowledge(brandKey) {
     return true;
   } catch (err) {
     console.error('Failed to delete brand knowledge:', err);
+    showToast('Failed to delete brand knowledge');
     throw err;
   }
 }

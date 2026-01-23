@@ -102,14 +102,8 @@ export async function getBasePriceRange(item) {
   const data = await loadBrandsDataFull();
   const baseRanges = data?.meta?.pricing_notes?.base_resale_ranges_cad;
 
-  // TODO: Remove old format handling after migration complete
-  // Handle both old format (string) and new format (object)
-  const primaryCategory = typeof item.category === 'string'
-    ? item.category.toLowerCase()
-    : item.category?.primary?.toLowerCase();
-  const secondaryCategory = typeof item.category === 'string'
-    ? item.subcategory?.toLowerCase()
-    : item.category?.secondary?.toLowerCase();
+  const primaryCategory = item.category?.primary?.toLowerCase();
+  const secondaryCategory = item.category?.secondary?.toLowerCase();
 
   if (!baseRanges && primaryCategory !== 'jewelry') {
     return null;

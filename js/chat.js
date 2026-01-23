@@ -1601,10 +1601,29 @@ function handleLogItem() {
   document.getElementById('chat-input')?.focus();
 }
 
-function handleEndTrip() {
+async function handleEndTrip() {
   if (!state.isOnTrip) return;
 
   const count = state.tripItemCount;
+
+  // Update trip record with end time
+  if (state.currentTripId) {
+    const now = new Date();
+    const timeStr = now.toTimeString().slice(0, 5);
+
+    try {
+      await updateTrip(state.currentTripId, {
+        endedAt: now.toISOString(),
+        stores: [{
+          storeId: state.tripStoreId,
+          storeName: state.tripStore,
+          departed: timeStr
+        }]
+      });
+    } catch (err) {
+      console.error('Failed to update trip record:', err);
+    }
+  }
 
   // Add system message
   addMessage({
@@ -1617,7 +1636,10 @@ function handleEndTrip() {
   // Reset trip state
   state.isOnTrip = false;
   state.tripStore = null;
+  state.tripStoreId = null;
+  state.currentTripId = null;
   state.tripItemCount = 0;
+  state.tripItems = [];
   state.tripStartedAt = null;
 
   updateUIState();
