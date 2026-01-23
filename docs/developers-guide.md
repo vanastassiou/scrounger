@@ -8,13 +8,20 @@ A comprehensive guide for developers contributing to the Bargain Huntress Tracke
 2. [Project Structure](#project-structure)
 3. [Architecture Overview](#architecture-overview)
 4. [Module Reference](#module-reference)
-5. [Key Patterns](#key-patterns)
-6. [Working with IndexedDB](#working-with-indexeddb)
-7. [Adding New Features](#adding-new-features)
-8. [Google Drive Sync](#google-drive-sync)
-9. [Reference Data](#reference-data)
-10. [Testing and Debugging](#testing-and-debugging)
-11. [Code Style](#code-style)
+5. [Chat Module Architecture](#chat-module-architecture)
+6. [Cloudflare Workers](#cloudflare-workers)
+7. [Key Patterns](#key-patterns)
+8. [Working with IndexedDB](#working-with-indexeddb)
+9. [Adding New Features](#adding-new-features)
+10. [Google Drive Sync](#google-drive-sync)
+11. [Reference Data](#reference-data)
+12. [Testing](#testing)
+13. [Security Considerations](#security-considerations)
+14. [Code Style](#code-style)
+
+**Related Documentation:**
+- [Setup Guide](setup-guide.md) — Installation and configuration
+- [User's Guide](users-guide.md) — Feature overview and usage
 
 ---
 
@@ -48,35 +55,79 @@ npm start   # Serves at http://localhost:8080
 │
 ├── /js/                          # Application modules
 │   ├── app.js                    # Entry point, initialization
-│   ├── db.js                     # IndexedDB wrapper
 │   ├── state.js                  # Shared state
 │   ├── config.js                 # Constants and enums
 │   ├── ui.js                     # Tab/modal controllers, toasts
 │   ├── utils.js                  # Formatters, DOM helpers
+│   ├── components.js             # Reusable UI patterns
+│   │
+│   ├── # Feature modules
 │   ├── inventory.js              # Item management
 │   ├── stores.js                 # Store browser
 │   ├── visits.js                 # Visit logging
 │   ├── selling.js                # Sales pipeline
 │   ├── dashboard-actions.js      # Action item workflow
 │   ├── settings.js               # Settings UI
+│   ├── references.js             # Reference data browser
+│   │
+│   ├── # Chat & sourcing
+│   ├── chat.js                   # Sourcing advisor, trip management
+│   ├── location.js               # GPS, store matching
+│   │
+│   ├── # Pricing & recommendations
+│   ├── fees.js                   # Platform fee calculations
+│   ├── seasonal.js               # Seasonal selling data
+│   ├── recommendations.js        # Pricing recommendations
+│   ├── data-loaders.js           # Reference data loading
+│   │
+│   ├── # Sync infrastructure
 │   ├── sync.js                   # Sync orchestration
 │   │
-│   └── /core/                    # Sync infrastructure
-│       ├── google-drive.js       # Drive API provider
-│       ├── sync-engine.js        # Sync state machine
-│       ├── oauth.js              # OAuth flow
-│       └── google-picker.js      # Folder picker
+│   ├── /core/                    # OAuth & Drive integration
+│   │   ├── google-drive.js       # Drive API provider
+│   │   ├── sync-engine.js        # Sync state machine
+│   │   ├── oauth.js              # OAuth PKCE flow
+│   │   └── google-picker.js      # Folder picker
+│   │
+│   ├── /db/                      # Modular database layer
+│   │   ├── core.js               # IndexedDB infrastructure
+│   │   ├── inventory.js          # Inventory CRUD
+│   │   ├── stores.js             # Store CRUD
+│   │   ├── visits.js             # Visit CRUD + stats
+│   │   ├── trips.js              # Trip tracking
+│   │   ├── expenses.js           # Expense tracking
+│   │   ├── chat-logs.js          # Chat history
+│   │   ├── knowledge.js          # Brand knowledge base
+│   │   ├── attachments.js        # Photo attachments
+│   │   └── export.js             # Data export utilities
+│   │
+│   └── /tests/                   # Test suite
+│       └── run-node-tests.mjs    # Node.js test runner
+│
+├── /workers/                     # Cloudflare Workers
+│   └── /claude-proxy/            # Claude API proxy
+│       ├── wrangler.toml         # Worker configuration
+│       ├── package.json          # Worker dependencies
+│       └── /src/
+│           ├── index.js          # Main worker entry
+│           ├── rate-limit.js     # IP-based rate limiting
+│           └── system-prompt.js  # Context-aware prompt builder
 │
 ├── /data/                        # Static reference data (JSON)
 │   ├── stores.json               # Pre-loaded thrift stores
-│   ├── inventory.json            # Baseline inventory
+│   ├── inventory.json            # Baseline inventory (archived)
 │   ├── brands-clothing-shoes.json
 │   ├── brands-jewelry-hallmarks.json
 │   ├── materials.json
+│   ├── platforms.json            # Platform fee structures
+│   ├── seasonal-selling.json     # Seasonal recommendations
 │   ├── inventory-form-schema.json
 │   └── rotation-logic.json
 │
 └── /docs/                        # Documentation
+    ├── setup-guide.md            # Installation guide
+    ├── users-guide.md            # End-user manual
+    └── developers-guide.md       # This file
 ```
 
 ---
@@ -102,9 +153,11 @@ User Action → Module Function → db.js → IndexedDB
 | Layer | Modules | Purpose |
 |-------|---------|---------|
 | Entry | `app.js` | Initialization, routing, dev tools |
-| Data | `db.js`, `state.js` | IndexedDB operations, shared state |
-| UI | `ui.js`, `utils.js` | Controllers, helpers, formatters |
-| Features | `inventory.js`, `stores.js`, `visits.js`, `selling.js` | Tab-specific logic |
+| Data | `db/*`, `state.js` | Modular IndexedDB operations, shared state |
+| UI | `ui.js`, `utils.js`, `components.js` | Controllers, helpers, formatters, reusable patterns |
+| Features | `inventory.js`, `stores.js`, `visits.js`, `selling.js`, `references.js` | Tab-specific logic |
+| Chat | `chat.js`, `location.js` | Sourcing advisor, GPS, trip management |
+| Pricing | `fees.js`, `seasonal.js`, `recommendations.js` | Fee calculations, seasonal data, pricing guidance |
 | Sync | `sync.js`, `core/*` | Google Drive integration |
 | Config | `config.js` | Constants, enums |
 
@@ -141,41 +194,103 @@ async function init() {
 
 Key exports: None (entry point only)
 
-### db.js — Database Layer
+### js/db/ — Modular Database Layer
 
-Native IndexedDB wrapper providing CRUD operations.
+The database layer is split into domain-specific modules for better organization.
+
+#### db/core.js — Infrastructure
+
+Base IndexedDB operations used by all domain modules:
 
 ```javascript
-// Core helpers (internal)
-async function getStore(storeName, mode = 'readonly')
-async function getAllFromStore(storeName)
-async function getByKey(storeName, key)
-async function addRecord(storeName, record)
-async function putRecord(storeName, record)
-async function deleteRecord(storeName, key)
+export function openDB()                        // Get DB instance
+export function resetDB()                       // Reset instance (testing)
+export function promisify(request)              // Promisify IDB request
+export async function getStore(name, mode)      // Get transaction store
+export async function getAllFromStore(name)     // Get all records
+export async function getByKey(name, key)       // Get by primary key
+export async function addRecord(name, record)   // Add (fails if exists)
+export async function putRecord(name, record)   // Add or update
+export async function deleteRecord(name, key)   // Delete by key
+export async function clearStore(name)          // Clear all records
+export async function clearAllData()            // Wipe all stores
+```
 
-// Public API
-export function openDB()                    // Get DB instance
-export async function clearAllData()        // Wipe all stores
+#### db/inventory.js — Inventory Operations
 
-// Inventory
-export async function getAllItems()
-export async function getItem(id)
-export async function addItem(item)
-export async function updateItem(item)
-export async function deleteItem(id)
+```javascript
+export async function getAllInventory()
+export async function getInventoryItem(id)
+export async function createInventoryItem(item)
+export async function updateInventoryItem(item)
+export async function deleteInventoryItem(id)   // Cascades to attachments
+export async function getInventoryStats()       // Category counts, totals
+```
 
-// Visits
+#### db/stores.js — Store Operations
+
+```javascript
+export async function getAllUserStores()
+export async function getUserStore(id)
+export async function createUserStore(store)
+export async function updateUserStore(store)
+export async function deleteUserStore(id)
+```
+
+#### db/visits.js — Visit Operations
+
+```javascript
 export async function getAllVisits()
-export async function addVisit(visit)
+export async function getVisit(id)
+export async function createVisit(visit)
+export async function updateVisit(visit)
+export async function deleteVisit(id)
+export async function getStoreStats(storeId)    // Hit rate, avg spend
+```
 
-// Stores
-export async function getUserStores()
-export async function addUserStore(store)
+#### db/trips.js — Trip Tracking
 
-// Settings
-export async function getSetting(key)
-export async function setSetting(key, value)
+```javascript
+export async function getAllTrips()
+export async function getTrip(id)
+export async function createTrip(trip)
+export async function updateTrip(trip)
+export async function getActiveTrip()
+```
+
+#### db/expenses.js — Expense Tracking
+
+```javascript
+export async function getAllExpenses()
+export async function createExpense(expense)
+export async function deleteExpense(id)
+export async function getExpensesByTrip(tripId)
+```
+
+#### db/knowledge.js — Brand Knowledge Base
+
+```javascript
+export async function getKnowledge()            // Get all brand knowledge
+export async function upsertBrandKnowledge(key, info)
+export async function deleteBrandKnowledge(key)
+```
+
+#### db/chat-logs.js — Chat History
+
+```javascript
+export async function getChatLogs(date)         // Get logs for date
+export async function appendChatLog(date, message)
+export async function clearChatLogs(date)
+```
+
+#### db/attachments.js — Photo Attachments
+
+```javascript
+export async function getAttachment(id)
+export async function createAttachment(attachment)
+export async function deleteAttachment(id)
+export async function getAttachmentsForItem(itemId)
+export async function deleteAttachmentsForItem(itemId)
 ```
 
 ### state.js — Shared State
@@ -284,6 +399,298 @@ export function createSortHandler(renderFn)
 
 // Images
 export async function compressImage(file, maxWidth, quality)
+```
+
+### chat.js — Sourcing Advisor
+
+Manages the chat interface, trip context, and Claude API integration.
+
+```javascript
+// Initialization
+export async function initChat()
+
+// State (internal)
+let state = {
+  messages: [],           // Chat history
+  isOnTrip: false,        // Trip active flag
+  tripStore: null,        // Current store name
+  tripStoreId: null,      // Store ID for DB
+  currentTripId: null,    // Trip record ID
+  tripItemCount: 0,       // Items logged this trip
+  tripItems: [],          // Items for context
+  lastLoggedItemId: null, // For corrections
+  tripStartedAt: null,
+  connectionStatus: 'online',
+  messageQueue: [],       // Offline queue
+  isStreaming: false,
+  pendingKnowledgeUpdate: null
+};
+```
+
+Key features:
+- **Trip management** — Start/end sourcing trips with store context
+- **Streaming responses** — Real-time response display
+- **Action parsing** — Handles `log_item`, `start_trip`, `end_trip`, `update_item`
+- **Offline queue** — Messages queue when offline, send when reconnected
+- **Voice input** — Speech recognition for hands-free logging
+
+### location.js — Geolocation
+
+GPS and store matching for trip start.
+
+```javascript
+// Permission handling
+export async function checkLocationPermission()
+// Returns: 'granted' | 'prompt' | 'denied' | 'unsupported'
+
+// Get current position
+export function getCurrentPosition(timeout = 10000)
+// Returns: { lat, lng, accuracy }
+
+// Find nearby stores
+export function findNearbyStores(position, stores, radiusKm = 5)
+
+// Distance utilities
+export function haversineDistance(lat1, lng1, lat2, lng2)
+export function formatDistance(km)
+
+// Google Places integration (optional)
+export function setPlacesWorkerUrl(url)
+export async function searchNearbyPlaces(position, type)
+```
+
+### fees.js — Platform Fee Calculations
+
+Calculates selling fees for each platform based on `platforms.json`.
+
+```javascript
+// Initialize (loads platforms.json)
+export async function initFees()
+
+// Calculate fees
+export function calculatePlatformFees(platformId, salePrice)
+// Returns: { totalFees, commission, paymentProcessing, payout, breakdown }
+
+// Get platform data
+export function getPlatformsData()
+```
+
+Supports complex fee structures:
+- Tiered commissions (Poshmark: 20% or flat $2.95)
+- Payment processing (eBay: percentage + flat fee)
+- Consignment models (The RealReal: seller payout percentage)
+
+### seasonal.js — Seasonal Selling Data
+
+Provides month-by-month selling recommendations.
+
+```javascript
+// Initialize (loads seasonal-selling.json)
+export async function initSeasonal()
+
+// Get recommendations
+export function getCurrentSeasonalTrends()
+export function getSeasonalRecommendations(month)
+export function getSeasonalDataForItem(category, subcategory)
+```
+
+### recommendations.js — Pricing Recommendations
+
+Combines brand data, seasonal trends, and sales history for pricing guidance.
+
+```javascript
+// Get price recommendation
+export function getPriceRecommendation(item)
+// Returns: { low, high, platform, reasoning }
+
+// Platform recommendation
+export function getBestPlatform(item)
+// Returns: { platform, reasoning }
+```
+
+---
+
+## Chat Module Architecture
+
+The chat system connects the PWA to a Claude API proxy for intelligent sourcing assistance.
+
+### Request Flow
+
+```
+User Input → chat.js → Cloudflare Worker → Claude API → Streaming Response
+                ↓
+            Local context
+            (trip, inventory, knowledge)
+```
+
+### State Management
+
+Chat state persists across page reloads:
+
+```javascript
+// Save state to localStorage
+function persistState() {
+  localStorage.setItem('chatState', JSON.stringify({
+    messages: state.messages.slice(-50),  // Keep last 50
+    isOnTrip: state.isOnTrip,
+    tripStore: state.tripStore,
+    tripStoreId: state.tripStoreId,
+    currentTripId: state.currentTripId,
+    tripItemCount: state.tripItemCount
+  }));
+}
+```
+
+### Action Parsing
+
+Claude responds with JSON containing actions:
+
+```javascript
+{
+  "message": "Great find! I logged that Pendleton shirt.",
+  "actions": [
+    {
+      "type": "log_item",
+      "data": {
+        "brand": "Pendleton",
+        "category": "clothing",
+        "subcategory": "shirt",
+        "purchaseCost": 12.99,
+        "suggestedPrice": { "low": 35, "high": 55 }
+      }
+    }
+  ],
+  "knowledgeUpdate": null
+}
+```
+
+Action types:
+- `start_trip` — Begin a sourcing trip at a store
+- `end_trip` — Complete the current trip
+- `log_item` — Add item to inventory
+- `update_item` — Correct the last logged item
+
+### Context Injection
+
+The worker builds a context-aware system prompt:
+
+```javascript
+// From system-prompt.js
+export function buildSystemPrompt(context) {
+  const parts = [BASE_PERSONA];
+
+  if (context.trip?.isActive) {
+    parts.push(buildTripContext(context.trip));
+  }
+
+  if (context.inventory?.recentItems?.length > 0) {
+    parts.push(buildInventoryContext(context.inventory));
+  }
+
+  if (context.knowledge && Object.keys(context.knowledge).length > 0) {
+    parts.push(buildKnowledgeContext(context.knowledge));
+  }
+
+  parts.push(OUTPUT_FORMAT);
+  return parts.join('\n\n---\n\n');
+}
+```
+
+### Offline Handling
+
+When offline, messages queue locally:
+
+```javascript
+if (!navigator.onLine) {
+  state.messageQueue.push(message);
+  updateQueueUI();
+  return;
+}
+
+// On reconnect
+window.addEventListener('online', () => {
+  processMessageQueue();
+});
+```
+
+---
+
+## Cloudflare Workers
+
+The Claude API proxy keeps the Anthropic API key secure on the server side.
+
+### Worker Structure
+
+```
+workers/claude-proxy/
+├── wrangler.toml         # Configuration
+├── package.json          # Dependencies
+└── src/
+    ├── index.js          # Entry point, CORS, routing
+    ├── rate-limit.js     # IP-based throttling
+    └── system-prompt.js  # Context-aware prompt builder
+```
+
+### Local Development
+
+```bash
+cd workers/claude-proxy
+npm install
+wrangler dev
+```
+
+The worker runs at `http://localhost:8787`.
+
+Test with curl:
+```bash
+curl -X POST http://localhost:8787 \
+  -H "Content-Type: application/json" \
+  -H "Origin: http://localhost:8080" \
+  -d '{"messages":[{"role":"user","content":"Hello"}],"context":{}}'
+```
+
+### Rate Limiting
+
+Two storage modes:
+
+**In-memory (development):**
+```javascript
+const rateLimitMap = new Map();
+// Resets on worker restart, not shared across instances
+```
+
+**KV storage (production):**
+```javascript
+// Persistent across instances
+await kv.put(key, JSON.stringify(record), { expirationTtl: windowSec });
+```
+
+Configuration in `wrangler.toml`:
+```toml
+[vars]
+RATE_LIMIT_REQUESTS = "20"    # Max requests
+RATE_LIMIT_WINDOW = "60"      # Window in seconds
+```
+
+### Deployment
+
+```bash
+# Set API key
+wrangler secret put ANTHROPIC_API_KEY
+
+# Deploy
+wrangler deploy
+
+# Monitor logs
+wrangler tail
+```
+
+### CORS Configuration
+
+Allowed origins in `wrangler.toml`:
+```toml
+[vars]
+ALLOWED_ORIGINS = "http://localhost:8080,https://yourdomain.com"
 ```
 
 ---
@@ -446,19 +853,76 @@ buttons.forEach(btn => {
 
 ```javascript
 // Object stores and indexes
+
 inventory: { keyPath: 'id' }
-  - index: category, status, store_id, acquisition_date
+  indexes: category, status, store_id, acquisition_date, synced
+  // Sync fields: synced (boolean), last_synced_at (ISO string)
 
 visits: { keyPath: 'id' }
-  - index: store_id, date
+  indexes: store_id, date, synced
 
 stores: { keyPath: 'id' }
-  - index: tier, name
+  indexes: tier, name, synced
+
+trips: { keyPath: 'id' }
+  indexes: date, store_id, synced
+  // Trip tracking for hit rate calculation
+
+expenses: { keyPath: 'id' }
+  indexes: date, category, trip_id, synced
+  // Supporting costs (fuel, packaging, etc.)
+
+knowledge: { keyPath: 'id' }
+  // Brand research and authentication tips
+
+chat_logs: { keyPath: 'id' }
+  indexes: date
+  // Daily chat conversation logs
 
 settings: { keyPath: 'id' }
 
 attachments: { keyPath: 'id' }
-  - index: itemId, synced
+  indexes: item_id, synced
+  // Photo attachments linked to inventory items
+```
+
+### Sync Flags
+
+All syncable records include:
+
+```javascript
+{
+  synced: false,          // False when modified locally
+  last_synced_at: null    // ISO timestamp of last sync
+}
+```
+
+On local modification:
+```javascript
+item.synced = false;
+item.updated_at = nowISO();
+await updateInventoryItem(item);
+```
+
+On successful sync:
+```javascript
+item.synced = true;
+item.last_synced_at = nowISO();
+await updateInventoryItem(item);
+```
+
+### Cascade Deletion
+
+When deleting inventory items, attachments are also deleted:
+
+```javascript
+// In db/inventory.js
+export async function deleteInventoryItem(id) {
+  // Delete associated attachments first
+  await deleteAttachmentsForItem(id);
+  // Then delete the item
+  await deleteRecord('inventory', id);
+}
 ```
 
 ### Common Operations
@@ -721,60 +1185,233 @@ The JSON files in `/data/` are now only used for:
 
 ---
 
-## Testing and Debugging
+## Testing
+
+### Running Tests
+
+```bash
+# Run chat-logs tests only (default)
+npm test
+
+# Run all test modules
+npm run test:all
+
+# Run specific test module
+node js/tests/run-node-tests.mjs --fees
+node js/tests/run-node-tests.mjs --inventory
+node js/tests/run-node-tests.mjs --sync
+```
+
+### Available Test Modules
+
+| Flag | Tests |
+|------|-------|
+| `--schema` | Schema extensions (trips, expenses, knowledge) |
+| `--pwa` | PWA manifest and service worker |
+| `--chat` | Chat UI and actions |
+| `--inventory` | Inventory CRUD, pipeline, archive |
+| `--selling` | Selling pipeline validation |
+| `--sync` | Sync engine and merge logic |
+| `--stores` | Store CRUD and stats |
+| `--visits` | Visits CRUD and computed stats |
+| `--recommendations` | Pricing recommendations |
+| `--fees` | Platform fee calculations |
+
+Run multiple modules:
+```bash
+node js/tests/run-node-tests.mjs --fees --inventory --stores
+```
+
+### Test Infrastructure
+
+Tests run in Node.js using `fake-indexeddb`:
+
+```javascript
+// run-node-tests.mjs
+import 'fake-indexeddb/auto';
+
+// Polyfill browser globals
+globalThis.localStorage = { /* mock */ };
+globalThis.document = { /* mock */ };
+globalThis.navigator = { onLine: true };
+```
+
+### Adding New Tests
+
+1. Create a test function in the test file:
+
+```javascript
+async function testNewFeature(db) {
+  logSection('New Feature Tests');
+
+  // Test case
+  const result = await db.someFunction();
+  assert(result !== null, 'Function returns result');
+  assert(result.length > 0, 'Result has items');
+}
+```
+
+2. Register it in the test runner:
+
+```javascript
+const TEST_MODULES = {
+  // ...existing modules
+  newfeature: testNewFeature
+};
+```
+
+3. Run: `node js/tests/run-node-tests.mjs --newfeature`
 
 ### Development Tools
 
 Available in browser console:
 
 ```javascript
-window.seedDatabase()   // Load 48 test items
-window.clearAllData()   // Wipe all data
+window.seedDatabase()   // Load 48 test items from CSV
+window.clearAllData()   // Wipe all IndexedDB data
 ```
 
-### Inspecting IndexedDB
+### Debugging
 
+**Inspecting IndexedDB:**
 1. Open DevTools (F12)
 2. Go to **Application** tab
 3. Expand **IndexedDB** → **thrift-inventory**
 4. Click on object stores to view data
 
-### Debugging Sync
-
-Enable verbose logging:
-```javascript
-// In sync.js, add console.log statements
-console.log('Sync state:', state.syncState);
-```
-
-### Service Worker
-
-To update after changes:
+**Service Worker:**
 1. DevTools → Application → Service Workers
-2. Click "Update" or "Unregister"
-3. Hard refresh (Ctrl+Shift+R)
+2. Check "Update on reload" during development
+3. Click "Unregister" to reset completely
+4. Hard refresh: `Ctrl+Shift+R` (Windows/Linux) or `Cmd+Shift+R` (Mac)
 
-Or during development:
+**Sync Issues:**
+- Check `state.syncState` in console
+- Verify `state.accessToken` is set
+- Watch Network tab for API errors
+
+---
+
+## Security Considerations
+
+### OAuth Token Storage
+
+OAuth tokens are stored in `sessionStorage`, not `localStorage`:
+
 ```javascript
-// Bypass service worker
-// DevTools → Network → Check "Disable cache"
+// In core/oauth.js
+sessionStorage.setItem('accessToken', token);
+sessionStorage.setItem('refreshToken', refreshToken);
 ```
 
-### Common Issues
+Benefits:
+- Tokens cleared when browser tab closes
+- Not persisted across sessions
+- Reduces exposure window for stolen tokens
 
-**Data not appearing:**
-- Check IndexedDB in DevTools
-- Verify `await` on all DB operations
-- Check console for errors
+### Input Sanitization
 
-**Sync not working:**
-- Check `isConnected()` returns true
-- Verify OAuth token in `state.accessToken`
-- Check Network tab for API errors
+All user-controlled content is escaped before rendering:
 
-**Service worker caching old files:**
-- Increment cache version in `sw.js`
-- Unregister and re-register worker
+```javascript
+// In utils.js
+export function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// Usage in rendering
+tbody.innerHTML = items.map(item => `
+  <tr>
+    <td>${escapeHtml(item.title)}</td>
+    <td>${escapeHtml(item.brand || '')}</td>
+  </tr>
+`).join('');
+```
+
+### XSS Prevention
+
+**Pattern: Always escape dynamic content:**
+
+```javascript
+// Good - escaped
+element.innerHTML = `<div>${escapeHtml(userInput)}</div>`;
+
+// Good - textContent (auto-escapes)
+element.textContent = userInput;
+
+// Bad - raw interpolation
+element.innerHTML = `<div>${userInput}</div>`;
+```
+
+**Pattern: Use textContent for single values:**
+
+```javascript
+document.getElementById('username').textContent = user.name;
+```
+
+### Prompt Injection Prevention
+
+The Claude proxy sanitizes all user-controlled context:
+
+```javascript
+// In workers/claude-proxy/src/system-prompt.js
+function sanitizeContextValue(value, maxLength = 200) {
+  if (value === null || value === undefined) return '';
+  return String(value)
+    .replace(/[\r\n\t]/g, ' ')         // Remove newlines
+    .replace(/\s+/g, ' ')               // Collapse spaces
+    .replace(/[^\x20-\x7E]/g, '')       // Remove non-printable
+    .trim()
+    .slice(0, maxLength);               // Truncate
+}
+```
+
+### Rate Limiting
+
+The Claude proxy implements IP-based rate limiting:
+
+```javascript
+// Default: 20 requests per 60 seconds
+const { limited, remaining } = await checkRateLimit(
+  clientIP,
+  parseInt(env.RATE_LIMIT_REQUESTS || '20'),
+  parseInt(env.RATE_LIMIT_WINDOW || '60'),
+  env.RATE_LIMIT  // Optional KV namespace
+);
+
+if (limited) {
+  return new Response('Rate limit exceeded', { status: 429 });
+}
+```
+
+### CORS Protection
+
+The worker validates request origins:
+
+```javascript
+const allowedOrigins = env.ALLOWED_ORIGINS?.split(',') || [];
+const origin = request.headers.get('Origin');
+
+if (!allowedOrigins.includes(origin)) {
+  return new Response('Forbidden', { status: 403 });
+}
+```
+
+### API Key Security
+
+- Anthropic API key is stored as a Cloudflare secret
+- Never exposed to the client
+- Set via: `wrangler secret put ANTHROPIC_API_KEY`
+
+### Best Practices
+
+1. **Never trust client data** — Validate and sanitize all inputs
+2. **Use HTTPS** — Required for OAuth and PWA installation
+3. **Keep secrets server-side** — Use Cloudflare Workers for sensitive APIs
+4. **Limit token scope** — Only request needed OAuth scopes (`drive.file`)
+5. **Session tokens** — Use `sessionStorage` over `localStorage` for auth
 
 ---
 
