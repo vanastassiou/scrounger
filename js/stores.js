@@ -99,13 +99,19 @@ function setupOtherHandlers() {
       if (!tier) return { valid: false, errors: ['Tier is required'] };
       return { valid: true };
     },
-    transform: (formData) => ({
-      name: formData.get('name')?.trim(),
-      address: formData.get('address')?.trim() || null,
-      tier: formData.get('tier'),
-      phone: formData.get('phone')?.trim() || null,
-      notes: formData.get('notes')?.trim() || null
-    }),
+    transform: (formData) => {
+      const lat = formData.get('lat');
+      const lng = formData.get('lng');
+      return {
+        name: formData.get('name')?.trim(),
+        address: formData.get('address')?.trim() || null,
+        tier: formData.get('tier'),
+        phone: formData.get('phone')?.trim() || null,
+        notes: formData.get('notes')?.trim() || null,
+        lat: lat ? parseFloat(lat) : null,
+        lng: lng ? parseFloat(lng) : null
+      };
+    },
     onSubmit: (store) => createUserStore(store),
     onSuccess: async () => {
       showToast('Store saved');

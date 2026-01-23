@@ -1,0 +1,11 @@
+name = "thrifting-places-proxy"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+ALLOWED_ORIGINS = "http://localhost:8080,http://localhost:8443,https://localhost:8443"
+RATE_LIMIT_REQUESTS = "30"
+RATE_LIMIT_WINDOW = "60"
+
+# Secrets (set via `wrangler secret put`):
+# - GEOAPIFY_API_KEY

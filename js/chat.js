@@ -13,9 +13,19 @@ import {
   updateInventoryItem,
   getAllUserStores,
   upsertBrandKnowledge,
-  getStoreStats
+  getStoreStats,
+  createUserStore
 } from './db.js';
 import { escapeHtml } from './utils.js';
+import {
+  getCurrentPosition,
+  findNearbyStores,
+  checkLocationPermission,
+  formatDistance,
+  searchNearbyPlaces,
+  setPlacesWorkerUrl
+} from './location.js';
+import { state as appState } from './state.js';
 
 // =============================================================================
 // CONFIGURATION
@@ -24,6 +34,10 @@ import { escapeHtml } from './utils.js';
 // Worker URL - update after deploying to Cloudflare
 // Set to null to use mock responses only
 const WORKER_URL = null; // e.g., 'https://thrifting-claude-proxy.<account>.workers.dev'
+
+// Places proxy worker URL - update after deploying to Cloudflare
+// Set to null to disable nearby place search (will only use saved stores)
+const PLACES_WORKER_URL = null; // e.g., 'https://thrifting-places-proxy.<account>.workers.dev'
 
 // =============================================================================
 // STATE
@@ -43,7 +57,11 @@ let state = {
   messageQueue: [],
   isRecording: false,
   isStreaming: false,
-  pendingKnowledgeUpdate: null  // Knowledge awaiting user confirmation
+  pendingKnowledgeUpdate: null,  // Knowledge awaiting user confirmation
+  // Location modal state
+  selectedStore: null,           // Currently selected store in modal
+  selectedStoreIsNew: false,     // Whether selected store needs to be saved
+  currentPosition: null          // Current GPS position
 };
 
 // Speech recognition instance (set up if supported)
@@ -103,10 +121,16 @@ const MOCK_RESPONSES = {
 export async function initChat() {
   loadPersistedState();
   setupEventHandlers();
+  setupLocationModal();
   setupOnlineOfflineHandlers();
   setupSpeechRecognition();
   renderMessages();
   updateUIState();
+
+  // Configure places worker if URL is set
+  if (PLACES_WORKER_URL) {
+    setPlacesWorkerUrl(PLACES_WORKER_URL);
+  }
 }
 
 // =============================================================================
@@ -1161,20 +1185,403 @@ function hideTypingIndicator() {
 // TRIP MANAGEMENT
 // =============================================================================
 
+/**
+ * Handle start trip button click - opens location modal
+ */
 async function handleStartTrip() {
-  const store = prompt('Which store are you at?');
-  if (!store) return;
+  // Show modal immediately
+  openLocationModal();
 
+  try {
+    // Check permission first
+    const permission = await checkLocationPermission();
+    if (permission === 'denied') {
+      updateLocationStatus('error', 'Location access denied');
+      showManualEntry();
+      return;
+    }
+
+    // Get position
+    updateLocationStatus('loading', 'Finding your location...');
+    const position = await getCurrentPosition();
+    state.currentPosition = position;
+
+    // Find nearby saved stores
+    const stores = appState.stores || [];
+    const nearby = findNearbyStores(stores, position.lat, position.lng, 500);
+
+    if (nearby.length > 0) {
+      updateLocationStatus('success', `Found ${nearby.length} store${nearby.length > 1 ? 's' : ''} nearby`);
+      showNearbyStores(nearby, true); // true = these are saved stores
+      showSearchMoreButton();
+    } else {
+      // No saved stores nearby - try searching for places
+      updateLocationStatus('loading', 'Searching for nearby stores...');
+      if (PLACES_WORKER_URL) {
+        await searchAndShowNearbyPlaces(position);
+      } else {
+        updateLocationStatus('info', 'No saved stores nearby');
+        showManualEntry();
+      }
+    }
+  } catch (error) {
+    console.warn('Location error:', error);
+    updateLocationStatus('error', error.message || 'Location unavailable');
+    showManualEntry();
+  }
+}
+
+/**
+ * Search for nearby places via Geoapify and show results
+ */
+async function searchAndShowNearbyPlaces(position) {
+  try {
+    const places = await searchNearbyPlaces(position.lat, position.lng, 1000);
+
+    if (places.length > 0) {
+      updateLocationStatus('success', `Found ${places.length} store${places.length > 1 ? 's' : ''} nearby`);
+      showNearbyStores(places, false); // false = these are new places
+    } else {
+      updateLocationStatus('info', 'No stores found nearby');
+      showManualEntry();
+    }
+  } catch (error) {
+    console.warn('Places search error:', error);
+    updateLocationStatus('info', 'Could not search nearby stores');
+    showManualEntry();
+  }
+}
+
+/**
+ * Open the location confirmation modal
+ */
+function openLocationModal() {
+  const dialog = document.getElementById('location-confirm-dialog');
+  if (!dialog) return;
+
+  // Reset state
+  state.selectedStore = null;
+  state.selectedStoreIsNew = false;
+
+  // Reset UI
+  updateLocationStatus('loading', 'Finding your location...');
+  const nearbyStores = document.getElementById('nearby-stores');
+  const manualEntry = document.getElementById('location-manual');
+  const searchBtn = document.getElementById('location-search-btn');
+  const confirmBtn = document.getElementById('location-confirm-btn');
+  const manualInput = document.getElementById('manual-store-name');
+
+  if (nearbyStores) {
+    nearbyStores.hidden = true;
+    nearbyStores.innerHTML = '';
+  }
+  if (manualEntry) manualEntry.hidden = true;
+  if (searchBtn) searchBtn.hidden = true;
+  if (confirmBtn) confirmBtn.disabled = true;
+  if (manualInput) manualInput.value = '';
+
+  dialog.showModal();
+}
+
+/**
+ * Close the location modal
+ */
+function closeLocationModal() {
+  const dialog = document.getElementById('location-confirm-dialog');
+  if (dialog) dialog.close();
+}
+
+/**
+ * Update the location status display
+ */
+function updateLocationStatus(status, text) {
+  const statusEl = document.getElementById('location-status');
+  if (!statusEl) return;
+
+  const icon = statusEl.querySelector('.location-icon');
+  const textEl = statusEl.querySelector('.location-text');
+
+  // Remove all status classes
+  statusEl.classList.remove('loading', 'error', 'success', 'info');
+
+  // Add new status class and set icon/text
+  switch (status) {
+    case 'loading':
+      statusEl.classList.add('loading');
+      if (icon) icon.textContent = '📍';
+      break;
+    case 'error':
+      statusEl.classList.add('error');
+      if (icon) icon.textContent = '❌';
+      break;
+    case 'success':
+      statusEl.classList.add('success');
+      if (icon) icon.textContent = '✓';
+      break;
+    case 'info':
+    default:
+      if (icon) icon.textContent = '📍';
+      break;
+  }
+
+  if (textEl) textEl.textContent = text;
+}
+
+/**
+ * Show nearby stores in the modal
+ */
+function showNearbyStores(stores, areSaved) {
+  const container = document.getElementById('nearby-stores');
+  if (!container) return;
+
+  container.innerHTML = stores.map(store => {
+    const badge = areSaved
+      ? '<span class="badge--saved">Saved</span>'
+      : '<span class="badge--new">New</span>';
+    const distance = store.distance != null ? formatDistance(store.distance) : '';
+    const address = store.address ? `<div class="store-address">${escapeHtml(store.address)}</div>` : '';
+
+    return `
+      <div class="nearby-store-item" data-store-id="${store.id || ''}"
+           data-store-name="${escapeHtml(store.name)}"
+           data-store-address="${escapeHtml(store.address || '')}"
+           data-store-lat="${store.lat || ''}"
+           data-store-lng="${store.lng || ''}"
+           data-is-saved="${areSaved}">
+        <div class="store-info">
+          <div class="store-name">${escapeHtml(store.name)}</div>
+          ${address}
+        </div>
+        <div class="store-meta">
+          ${distance ? `<span class="store-distance">${distance}</span>` : ''}
+          ${badge}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.hidden = false;
+}
+
+/**
+ * Show the "Search for more stores" button
+ */
+function showSearchMoreButton() {
+  const btn = document.getElementById('location-search-btn');
+  if (btn && PLACES_WORKER_URL) {
+    btn.hidden = false;
+  }
+}
+
+/**
+ * Show manual store entry field
+ */
+function showManualEntry() {
+  const manualEntry = document.getElementById('location-manual');
+  const manualBtn = document.getElementById('location-manual-btn');
+
+  if (manualEntry) manualEntry.hidden = false;
+  if (manualBtn) manualBtn.hidden = true;
+
+  // Focus the input
+  const input = document.getElementById('manual-store-name');
+  if (input) {
+    input.focus();
+    // Enable confirm on input
+    input.addEventListener('input', () => {
+      const confirmBtn = document.getElementById('location-confirm-btn');
+      if (confirmBtn) {
+        confirmBtn.disabled = !input.value.trim();
+      }
+      // Clear store selection since user is typing manually
+      state.selectedStore = null;
+      state.selectedStoreIsNew = true;
+    });
+  }
+}
+
+/**
+ * Handle store selection in the modal
+ */
+function handleStoreSelect(storeEl) {
+  // Deselect previous
+  const container = document.getElementById('nearby-stores');
+  container?.querySelectorAll('.nearby-store-item').forEach(el => el.classList.remove('selected'));
+
+  // Select new
+  storeEl.classList.add('selected');
+
+  // Update state
+  const isSaved = storeEl.dataset.isSaved === 'true';
+  state.selectedStore = {
+    id: storeEl.dataset.storeId || null,
+    name: storeEl.dataset.storeName,
+    address: storeEl.dataset.storeAddress || null,
+    lat: storeEl.dataset.storeLat ? parseFloat(storeEl.dataset.storeLat) : null,
+    lng: storeEl.dataset.storeLng ? parseFloat(storeEl.dataset.storeLng) : null
+  };
+  state.selectedStoreIsNew = !isSaved;
+
+  // Enable confirm button
+  const confirmBtn = document.getElementById('location-confirm-btn');
+  if (confirmBtn) confirmBtn.disabled = false;
+
+  // Clear manual input if it was being used
+  const manualInput = document.getElementById('manual-store-name');
+  if (manualInput) manualInput.value = '';
+}
+
+/**
+ * Setup location modal event handlers
+ */
+function setupLocationModal() {
+  const dialog = document.getElementById('location-confirm-dialog');
+  if (!dialog) return;
+
+  // Close button
+  const closeBtn = dialog.querySelector('.modal-close');
+  closeBtn?.addEventListener('click', closeLocationModal);
+
+  // Cancel button
+  const cancelBtn = document.getElementById('location-cancel-btn');
+  cancelBtn?.addEventListener('click', closeLocationModal);
+
+  // Manual entry button
+  const manualBtn = document.getElementById('location-manual-btn');
+  manualBtn?.addEventListener('click', showManualEntry);
+
+  // Search more button
+  const searchBtn = document.getElementById('location-search-btn');
+  searchBtn?.addEventListener('click', async () => {
+    if (state.currentPosition && PLACES_WORKER_URL) {
+      updateLocationStatus('loading', 'Searching for more stores...');
+      await searchAndShowNearbyPlaces(state.currentPosition);
+    }
+  });
+
+  // Confirm button
+  const confirmBtn = document.getElementById('location-confirm-btn');
+  confirmBtn?.addEventListener('click', confirmTripStart);
+
+  // Store selection (click on nearby stores list)
+  const nearbyStores = document.getElementById('nearby-stores');
+  nearbyStores?.addEventListener('click', (e) => {
+    const storeEl = e.target.closest('.nearby-store-item');
+    if (storeEl) {
+      handleStoreSelect(storeEl);
+    }
+  });
+
+  // Close on backdrop click
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) closeLocationModal();
+  });
+
+  // Close on Escape
+  dialog.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeLocationModal();
+  });
+}
+
+/**
+ * Confirm and start the trip
+ */
+async function confirmTripStart() {
+  let storeName, storeId;
+
+  // Check if using manual entry
+  const manualInput = document.getElementById('manual-store-name');
+  if (manualInput && manualInput.value.trim() && !state.selectedStore) {
+    storeName = manualInput.value.trim();
+    storeId = null;
+
+    // If we have position, optionally save as a new store
+    if (state.currentPosition) {
+      // Create a new store with coordinates
+      try {
+        const newStore = await createUserStore({
+          name: storeName,
+          lat: state.currentPosition.lat,
+          lng: state.currentPosition.lng,
+          tier: 'B' // Default tier for auto-created stores
+        });
+        storeId = newStore.id;
+        // Update app state stores list
+        if (appState.stores) {
+          appState.stores.push(newStore);
+        }
+      } catch (err) {
+        console.warn('Failed to save new store:', err);
+        // Continue without saving - trip still works
+      }
+    }
+  } else if (state.selectedStore) {
+    storeName = state.selectedStore.name;
+    storeId = state.selectedStore.id;
+
+    // If selected store is new (from Geoapify), save it
+    if (state.selectedStoreIsNew && !storeId) {
+      try {
+        const newStore = await createUserStore({
+          name: state.selectedStore.name,
+          address: state.selectedStore.address,
+          lat: state.selectedStore.lat,
+          lng: state.selectedStore.lng,
+          tier: 'B' // Default tier
+        });
+        storeId = newStore.id;
+        // Update app state stores list
+        if (appState.stores) {
+          appState.stores.push(newStore);
+        }
+      } catch (err) {
+        console.warn('Failed to save new store:', err);
+      }
+    }
+  } else {
+    // No store selected or entered
+    return;
+  }
+
+  // Close modal
+  closeLocationModal();
+
+  // Start the trip
   state.isOnTrip = true;
-  state.tripStore = store;
+  state.tripStore = storeName;
+  state.tripStoreId = storeId;
   state.tripItemCount = 0;
+  state.tripItems = [];
   state.tripStartedAt = new Date().toISOString();
+
+  // Create trip record in database
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+  const timeStr = now.toTimeString().slice(0, 5);
+
+  try {
+    const tripData = {
+      date: dateStr,
+      stores: [{
+        storeId: storeId,
+        storeName: storeName,
+        arrived: timeStr
+      }],
+      startedAt: now.toISOString()
+    };
+
+    const trip = await createTrip(tripData);
+    state.currentTripId = trip.id;
+  } catch (err) {
+    console.warn('Failed to create trip record:', err);
+    // Continue anyway - trip UI still works
+  }
 
   // Add system message
   addMessage({
     id: generateId(),
     role: 'system',
-    content: MOCK_RESPONSES.trip_start.replace('{store}', store),
+    content: MOCK_RESPONSES.trip_start.replace('{store}', storeName),
     timestamp: Date.now()
   });
 

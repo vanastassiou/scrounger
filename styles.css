@@ -4941,3 +4941,135 @@
   .chat-actions { justify-content: center; }
   .chat-knowledge-prompt { max-width: 400px; }
 }
+
+/* =============================================================================
+   LOCATION CONFIRMATION MODAL
+   ============================================================================= */
+
+.location-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: var(--color-surface-elevated);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
+}
+
+.location-status .location-icon {
+  font-size: 1.25rem;
+}
+
+.location-status .location-text {
+  color: var(--color-text);
+}
+
+.location-status.loading .location-icon {
+  animation: pulse 1.5s infinite;
+}
+
+.location-status.error {
+  background: var(--color-error-light);
+  border: 1px solid var(--color-error-border);
+}
+
+.location-status.error .location-text {
+  color: var(--color-error);
+}
+
+.location-status.success {
+  background: var(--color-success-light);
+  border: 1px solid var(--color-success-border);
+}
+
+.nearby-stores-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-height: 300px;
+  overflow-y: auto;
+  margin-bottom: var(--space-md);
+}
+
+.nearby-store-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.nearby-store-item:hover {
+  border-color: var(--color-primary);
+}
+
+.nearby-store-item.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.nearby-store-item .store-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nearby-store-item .store-name {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
+
+.nearby-store-item .store-address {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.nearby-store-item .store-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.nearby-store-item .store-distance {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.nearby-store-item .badge--new {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+.nearby-store-item .badge--saved {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-medium);
+}
+
+#location-confirm-dialog .action-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+  margin-top: var(--space-md);
+}
+
+#location-confirm-dialog .action-bar .btn {
+  flex: 0 0 auto;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

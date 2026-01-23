@@ -34,6 +34,7 @@
   <link rel="modulepreload" href="js/google-picker.js">
   <link rel="modulepreload" href="js/oauth.js">
   <link rel="modulepreload" href="js/chat.js">
+  <link rel="modulepreload" href="js/location.js">
   <!-- Prevent flash of wrong tab -->
   <script>
     (function() {
@@ -597,6 +598,42 @@
     </section>
   </main>
 
+  <!-- Location Confirm Dialog (Trip Start) -->
+  <dialog id="location-confirm-dialog" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Start Trip</h2>
+        <button class="modal-close" aria-label="Close">&times;</button>
+      </div>
+
+      <div id="location-status" class="location-status">
+        <span class="location-icon">📍</span>
+        <span class="location-text">Finding your location...</span>
+      </div>
+
+      <div id="nearby-stores" class="nearby-stores-list" hidden></div>
+
+      <div id="location-manual" class="form-group" hidden>
+        <label class="form-label">Store name</label>
+        <input type="text" class="form-input" id="manual-store-name"
+               placeholder="e.g., Value Village - Main St">
+      </div>
+
+      <div class="action-bar">
+        <button type="button" class="btn" id="location-cancel-btn">Cancel</button>
+        <button type="button" class="btn btn--outline" id="location-search-btn" hidden>
+          Search nearby
+        </button>
+        <button type="button" class="btn btn--outline" id="location-manual-btn">
+          Enter manually
+        </button>
+        <button type="button" class="btn btn--primary" id="location-confirm-btn" disabled>
+          Start Trip
+        </button>
+      </div>
+    </div>
+  </dialog>
+
   <!-- Add Item Dialog -->
   <dialog id="add-item-dialog" class="modal modal--large">
     <div class="modal-content">
@@ -1013,6 +1050,17 @@
         <div class="form-group">
           <label class="form-label" for="store-notes">Notes</label>
           <textarea class="form-textarea" id="store-notes" name="notes" rows="3" placeholder="Hours, specialties, parking info..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="store-lat">Latitude</label>
+            <input type="number" step="any" class="form-input" id="store-lat" name="lat" placeholder="e.g., 49.2827">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="store-lng">Longitude</label>
+            <input type="number" step="any" class="form-input" id="store-lng" name="lng" placeholder="e.g., -123.1207">
+          </div>
         </div>
 
         <button type="submit" class="btn btn--primary btn--block">Save store</button>
