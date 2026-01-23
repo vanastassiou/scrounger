@@ -34,7 +34,16 @@ globalThis.window = globalThis;
 globalThis.localStorage = {
   data: {},
   getItem(key) { return this.data[key] || null; },
-  setItem(key, value) { this.data[key] = value; },
+  setItem(key, value) { this.data[key] = String(value); },
+  removeItem(key) { delete this.data[key]; },
+  clear() { this.data = {}; }
+};
+
+// sessionStorage mock (same interface as localStorage, but separate storage)
+globalThis.sessionStorage = {
+  data: {},
+  getItem(key) { return this.data[key] || null; },
+  setItem(key, value) { this.data[key] = String(value); },
   removeItem(key) { delete this.data[key]; },
   clear() { this.data = {}; }
 };

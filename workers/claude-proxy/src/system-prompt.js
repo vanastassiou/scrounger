@@ -2,6 +2,37 @@
 // SYSTEM PROMPT BUILDER - Context-aware prompt construction
 // =============================================================================
 
+/**
+ * Sanitize user-controlled values to prevent prompt injection
+ * Removes newlines and control characters that could manipulate system prompt
+ * @param {string} value - User-provided value
+ * @param {number} maxLength - Maximum allowed length (default 200)
+ * @returns {string} Sanitized value
+ */
+function sanitizeContextValue(value, maxLength = 200) {
+  if (value === null || value === undefined) return '';
+  const str = String(value);
+  // Remove newlines, carriage returns, and other control characters
+  // Truncate to prevent context bloat
+  return str
+    .replace(/[\r\n\t]/g, ' ')           // Replace newlines/tabs with space
+    .replace(/\s+/g, ' ')                 // Collapse multiple spaces
+    .replace(/[^\x20-\x7E]/g, '')         // Remove non-printable ASCII
+    .trim()
+    .slice(0, maxLength);
+}
+
+/**
+ * Sanitize a numeric value
+ * @param {*} value - Value to sanitize
+ * @param {number} defaultVal - Default if invalid
+ * @returns {number} Sanitized number
+ */
+function sanitizeNumber(value, defaultVal = 0) {
+  const num = parseFloat(value);
+  return isNaN(num) ? defaultVal : num;
+}
+
 const BASE_PERSONA = `You are a sourcing advisor for a vintage/designer clothing reseller. You help evaluate finds, provide pricing guidance, and assist with logging items during sourcing trips.
 
 You're knowledgeable about:
@@ -113,36 +144,45 @@ export function buildSystemPrompt(context = {}) {
 
 /**
  * Build trip-specific context
+ * All user-provided values are sanitized to prevent prompt injection
  */
 function buildTripContext(trip) {
   const duration = trip.startedAt
     ? getTimeSince(trip.startedAt)
     : 'unknown duration';
 
+  // Sanitize all user-controlled values
+  const storeName = sanitizeContextValue(trip.store, 100) || 'Unknown store';
+  const itemCount = sanitizeNumber(trip.itemCount, 0);
+  const runningSpend = sanitizeNumber(trip.runningSpend, 0);
+
   let context = `CURRENT TRIP CONTEXT:
 You are helping during an active sourcing trip.
-- Store: ${trip.store || 'Unknown store'}
-- Items logged so far: ${trip.itemCount || 0}
-- Running spend: $${(trip.runningSpend || 0).toFixed(2)}
+- Store: ${storeName}
+- Items logged so far: ${itemCount}
+- Running spend: $${runningSpend.toFixed(2)}
 - Trip duration: ${duration}`;
 
   // Include store performance stats if available
   if (trip.storeStats) {
+    const hitRate = sanitizeNumber(trip.storeStats.hit_rate, 0);
+    const totalVisits = sanitizeNumber(trip.storeStats.total_visits, 0);
+    const avgSpend = sanitizeNumber(trip.storeStats.avg_spend_per_visit, 0);
     context += `
 
 Store Performance:
-- Hit rate: ${((trip.storeStats.hit_rate || 0) * 100).toFixed(0)}%
-- Total visits: ${trip.storeStats.total_visits || 0}
-- Avg spend/visit: $${(trip.storeStats.avg_spend_per_visit || 0).toFixed(2)}`;
+- Hit rate: ${(hitRate * 100).toFixed(0)}%
+- Total visits: ${totalVisits}
+- Avg spend/visit: $${avgSpend.toFixed(2)}`;
   }
 
   // Include recent items for update_item context
   if (trip.recentItems && trip.recentItems.length > 0) {
     context += '\n\nRecently logged items (for corrections):';
     for (const item of trip.recentItems.slice(0, 3)) {
-      const brand = item.brand || 'Unknown brand';
-      const category = item.subcategory || item.category || 'item';
-      const price = item.purchaseCost ? `$${item.purchaseCost}` : 'price unknown';
+      const brand = sanitizeContextValue(item.brand, 50) || 'Unknown brand';
+      const category = sanitizeContextValue(item.subcategory || item.category, 50) || 'item';
+      const price = item.purchaseCost ? `$${sanitizeNumber(item.purchaseCost, 0)}` : 'price unknown';
       context += `\n- ${brand} ${category} (${price})`;
     }
   }
@@ -162,6 +202,7 @@ If user says "actually...", "correction...", or similar, use update_item action 
 
 /**
  * Build inventory context from recent items
+ * All user-provided values are sanitized to prevent prompt injection
  */
 function buildInventoryContext(inventory) {
   const items = inventory.recentItems || [];
@@ -175,7 +216,9 @@ function buildInventoryContext(inventory) {
   if (Object.keys(stats).length > 0) {
     context += 'Current inventory by category:\n';
     for (const [category, count] of Object.entries(stats)) {
-      context += `- ${category}: ${count} items\n`;
+      const safeCat = sanitizeContextValue(category, 50);
+      const safeCount = sanitizeNumber(count, 0);
+      context += `- ${safeCat}: ${safeCount} items\n`;
     }
     context += '\n';
   }
@@ -184,10 +227,11 @@ function buildInventoryContext(inventory) {
   if (items.length > 0) {
     context += 'Recent items (avoid suggesting duplicates):\n';
     for (const item of items.slice(0, 5)) {
-      const brand = item.brand || 'Unknown brand';
-      const category = item.category?.primary || item.category || 'item';
+      const brand = sanitizeContextValue(item.brand, 50) || 'Unknown brand';
+      const category = sanitizeContextValue(item.category?.primary || item.category, 50) || 'item';
+      const status = item.status ? sanitizeContextValue(item.status, 30) : null;
       context += `- ${brand} ${category}`;
-      if (item.status) context += ` (${item.status})`;
+      if (status) context += ` (${status})`;
       context += '\n';
     }
   }
@@ -196,10 +240,11 @@ function buildInventoryContext(inventory) {
   if (similarItems.length > 0) {
     context += '\nSimilar items you own:\n';
     for (const item of similarItems) {
-      const brand = item.brand || 'Unknown';
-      const category = item.category?.primary || item.category || 'item';
+      const brand = sanitizeContextValue(item.brand, 50) || 'Unknown';
+      const category = sanitizeContextValue(item.category?.primary || item.category, 50) || 'item';
+      const price = sanitizeNumber(item.purchasePrice, 0);
       context += `- ${brand} ${category}`;
-      if (item.purchasePrice) context += ` ($${item.purchasePrice})`;
+      if (price > 0) context += ` ($${price})`;
       context += '\n';
     }
   }
@@ -208,13 +253,14 @@ function buildInventoryContext(inventory) {
   if (historicalSales.length > 0) {
     context += '\nYour past sales of similar items:\n';
     for (const sale of historicalSales) {
-      const brand = sale.brand || 'Unknown';
-      const purchasePrice = sale.purchasePrice || 0;
-      const soldPrice = sale.soldPrice || 0;
+      const brand = sanitizeContextValue(sale.brand, 50) || 'Unknown';
+      const purchasePrice = sanitizeNumber(sale.purchasePrice, 0);
+      const soldPrice = sanitizeNumber(sale.soldPrice, 0);
+      const platform = sale.soldPlatform ? sanitizeContextValue(sale.soldPlatform, 30) : null;
       const roi = purchasePrice > 0 ? ((soldPrice - purchasePrice) / purchasePrice * 100).toFixed(0) : null;
       context += `- ${brand}: $${purchasePrice} → $${soldPrice}`;
       if (roi) context += ` (${roi}% ROI)`;
-      if (sale.soldPlatform) context += ` on ${sale.soldPlatform}`;
+      if (platform) context += ` on ${platform}`;
       context += '\n';
     }
   }
@@ -225,6 +271,7 @@ function buildInventoryContext(inventory) {
 /**
  * Build knowledge base context
  * Uses pre-filtered data from client (only relevant brands included)
+ * All user-provided values are sanitized to prevent prompt injection
  */
 function buildKnowledgeContext(knowledge) {
   // Handle new filtered structure
@@ -248,13 +295,20 @@ function buildKnowledgeContext(knowledge) {
       if (brandKey === 'relevantBrands' || brandKey === 'hasPlatformIntent' || brandKey === 'platformTips') {
         continue;
       }
-      context += `\n${info.name || brandKey}:\n`;
-      if (info.notes) context += `  ${info.notes}\n`;
+      const brandName = sanitizeContextValue(info.name || brandKey, 50);
+      context += `\n${brandName}:\n`;
+      if (info.notes) {
+        const notes = sanitizeContextValue(info.notes, 300);
+        context += `  ${notes}\n`;
+      }
       if (info.priceRange) {
-        context += `  Typical range: $${info.priceRange.low}-$${info.priceRange.high}\n`;
+        const low = sanitizeNumber(info.priceRange.low, 0);
+        const high = sanitizeNumber(info.priceRange.high, 0);
+        context += `  Typical range: $${low}-$${high}\n`;
       }
       if (info.authentication) {
-        context += `  Auth tips: ${info.authentication}\n`;
+        const auth = sanitizeContextValue(info.authentication, 200);
+        context += `  Auth tips: ${auth}\n`;
       }
     }
   }
@@ -263,12 +317,16 @@ function buildKnowledgeContext(knowledge) {
   if (hasPlatformIntent && platformTips && Object.keys(platformTips).length > 0) {
     context += '\nPLATFORM TIPS:\n';
     for (const [platform, tips] of Object.entries(platformTips)) {
+      const safePlatform = sanitizeContextValue(platform, 30);
       if (typeof tips === 'string') {
-        context += `${platform}: ${tips}\n`;
+        const safeTips = sanitizeContextValue(tips, 200);
+        context += `${safePlatform}: ${safeTips}\n`;
       } else if (typeof tips === 'object') {
-        context += `${platform}:\n`;
+        context += `${safePlatform}:\n`;
         for (const [key, value] of Object.entries(tips)) {
-          context += `  ${key}: ${value}\n`;
+          const safeKey = sanitizeContextValue(key, 50);
+          const safeValue = sanitizeContextValue(String(value), 200);
+          context += `  ${safeKey}: ${safeValue}\n`;
         }
       }
     }

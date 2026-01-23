@@ -75,37 +75,44 @@ function getOAuthState(provider) {
 }
 
 /**
- * Store access token
+ * Store access token securely
+ * - Uses sessionStorage (cleared when browser closes, not accessible across tabs)
+ * - Does NOT store refresh tokens client-side (security best practice)
  */
 function saveToken(provider, token) {
   const expiry = Date.now() + (token.expires_in || 3600) * 1000;
-  localStorage.setItem(`token-${provider}`, JSON.stringify({
+  // Use sessionStorage for access tokens - cleared on browser close
+  // Refresh tokens should NEVER be stored client-side
+  sessionStorage.setItem(`token-${provider}`, JSON.stringify({
     accessToken: token.access_token,
-    refreshToken: token.refresh_token,
     expiry
   }));
 }
 
 /**
- * Get stored token
+ * Get stored token from sessionStorage
  */
 export function getToken(provider) {
-  const data = localStorage.getItem(`token-${provider}`);
+  const data = sessionStorage.getItem(`token-${provider}`);
   if (!data) return null;
 
-  const parsed = JSON.parse(data);
+  try {
+    const parsed = JSON.parse(data);
 
-  // Check expiry (with 5 minute buffer)
-  if (Date.now() > parsed.expiry - 5 * 60 * 1000) {
-    if (parsed.refreshToken) {
-      // Could implement token refresh here
+    // Check expiry (with 5 minute buffer)
+    if (Date.now() > parsed.expiry - 5 * 60 * 1000) {
+      // Token expired - clear and return null
+      // User will need to re-authenticate (no client-side refresh token)
+      sessionStorage.removeItem(`token-${provider}`);
       return null;
     }
-    localStorage.removeItem(`token-${provider}`);
+
+    return parsed.accessToken;
+  } catch {
+    // Invalid token data
+    sessionStorage.removeItem(`token-${provider}`);
     return null;
   }
-
-  return parsed.accessToken;
 }
 
 /**
@@ -119,8 +126,9 @@ export function isAuthenticated(provider) {
  * Clear authentication for provider
  */
 export function logout(provider) {
-  localStorage.removeItem(`token-${provider}`);
+  sessionStorage.removeItem(`token-${provider}`);
   localStorage.removeItem(`oauth-${provider}`);
+  localStorage.removeItem(`userinfo-${provider}`);
 }
 
 /**

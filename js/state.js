@@ -82,14 +82,15 @@ export const state = {
   set syncState(s) { _syncState = { ..._syncState, ...s }; },
 
   // Access token for Google Drive
+  // Uses sessionStorage for security (cleared on browser close)
   get accessToken() {
-    return localStorage.getItem('google_access_token');
+    return sessionStorage.getItem('google_access_token');
   },
   set accessToken(token) {
     if (token) {
-      localStorage.setItem('google_access_token', token);
+      sessionStorage.setItem('google_access_token', token);
     } else {
-      localStorage.removeItem('google_access_token');
+      sessionStorage.removeItem('google_access_token');
     }
   }
 };

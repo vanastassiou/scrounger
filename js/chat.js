@@ -1190,8 +1190,11 @@ function showKnowledgeSavePrompt(update) {
 
   const brandName = update.info?.name || update.brand;
   const notes = update.info?.notes || '';
-  const priceRange = update.info?.priceRange
-    ? `$${update.info.priceRange.low}-$${update.info.priceRange.high}`
+  // Sanitize and escape price range values
+  const priceLow = typeof update.info?.priceRange?.low === 'number' ? update.info.priceRange.low : null;
+  const priceHigh = typeof update.info?.priceRange?.high === 'number' ? update.info.priceRange.high : null;
+  const priceRange = (priceLow !== null && priceHigh !== null)
+    ? `$${escapeHtml(String(priceLow))}-$${escapeHtml(String(priceHigh))}`
     : '';
 
   promptEl.innerHTML = `
@@ -1953,24 +1956,100 @@ function persistState() {
   }
 }
 
+/**
+ * Validate and sanitize a message object from storage
+ * @param {Object} msg - Message object to validate
+ * @returns {Object|null} Validated message or null if invalid
+ */
+function validateMessage(msg) {
+  if (!msg || typeof msg !== 'object') return null;
+
+  // Validate required fields
+  if (typeof msg.id !== 'string' || !msg.id) return null;
+  if (!['user', 'assistant', 'system'].includes(msg.role)) return null;
+  if (typeof msg.content !== 'string') return null;
+  if (typeof msg.timestamp !== 'number' || isNaN(msg.timestamp)) return null;
+
+  // Return sanitized message (content will be escaped at render time)
+  return {
+    id: msg.id.slice(0, 100),
+    role: msg.role,
+    content: msg.content.slice(0, 10000), // Limit content length
+    timestamp: msg.timestamp
+  };
+}
+
+/**
+ * Validate a trip item from storage
+ * @param {Object} item - Trip item to validate
+ * @returns {Object|null} Validated item or null if invalid
+ */
+function validateTripItem(item) {
+  if (!item || typeof item !== 'object') return null;
+  if (typeof item.id !== 'string') return null;
+
+  return {
+    id: item.id.slice(0, 100),
+    brand: typeof item.brand === 'string' ? item.brand.slice(0, 100) : null,
+    category: typeof item.category === 'string' ? item.category.slice(0, 50) : null,
+    subcategory: typeof item.subcategory === 'string' ? item.subcategory.slice(0, 50) : null,
+    purchaseCost: typeof item.purchaseCost === 'number' ? item.purchaseCost : null
+  };
+}
+
 function loadPersistedState() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const data = JSON.parse(stored);
-      state.messages = data.messages || [];
-      state.isOnTrip = data.isOnTrip || false;
-      state.tripStore = data.tripStore || null;
-      state.tripStoreId = data.tripStoreId || null;
-      state.currentTripId = data.currentTripId || null;
-      state.tripItemCount = data.tripItemCount || 0;
-      state.tripItems = data.tripItems || [];
-      state.lastLoggedItemId = data.lastLoggedItemId || null;
-      state.tripStartedAt = data.tripStartedAt || null;
-      state.messageQueue = data.messageQueue || [];
+
+      // Validate and sanitize messages
+      const rawMessages = Array.isArray(data.messages) ? data.messages : [];
+      state.messages = rawMessages
+        .map(validateMessage)
+        .filter(Boolean)
+        .slice(-50);
+
+      // Validate scalar values
+      state.isOnTrip = data.isOnTrip === true;
+      state.tripStore = typeof data.tripStore === 'string' ? data.tripStore.slice(0, 200) : null;
+      state.tripStoreId = typeof data.tripStoreId === 'string' ? data.tripStoreId.slice(0, 100) : null;
+      state.currentTripId = typeof data.currentTripId === 'string' ? data.currentTripId.slice(0, 100) : null;
+      state.tripItemCount = typeof data.tripItemCount === 'number' ? Math.max(0, data.tripItemCount) : 0;
+      state.lastLoggedItemId = typeof data.lastLoggedItemId === 'string' ? data.lastLoggedItemId.slice(0, 100) : null;
+      state.tripStartedAt = typeof data.tripStartedAt === 'string' ? data.tripStartedAt.slice(0, 50) : null;
+
+      // Validate and sanitize trip items
+      const rawItems = Array.isArray(data.tripItems) ? data.tripItems : [];
+      state.tripItems = rawItems
+        .map(validateTripItem)
+        .filter(Boolean)
+        .slice(-10);
+
+      // Validate and sanitize message queue
+      const rawQueue = Array.isArray(data.messageQueue) ? data.messageQueue : [];
+      state.messageQueue = rawQueue
+        .filter(q => q && typeof q === 'object' && typeof q.id === 'string' && typeof q.content === 'string')
+        .map(q => ({
+          id: q.id.slice(0, 100),
+          content: q.content.slice(0, 5000),
+          timestamp: typeof q.timestamp === 'number' ? q.timestamp : Date.now()
+        }))
+        .slice(-20);
     }
   } catch (e) {
     console.warn('Failed to load chat state:', e);
+    // Reset to safe defaults on parse error
+    state.messages = [];
+    state.isOnTrip = false;
+    state.tripStore = null;
+    state.tripStoreId = null;
+    state.currentTripId = null;
+    state.tripItemCount = 0;
+    state.tripItems = [];
+    state.lastLoggedItemId = null;
+    state.tripStartedAt = null;
+    state.messageQueue = [];
   }
 }
 

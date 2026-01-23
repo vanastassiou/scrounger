@@ -7,5 +7,12 @@ ALLOWED_ORIGINS = "http://localhost:8080,http://localhost:8443,https://localhost
 RATE_LIMIT_REQUESTS = "20"
 RATE_LIMIT_WINDOW = "60"
 
+# KV namespace for persistent rate limiting
+# Create with: wrangler kv:namespace create "RATE_LIMIT"
+# Then add the ID below after creation
+# [[kv_namespaces]]
+# binding = "RATE_LIMIT"
+# id = "YOUR_KV_NAMESPACE_ID"
+
 # Secrets (set via `wrangler secret put`):
 # - ANTHROPIC_API_KEY

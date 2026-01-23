@@ -33,35 +33,52 @@ export default {
 
     // Validate origin early so we can include it in error responses
     const origin = request.headers.get('Origin');
-    const allowedOrigins = (env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim());
-    const validOrigin = origin && allowedOrigins.includes(origin) ? origin : null;
+
+    // Explicitly reject requests without Origin header (CORS requirement)
+    if (!origin) {
+      return jsonError('Origin header required', 400, {}, null);
+    }
+
+    const allowedOrigins = (env.ALLOWED_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
+    const validOrigin = allowedOrigins.includes(origin) ? origin : null;
 
     try {
       if (!validOrigin) {
-        return jsonError('Forbidden', 403, {}, null);
+        return jsonError('Origin not allowed', 403, {}, null);
       }
 
-      // Check rate limit
-      const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+      // Check rate limit (uses KV if available, falls back to in-memory)
+      const clientIp = request.headers.get('CF-Connecting-IP');
       const rateLimit = parseInt(env.RATE_LIMIT_REQUESTS || '20', 10);
       const rateWindow = parseInt(env.RATE_LIMIT_WINDOW || '60', 10);
 
-      const rateLimitResult = checkRateLimit(clientIp, rateLimit, rateWindow);
+      // Pass KV namespace if configured (env.RATE_LIMIT binding from wrangler.toml)
+      const rateLimitResult = await checkRateLimit(clientIp, rateLimit, rateWindow, env.RATE_LIMIT);
 
       if (rateLimitResult.limited) {
         return jsonError('Rate limited', 429, {
-          retryAfter: rateLimitResult.resetIn,
-          remaining: 0
+          retryAfter: rateLimitResult.resetIn
         }, validOrigin);
       }
 
       // Periodic cleanup (non-blocking)
       ctx.waitUntil(Promise.resolve().then(() => cleanupExpiredEntries(rateWindow)));
 
+      // Validate request size before parsing (prevent CPU exhaustion)
+      const MAX_BODY_SIZE = 100 * 1024; // 100KB limit
+      const contentLength = parseInt(request.headers.get('Content-Length') || '0', 10);
+      if (contentLength > MAX_BODY_SIZE) {
+        return jsonError('Request too large', 413, {}, validOrigin);
+      }
+
       // Parse request body
       let body;
       try {
-        body = await request.json();
+        const bodyText = await request.text();
+        if (bodyText.length > MAX_BODY_SIZE) {
+          return jsonError('Request too large', 413, {}, validOrigin);
+        }
+        body = JSON.parse(bodyText);
       } catch {
         return jsonError('Invalid JSON body', 400, {}, validOrigin);
       }
@@ -69,6 +86,12 @@ export default {
       // Validate request structure
       if (!body.messages || !Array.isArray(body.messages)) {
         return jsonError('Invalid request: messages array required', 400, {}, validOrigin);
+      }
+
+      // Validate array size before processing (prevent CPU exhaustion from large arrays)
+      const MAX_INPUT_MESSAGES = 100;
+      if (body.messages.length > MAX_INPUT_MESSAGES) {
+        return jsonError('Too many messages', 400, {}, validOrigin);
       }
 
       // Build system prompt with context
@@ -103,9 +126,9 @@ export default {
         });
       } catch (err) {
         if (err.name === 'AbortError') {
-          return jsonError('Upstream timeout', 504, {
-            details: 'Claude API did not respond in time'
-          }, validOrigin);
+          // Log details server-side, return generic message to client
+          console.error('Upstream timeout after', UPSTREAM_TIMEOUT_MS, 'ms');
+          return jsonError('Service temporarily unavailable', 503, {}, validOrigin);
         }
         throw err;
       } finally {
@@ -115,11 +138,10 @@ export default {
       // Check for upstream errors
       if (!claudeResponse.ok) {
         const errorText = await claudeResponse.text();
+        // Log details server-side only
         console.error('Claude API error:', claudeResponse.status, errorText);
-
-        return jsonError('Upstream error', 502, {
-          details: `Claude API returned ${claudeResponse.status}`
-        }, validOrigin);
+        // Return generic error to client (no status codes or internal details)
+        return jsonError('Service temporarily unavailable', 503, {}, validOrigin);
       }
 
       // Forward the stream to client with CORS headers
