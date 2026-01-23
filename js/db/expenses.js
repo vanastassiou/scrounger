@@ -15,6 +15,34 @@ import { generateId, nowISO, handleError } from '../utils.js';
 import { showToast } from '../ui.js';
 
 // =============================================================================
+// VALIDATION
+// =============================================================================
+
+const VALID_CATEGORIES = ['fuel', 'packaging', 'shipping_supplies', 'platform_fees', 'repairs', 'storage', 'other'];
+
+/**
+ * Validate expense data before create/update.
+ * @param {Object} data - Expense data
+ * @throws {Error} If validation fails
+ */
+function validateExpenseData(data) {
+  // Date validation (YYYY-MM-DD format)
+  if (!data.date || !/^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
+    throw new Error('Invalid date format (YYYY-MM-DD required)');
+  }
+
+  // Category validation
+  if (!VALID_CATEGORIES.includes(data.category)) {
+    throw new Error(`Invalid category. Must be one of: ${VALID_CATEGORIES.join(', ')}`);
+  }
+
+  // Amount validation
+  if (typeof data.amount !== 'number' || data.amount <= 0) {
+    throw new Error('Amount must be a positive number');
+  }
+}
+
+// =============================================================================
 // EXPENSES CRUD
 // =============================================================================
 
@@ -40,6 +68,9 @@ import { showToast } from '../ui.js';
  */
 export async function createExpense(data) {
   try {
+    // Validate before creating
+    validateExpenseData(data);
+
     const now = nowISO();
     const expense = {
       ...data,
@@ -52,7 +83,8 @@ export async function createExpense(data) {
     return expense;
   } catch (err) {
     console.error('Failed to create expense:', err);
-    showToast('Failed to save expense');
+    const isValidationError = err.message.startsWith('Invalid') || err.message.startsWith('Amount');
+    showToast(isValidationError ? err.message : 'Failed to save expense');
     throw err;
   }
 }

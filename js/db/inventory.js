@@ -223,12 +223,46 @@ export async function updateInventoryItem(id, updates) {
   }
 }
 
-export async function deleteInventoryItem(id) {
+/**
+ * Check if an inventory item can be safely deleted.
+ * Returns dependent records that would be orphaned.
+ * @param {string} id - Item ID
+ * @returns {Promise<{canDelete: boolean, dependents: {attachments: Array, expenses: Array}}>}
+ */
+export async function canDeleteItem(id) {
   try {
+    // Check for linked attachments
+    const { getAttachmentsByItem } = await import('./attachments.js');
+    const attachments = await getAttachmentsByItem(id);
+
+    // Check for linked expenses
+    const { getExpensesByItem } = await import('./expenses.js');
+    const expenses = await getExpensesByItem(id);
+
+    return {
+      canDelete: attachments.length === 0 && expenses.length === 0,
+      dependents: { attachments, expenses }
+    };
+  } catch (err) {
+    console.error('Failed to check item dependents:', err);
+    return { canDelete: false, dependents: { attachments: [], expenses: [] }, error: err.message };
+  }
+}
+
+export async function deleteInventoryItem(id, force = false) {
+  try {
+    if (!force) {
+      const { canDelete, dependents } = await canDeleteItem(id);
+      if (!canDelete) {
+        const attachmentCount = dependents.attachments?.length || 0;
+        const expenseCount = dependents.expenses?.length || 0;
+        throw new Error(`Cannot delete item: ${attachmentCount} attachment(s) and ${expenseCount} expense(s) are linked to it`);
+      }
+    }
     await deleteRecord('inventory', id);
   } catch (err) {
     console.error('Failed to delete inventory item:', err);
-    showToast('Failed to delete item');
+    showToast(err.message.startsWith('Cannot delete') ? err.message : 'Failed to delete item');
     throw err;
   }
 }
@@ -467,6 +501,15 @@ export async function getInventoryByStore(storeId) {
     return promisify(index.getAll(storeId));
   } catch (err) {
     return handleError(err, `Failed to get inventory by store ${storeId}`, []);
+  }
+}
+
+export async function getInventoryByTrip(tripId) {
+  try {
+    const items = await getAllFromStore('inventory');
+    return items.filter(item => item.metadata?.acquisition?.trip_id === tripId);
+  } catch (err) {
+    return handleError(err, `Failed to get inventory by trip ${tripId}`, []);
   }
 }
 

@@ -8,8 +8,12 @@ import { createSyncEngine, SyncStatus } from './core/sync-engine.js';
 import { hasOAuthCallback } from './core/oauth.js';
 import { exportAllData, importData } from './db/export.js';
 import { getPendingAttachments, markAttachmentSynced, getAllAttachments, upsertAttachmentFromSync } from './db/attachments.js';
-import { getInventoryItem } from './db/inventory.js';
+import { getInventoryItem, getAllInventory, markInventorySynced } from './db/inventory.js';
 import { getUnsyncedChatLogs, markChatLogSynced, importChatLog, getChatLog } from './db/chat-logs.js';
+import { getAllVisits, markVisitsSynced } from './db/visits.js';
+import { getAllTrips, markTripsSynced } from './db/trips.js';
+import { getAllExpenses, markExpensesSynced } from './db/expenses.js';
+import { markKnowledgeSynced } from './db/knowledge.js';
 import { updateSyncStatus, showToast } from './ui.js';
 
 // Configuration - will be loaded dynamically
@@ -250,6 +254,8 @@ export async function syncNow() {
       // Sync attachments and chat logs after data sync
       await syncAttachments();
       await syncChatLogs();
+      // Clear unsynced flags after successful sync to prevent duplicate pushes
+      await clearAllUnsyncedFlags();
       showToast('Sync complete');
     } else {
       showToast('Sync failed: ' + result.error);
@@ -278,9 +284,12 @@ export function queueSync() {
 
     isSyncing = true;
     try {
-      await syncEngine.sync();
-      await syncAttachments();
-      await syncChatLogs();
+      const result = await syncEngine.sync();
+      if (result.success) {
+        await syncAttachments();
+        await syncChatLogs();
+        await clearAllUnsyncedFlags();
+      }
     } catch (err) {
       console.error('Auto-sync failed:', err);
     } finally {
@@ -304,9 +313,12 @@ export async function syncOnOpen() {
 
   isSyncing = true;
   try {
-    await syncEngine.sync();
-    await syncAttachments();
-    await syncChatLogs();
+    const result = await syncEngine.sync();
+    if (result.success) {
+      await syncAttachments();
+      await syncChatLogs();
+      await clearAllUnsyncedFlags();
+    }
   } catch (err) {
     console.error('Sync on open failed:', err);
   } finally {
@@ -400,10 +412,10 @@ async function syncChatLogs() {
         const remote = await provider.downloadChatLog(log.date);
 
         if (remote) {
-          // Merge: combine conversations by ID
+          // Merge: combine conversations by ID (remote wins for conflicts, consistent with main sync engine)
           const mergedConvs = new Map();
-          for (const c of remote.conversations || []) mergedConvs.set(c.id, c);
-          for (const c of log.conversations || []) mergedConvs.set(c.id, c);
+          for (const c of log.conversations || []) mergedConvs.set(c.id, c);  // local first
+          for (const c of remote.conversations || []) mergedConvs.set(c.id, c);  // remote overwrites
 
           log.conversations = Array.from(mergedConvs.values())
             .sort((a, b) => (a.started || '').localeCompare(b.started || ''));
@@ -451,6 +463,36 @@ async function syncChatLogs() {
 // =============================================================================
 // INTERNAL
 // =============================================================================
+
+/**
+ * Clear unsynced flags on all records after successful sync.
+ * This ensures that items don't get pushed again in future syncs.
+ */
+async function clearAllUnsyncedFlags() {
+  try {
+    // Get all records and mark them as synced
+    const [inventory, visits, trips, expenses] = await Promise.all([
+      getAllInventory(),
+      getAllVisits(),
+      getAllTrips(),
+      getAllExpenses()
+    ]);
+
+    // Mark all as synced in parallel
+    await Promise.all([
+      inventory.length > 0 ? markInventorySynced(inventory.map(i => i.id)) : Promise.resolve(),
+      visits.length > 0 ? markVisitsSynced(visits.map(v => v.id)) : Promise.resolve(),
+      trips.length > 0 ? markTripsSynced(trips.map(t => t.id)) : Promise.resolve(),
+      expenses.length > 0 ? markExpensesSynced(expenses.map(e => e.id)) : Promise.resolve(),
+      markKnowledgeSynced()
+    ]);
+
+    console.log('Cleared all unsynced flags after successful sync');
+  } catch (err) {
+    console.error('Failed to clear unsynced flags:', err);
+    // Don't throw - this is a cleanup operation that shouldn't block the sync
+  }
+}
 
 /**
  * Import merged data from sync engine

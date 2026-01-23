@@ -13,6 +13,35 @@ import {
 } from './core.js';
 import { generateId, nowISO, handleError } from '../utils.js';
 import { showToast } from '../ui.js';
+import { getExpensesByTrip } from './expenses.js';
+
+// =============================================================================
+// VALIDATION
+// =============================================================================
+
+/**
+ * Validate trip data before create/update.
+ * @param {Object} data - Trip data
+ * @throws {Error} If validation fails
+ */
+function validateTripData(data) {
+  // Date validation (YYYY-MM-DD format)
+  if (!data.date || !/^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
+    throw new Error('Invalid date format (YYYY-MM-DD required)');
+  }
+
+  // Stores array validation (if provided)
+  if (data.stores !== undefined) {
+    if (!Array.isArray(data.stores)) {
+      throw new Error('Stores must be an array');
+    }
+    for (const store of data.stores) {
+      if (!store.storeId || typeof store.storeId !== 'string') {
+        throw new Error('Each store must have a valid storeId');
+      }
+    }
+  }
+}
 
 // =============================================================================
 // TRIPS CRUD
@@ -20,6 +49,9 @@ import { showToast } from '../ui.js';
 
 export async function createTrip(data) {
   try {
+    // Validate before creating
+    validateTripData(data);
+
     const now = nowISO();
     const trip = {
       ...data,
@@ -32,7 +64,7 @@ export async function createTrip(data) {
     return trip;
   } catch (err) {
     console.error('Failed to create trip:', err);
-    showToast('Failed to save trip');
+    showToast(err.message.startsWith('Invalid') ? err.message : 'Failed to save trip');
     throw err;
   }
 }
@@ -58,12 +90,45 @@ export async function updateTrip(id, updates) {
   }
 }
 
-export async function deleteTrip(id) {
+/**
+ * Check if a trip can be safely deleted.
+ * Returns dependent records that would be orphaned.
+ * @param {string} id - Trip ID
+ * @returns {Promise<{canDelete: boolean, dependents: {items: Array, expenses: Array}}>}
+ */
+export async function canDeleteTrip(id) {
   try {
+    // Check for linked items (via trip_id in metadata.acquisition)
+    const { getInventoryByTrip } = await import('./inventory.js');
+    const items = await getInventoryByTrip(id);
+
+    // Check for linked expenses
+    const expenses = await getExpensesByTrip(id);
+
+    return {
+      canDelete: items.length === 0 && expenses.length === 0,
+      dependents: { items, expenses }
+    };
+  } catch (err) {
+    console.error('Failed to check trip dependents:', err);
+    return { canDelete: false, dependents: { items: [], expenses: [] }, error: err.message };
+  }
+}
+
+export async function deleteTrip(id, force = false) {
+  try {
+    if (!force) {
+      const { canDelete, dependents } = await canDeleteTrip(id);
+      if (!canDelete) {
+        const itemCount = dependents.items?.length || 0;
+        const expenseCount = dependents.expenses?.length || 0;
+        throw new Error(`Cannot delete trip: ${itemCount} item(s) and ${expenseCount} expense(s) are linked to it`);
+      }
+    }
     await deleteRecord('trips', id);
   } catch (err) {
     console.error('Failed to delete trip:', err);
-    showToast('Failed to delete trip');
+    showToast(err.message.startsWith('Cannot delete') ? err.message : 'Failed to delete trip');
     throw err;
   }
 }

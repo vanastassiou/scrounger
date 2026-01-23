@@ -15,11 +15,43 @@ import { showToast } from '../ui.js';
 import { computeVisitsFromInventory } from './inventory.js';
 
 // =============================================================================
+// VALIDATION
+// =============================================================================
+
+/**
+ * Validate visit data before create/update.
+ * @param {Object} data - Visit data
+ * @throws {Error} If validation fails
+ */
+function validateVisitData(data) {
+  // Store ID is required
+  if (!data.store_id || typeof data.store_id !== 'string') {
+    throw new Error('Store ID is required');
+  }
+
+  // Date validation (YYYY-MM-DD format)
+  if (!data.date || !/^\d{4}-\d{2}-\d{2}$/.test(data.date)) {
+    throw new Error('Invalid date format (YYYY-MM-DD required)');
+  }
+
+  // Numeric field validation
+  if (data.purchases_count !== undefined && (typeof data.purchases_count !== 'number' || data.purchases_count < 0)) {
+    throw new Error('Purchases count must be a non-negative number');
+  }
+  if (data.total_spent !== undefined && (typeof data.total_spent !== 'number' || data.total_spent < 0)) {
+    throw new Error('Total spent must be a non-negative number');
+  }
+}
+
+// =============================================================================
 // VISITS CRUD
 // =============================================================================
 
 export async function createVisit(data) {
   try {
+    // Validate before creating
+    validateVisitData(data);
+
     const now = nowISO();
     const visit = {
       ...data,
@@ -32,7 +64,11 @@ export async function createVisit(data) {
     return visit;
   } catch (err) {
     console.error('Failed to create visit:', err);
-    showToast('Failed to save visit');
+    const isValidationError = err.message.startsWith('Store ID') ||
+                              err.message.startsWith('Invalid') ||
+                              err.message.startsWith('Purchases') ||
+                              err.message.startsWith('Total spent');
+    showToast(isValidationError ? err.message : 'Failed to save visit');
     throw err;
   }
 }
@@ -88,9 +124,13 @@ export async function getVisitsByStore(storeId) {
   }
 }
 
-export async function getStoreStats(storeId) {
-  const visits = await getVisitsByStore(storeId);
-
+/**
+ * Calculate stats from a list of visits.
+ * @param {string} storeId - Store ID
+ * @param {Array} visits - Array of visit records (sorted by date descending)
+ * @returns {Object} Stats object
+ */
+function calculateStatsFromVisits(storeId, visits) {
   const totalVisits = visits.length;
   const totalSpent = visits.reduce((sum, v) => sum + (v.total_spent || 0), 0);
   const totalItems = visits.reduce((sum, v) => sum + (v.purchases_count || 0), 0);
@@ -115,10 +155,16 @@ export async function getStoreStats(storeId) {
   };
 }
 
+export async function getStoreStats(storeId) {
+  const visits = await getVisitsByStore(storeId);
+  return calculateStatsFromVisits(storeId, visits);
+}
+
 export async function getAllStoreStats() {
   const visits = await computeVisitsFromInventory();
   const statsMap = new Map();
 
+  // Group visits by store
   const storeVisits = new Map();
   for (const visit of visits) {
     const existing = storeVisits.get(visit.store_id) || [];
@@ -126,29 +172,9 @@ export async function getAllStoreStats() {
     storeVisits.set(visit.store_id, existing);
   }
 
+  // Calculate stats for each store
   for (const [storeId, storeVisitList] of storeVisits) {
-    const totalVisits = storeVisitList.length;
-    const totalSpent = storeVisitList.reduce((sum, v) => sum + (v.total_spent || 0), 0);
-    const totalItems = storeVisitList.reduce((sum, v) => sum + (v.purchases_count || 0), 0);
-    const hitRate = totalVisits > 0
-      ? storeVisitList.filter(v => v.purchases_count > 0).length / totalVisits
-      : 0;
-
-    const lastVisit = storeVisitList[0];
-    const daysSinceLast = lastVisit
-      ? Math.floor((Date.now() - new Date(lastVisit.date).getTime()) / (1000 * 60 * 60 * 24))
-      : Infinity;
-
-    statsMap.set(storeId, {
-      store_id: storeId,
-      total_visits: totalVisits,
-      total_spent: totalSpent,
-      total_items: totalItems,
-      hit_rate: hitRate,
-      avg_spend_per_visit: totalVisits > 0 ? totalSpent / totalVisits : 0,
-      last_visit_date: lastVisit?.date,
-      days_since_last_visit: daysSinceLast
-    });
+    statsMap.set(storeId, calculateStatsFromVisits(storeId, storeVisitList));
   }
 
   return statsMap;

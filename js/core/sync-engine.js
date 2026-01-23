@@ -80,7 +80,8 @@ export function createSyncEngine(config) {
   }
 
   /**
-   * Perform sync
+   * Perform sync with snapshot/rollback support.
+   * If push fails after local data has been modified, the snapshot is restored.
    * @returns {Promise<{success: boolean, error?: string}>}
    */
   async function sync() {
@@ -100,9 +101,14 @@ export function createSyncEngine(config) {
     lastError = null;
     notifyStatusChange();
 
+    // Snapshot local data before merge for rollback capability
+    let snapshot = null;
+    let localDataModified = false;
+
     try {
-      // Get local data
+      // Get local data and save snapshot
       const localData = await getLocalData();
+      snapshot = localData;
       const lastSync = getLastSync();
 
       // Fetch remote data
@@ -114,13 +120,23 @@ export function createSyncEngine(config) {
 
       // Save merged data locally
       await setLocalData(merged.local);
+      localDataModified = true;
 
       // Push to remote if there were local changes
       if (merged.hasLocalChanges) {
-        await provider.push({
-          data: merged.local,
-          lastModified: new Date().toISOString()
-        });
+        try {
+          await provider.push({
+            data: merged.local,
+            lastModified: new Date().toISOString()
+          });
+        } catch (pushErr) {
+          // Push failed - rollback local data to snapshot
+          console.error(`Push failed, rolling back local data for ${domain}:`, pushErr);
+          if (snapshot) {
+            await setLocalData(snapshot);
+          }
+          throw pushErr;
+        }
       }
 
       // Update last sync time
@@ -132,6 +148,17 @@ export function createSyncEngine(config) {
       return { success: true };
     } catch (err) {
       console.error(`Sync failed for ${domain}:`, err);
+
+      // If we modified local data but didn't push successfully, try to restore
+      if (localDataModified && snapshot) {
+        try {
+          await setLocalData(snapshot);
+          console.log(`Rolled back local data for ${domain}`);
+        } catch (rollbackErr) {
+          console.error(`Rollback failed for ${domain}:`, rollbackErr);
+        }
+      }
+
       status = SyncStatus.ERROR;
       lastError = err.message;
       notifyStatusChange();
@@ -171,8 +198,9 @@ export function createSyncEngine(config) {
     }
 
     // For simple object data, use timestamp comparison
-    const localTime = new Date(local.updatedAt || 0).getTime();
-    const remoteTime = new Date(remote.updatedAt || 0).getTime();
+    // Handle both camelCase (legacy) and snake_case (current) formats
+    const localTime = new Date(local.updated_at || local.updatedAt || 0).getTime();
+    const remoteTime = new Date(remote.updated_at || remote.updatedAt || 0).getTime();
 
     if (remoteTime > localTime) {
       return { local: remote, hasLocalChanges: false };
