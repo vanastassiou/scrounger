@@ -2,7 +2,7 @@
 // CHAT MODULE - Sourcing Advisor Interface
 // =============================================================================
 
-import { getAllInventory, getInventoryStats, createInventoryItem, updateInventoryItem } from './db/inventory.js';
+import { getAllInventory, getInventoryStats, createInventoryItem, updateInventoryItem, deleteInventoryItem } from './db/inventory.js';
 import { getAllTrips, createTrip, updateTrip } from './db/trips.js';
 import { getKnowledge, upsertBrandKnowledge } from './db/knowledge.js';
 import { getAllUserStores, createUserStore } from './db/stores.js';
@@ -164,20 +164,25 @@ function setupOnlineOfflineHandlers() {
 // =============================================================================
 
 function setupSpeechRecognition() {
+  const micBtn = document.getElementById('chat-mic');
+  if (!micBtn) return;
+
+  // Always show the mic button
+  micBtn.hidden = false;
+
   // Check for browser support
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
-    // Browser doesn't support speech recognition - button stays hidden
+    // Browser doesn't support speech - show disabled state
+    micBtn.classList.add('chat-mic--unsupported');
+    micBtn.disabled = true;
+    micBtn.title = 'Voice input not supported in this browser';
     return;
   }
 
-  // Show the mic button since speech is supported
-  const micBtn = document.getElementById('chat-mic');
-  if (micBtn) {
-    micBtn.hidden = false;
-    micBtn.addEventListener('click', handleMicClick);
-  }
+  // Speech is supported - add click handler
+  micBtn.addEventListener('click', handleMicClick);
 
   // Create speech recognition instance
   speechRecognition = new SpeechRecognition();
@@ -925,6 +930,103 @@ function addSystemConfirmation(content) {
 }
 
 /**
+ * Add a logged item confirmation with undo button
+ * @param {string} content - Confirmation message text
+ * @param {string} itemId - Item ID for undo functionality
+ */
+function addLoggedItemConfirmation(content, itemId) {
+  const msgId = generateId();
+  const msg = {
+    id: msgId,
+    role: 'system',
+    content,
+    timestamp: Date.now()
+  };
+
+  // Add message to state
+  state.messages.push(msg);
+  if (state.messages.length > 50) {
+    state.messages = state.messages.slice(-50);
+  }
+
+  // Hide welcome message
+  const welcome = document.getElementById('chat-welcome');
+  if (welcome) welcome.hidden = true;
+
+  // Render message with undo button
+  const container = document.getElementById('chat-messages');
+  if (!container) return;
+
+  const msgEl = document.createElement('div');
+  msgEl.className = 'chat-message chat-message--system';
+  msgEl.dataset.id = msgId;
+
+  const time = new Date(msg.timestamp).toLocaleTimeString([], {
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+
+  msgEl.innerHTML = `
+    <div class="chat-bubble">
+      ${escapeHtml(content)}
+      <button class="chat-undo-btn" data-item-id="${escapeHtml(itemId)}">Undo</button>
+    </div>
+    <span class="chat-time">${time}</span>
+  `;
+
+  container.appendChild(msgEl);
+  scrollToBottom();
+  persistState();
+
+  // Set up undo button handler
+  const undoBtn = msgEl.querySelector('.chat-undo-btn');
+  if (undoBtn) {
+    undoBtn.addEventListener('click', async () => {
+      await handleUndoLoggedItem(itemId, msgEl);
+    });
+
+    // Remove undo button after 10 seconds
+    setTimeout(() => {
+      if (undoBtn.parentElement) {
+        undoBtn.remove();
+      }
+    }, 10000);
+  }
+}
+
+/**
+ * Handle undo for a logged item
+ * @param {string} itemId - Item ID to delete
+ * @param {HTMLElement} msgEl - Message element to update
+ */
+async function handleUndoLoggedItem(itemId, msgEl) {
+  try {
+    await deleteInventoryItem(itemId, true); // force = true to bypass checks
+
+    // Update state
+    state.tripItemCount = Math.max(0, state.tripItemCount - 1);
+    state.tripItems = state.tripItems.filter(i => i.id !== itemId);
+    if (state.lastLoggedItemId === itemId) {
+      state.lastLoggedItemId = state.tripItems.length > 0
+        ? state.tripItems[state.tripItems.length - 1].id
+        : null;
+    }
+    persistState();
+
+    // Update message
+    const bubble = msgEl.querySelector('.chat-bubble');
+    if (bubble) {
+      bubble.textContent = 'Item removed';
+    }
+
+    showToast('Item undone');
+  } catch (err) {
+    console.error('Failed to undo item:', err);
+    showToast('Could not undo item');
+  }
+}
+
+/**
  * Handle start_trip action
  */
 async function handleStartTripAction(data) {
@@ -1056,11 +1158,13 @@ async function handleLogItemAction(data) {
   const brandLabel = data.brand || '';
   const typeLabel = data.subcategory || data.category || 'item';
   const priceLabel = data.purchaseCost ? `$${data.purchaseCost}` : '';
+  const confirmationText = `Logged: ${brandLabel} ${typeLabel}${priceLabel ? ' - ' + priceLabel : ''}`;
 
-  return {
-    success: true,
-    message: `Logged: ${brandLabel} ${typeLabel}${priceLabel ? ' - ' + priceLabel : ''}`
-  };
+  // Add confirmation with undo button (handles its own message)
+  addLoggedItemConfirmation(confirmationText, item.id);
+
+  // Return success without message (message already added with undo button)
+  return { success: true };
 }
 
 /**
@@ -1398,6 +1502,14 @@ function hideTypingIndicator() {
  * Handle start trip button click - opens location modal
  */
 async function handleStartTrip() {
+  const startBtn = document.getElementById('btn-start-trip');
+
+  // Add loading state to prevent double-taps
+  if (startBtn) {
+    startBtn.classList.add('btn--loading');
+    startBtn.disabled = true;
+  }
+
   // Show modal immediately
   openLocationModal();
 
@@ -1405,8 +1517,8 @@ async function handleStartTrip() {
     // Check permission first
     const permission = await checkLocationPermission();
     if (permission === 'denied') {
-      updateLocationStatus('error', 'Location access denied');
-      showManualEntry();
+      updateLocationStatus('error', 'Location access denied. Open Settings to enable.');
+      focusManualEntry();
       return;
     }
 
@@ -1430,13 +1542,26 @@ async function handleStartTrip() {
         await searchAndShowNearbyPlaces(position);
       } else {
         updateLocationStatus('info', 'No saved stores nearby');
-        showManualEntry();
+        focusManualEntry();
       }
     }
   } catch (error) {
     console.warn('Location error:', error);
-    updateLocationStatus('error', error.message || 'Location unavailable');
-    showManualEntry();
+    // Provide actionable error messages
+    let errorMsg = error.message || 'Location unavailable';
+    if (error.code === 1) { // PERMISSION_DENIED
+      errorMsg = 'Location access denied. Open Settings to enable.';
+    } else if (error.code === 3) { // TIMEOUT
+      errorMsg = 'Location timed out. Tap to retry.';
+    }
+    updateLocationStatus('error', errorMsg);
+    focusManualEntry();
+  } finally {
+    // Remove loading state
+    if (startBtn) {
+      startBtn.classList.remove('btn--loading');
+      startBtn.disabled = false;
+    }
   }
 }
 
@@ -1452,12 +1577,12 @@ async function searchAndShowNearbyPlaces(position) {
       showNearbyStores(places, false); // false = these are new places
     } else {
       updateLocationStatus('info', 'No stores found nearby');
-      showManualEntry();
+      focusManualEntry();
     }
   } catch (error) {
     console.warn('Places search error:', error);
     updateLocationStatus('info', 'Could not search nearby stores');
-    showManualEntry();
+    focusManualEntry();
   }
 }
 
@@ -1475,7 +1600,6 @@ function openLocationModal() {
   // Reset UI
   updateLocationStatus('loading', 'Finding your location...');
   const nearbyStores = document.getElementById('nearby-stores');
-  const manualEntry = document.getElementById('location-manual');
   const searchBtn = document.getElementById('location-search-btn');
   const confirmBtn = document.getElementById('location-confirm-btn');
   const manualInput = document.getElementById('manual-store-name');
@@ -1484,7 +1608,7 @@ function openLocationModal() {
     nearbyStores.hidden = true;
     nearbyStores.innerHTML = '';
   }
-  if (manualEntry) manualEntry.hidden = true;
+  // Manual entry is always visible - don't hide it
   if (searchBtn) searchBtn.hidden = true;
   if (confirmBtn) confirmBtn.disabled = true;
   if (manualInput) manualInput.value = '';
@@ -1587,14 +1711,8 @@ function showSearchMoreButton() {
  */
 let manualInputHandlerAttached = false;
 
-function showManualEntry() {
-  const manualEntry = document.getElementById('location-manual');
-  const manualBtn = document.getElementById('location-manual-btn');
-
-  if (manualEntry) manualEntry.hidden = false;
-  if (manualBtn) manualBtn.hidden = true;
-
-  // Focus the input
+function focusManualEntry() {
+  // Focus the manual store name input (manual entry is always visible)
   const input = document.getElementById('manual-store-name');
   if (input) {
     input.focus();
@@ -1660,9 +1778,12 @@ function setupLocationModal() {
   const cancelBtn = document.getElementById('location-cancel-btn');
   cancelBtn?.addEventListener('click', closeLocationModal);
 
-  // Manual entry button
-  const manualBtn = document.getElementById('location-manual-btn');
-  manualBtn?.addEventListener('click', showManualEntry);
+  // Skip location link - focus manual entry when clicked
+  const skipLink = document.getElementById('location-skip-link');
+  skipLink?.addEventListener('click', (e) => {
+    e.preventDefault();
+    focusManualEntry();
+  });
 
   // Search more button
   const searchBtn = document.getElementById('location-search-btn');

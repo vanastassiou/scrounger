@@ -53,8 +53,8 @@
     --color-primary: #e94560;
     --color-primary-hover: #ff6b6b;
     --color-text: #edf2f4;
-    --color-text-muted: #8d99ae;
-    --color-border: #2b4570;
+    --color-text-muted: #a8b2c1;  /* Improved contrast for outdoor readability (~6:1 ratio) */
+    --color-border: #3d5a80;      /* More visible borders for outdoor use */
     --color-success: #52b788;
     --color-warning: #f9c74f;
     --color-error: #e63946;
@@ -489,7 +489,7 @@
     --btn-padding-x: var(--space-xs);
     --btn-font-size: var(--font-size-2xs);
     --btn-gap: var(--space-2xs);
-    min-height: 1.5rem;
+    min-height: var(--touch-target);  /* 44px - mobile touch target */
   }
 
   .btn--sm {
@@ -497,6 +497,7 @@
     --btn-padding-x: var(--space-sm);
     --btn-font-size: var(--font-size-xs);
     --btn-gap: var(--space-xs);
+    min-height: var(--touch-target);  /* 44px - mobile touch target */
   }
 
   .btn--lg {
@@ -553,6 +554,36 @@
 
   .btn--block {
     width: 100%;
+  }
+
+  /* Loading state for buttons */
+  .btn--loading {
+    position: relative;
+    color: transparent !important;
+    pointer-events: none;
+  }
+
+  .btn--loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1rem;
+    height: 1rem;
+    margin: -0.5rem 0 0 -0.5rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: btn-spin 0.6s linear infinite;
+    color: var(--color-text);
+  }
+
+  .btn--primary.btn--loading::after {
+    color: white;
+  }
+
+  @keyframes btn-spin {
+    to { transform: rotate(360deg); }
   }
 
   .btn-icon {
@@ -1349,7 +1380,7 @@
   .table-responsive .table-actions-inner .btn {
     width: 100%;
     justify-content: center;
-    min-height: 32px;
+    min-height: var(--touch-target);  /* 44px - mobile touch target */
     padding: var(--space-xs) var(--space-sm);
     font-size: var(--font-size-xs);
   }
@@ -2354,6 +2385,7 @@
 .filter-select {
   padding: var(--space-sm) var(--space-md);
   font-size: var(--font-size-sm);
+  min-height: var(--touch-target);  /* 44px - mobile touch target */
   background: var(--color-surface);
   color: var(--color-text);
   border: 1px solid var(--color-border);
@@ -3490,6 +3522,7 @@
   flex-shrink: 0;
   padding: var(--space-xs) var(--space-sm);
   font-size: var(--font-size-sm);
+  min-height: var(--touch-target);  /* 44px - mobile touch target */
   font-weight: var(--font-weight-medium);
   color: var(--color-text-muted);
   background: transparent;
@@ -4767,6 +4800,33 @@
   font-style: italic;
 }
 
+/* Undo button for logged items */
+.chat-undo-btn {
+  display: inline-block;
+  margin-left: var(--space-sm);
+  padding: var(--space-2xs) var(--space-sm);
+  font-size: var(--font-size-xs);
+  font-style: normal;
+  color: var(--color-primary);
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  min-height: var(--touch-target);  /* 44px touch target */
+  vertical-align: middle;
+  transition: background 0.15s, color 0.15s;
+}
+
+.chat-undo-btn:hover,
+.chat-undo-btn:focus {
+  background: var(--color-primary);
+  color: white;
+}
+
+.chat-undo-btn:active {
+  transform: scale(0.98);
+}
+
 .chat-time {
   font-size: var(--font-size-2xs);
   color: var(--color-text-muted);
@@ -4888,6 +4948,16 @@
 
 .chat-mic[hidden] { display: none; }
 
+.chat-mic--unsupported {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.chat-mic--unsupported:hover {
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+}
+
 /* Knowledge Save Prompt */
 .chat-knowledge-prompt {
   max-width: 100%;
@@ -4980,6 +5050,18 @@
 .location-status.success {
   background: var(--color-success-light);
   border: 1px solid var(--color-success-border);
+}
+
+.skip-location-link {
+  margin-left: auto;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.skip-location-link:hover {
+  color: var(--color-text);
 }
 
 .nearby-stores-list {

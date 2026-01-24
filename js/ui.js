@@ -98,7 +98,7 @@ export function createModalController(dialog) {
  * @param {string} message - Message to display
  * @param {number} duration - Duration in milliseconds
  */
-export function showToast(message, duration = 2000) {
+export function showToast(message, duration = 3500) {
   let toast = document.querySelector('.toast');
   if (!toast) {
     toast = document.createElement('div');

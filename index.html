@@ -609,12 +609,13 @@
       <div id="location-status" class="location-status">
         <span class="location-icon">📍</span>
         <span class="location-text">Finding your location...</span>
+        <a href="#" id="location-skip-link" class="skip-location-link">Skip location</a>
       </div>
 
       <div id="nearby-stores" class="nearby-stores-list" hidden></div>
 
-      <div id="location-manual" class="form-group" hidden>
-        <label class="form-label">Store name</label>
+      <div id="location-manual" class="form-group">
+        <label class="form-label">Or enter store name</label>
         <input type="text" class="form-input" id="manual-store-name"
                placeholder="e.g., Value Village - Main St">
       </div>
@@ -623,9 +624,6 @@
         <button type="button" class="btn" id="location-cancel-btn">Cancel</button>
         <button type="button" class="btn btn--outline" id="location-search-btn" hidden>
           Search nearby
-        </button>
-        <button type="button" class="btn btn--outline" id="location-manual-btn">
-          Enter manually
         </button>
         <button type="button" class="btn btn--primary" id="location-confirm-btn" disabled>
           Start Trip
