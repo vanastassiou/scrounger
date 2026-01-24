@@ -17,7 +17,9 @@ A comprehensive guide for developers contributing to the Bargain Huntress Tracke
 11. [Reference Data](#reference-data)
 12. [Testing](#testing)
 13. [Security Considerations](#security-considerations)
-14. [Code Style](#code-style)
+14. [Performance Patterns](#performance-patterns)
+15. [Data Integrity Patterns](#data-integrity-patterns)
+16. [Code Style](#code-style)
 
 **Related Documentation:**
 - [Setup Guide](setup-guide.md) — Installation and configuration
@@ -1412,6 +1414,233 @@ if (!allowedOrigins.includes(origin)) {
 3. **Keep secrets server-side** — Use Cloudflare Workers for sensitive APIs
 4. **Limit token scope** — Only request needed OAuth scopes (`drive.file`)
 5. **Session tokens** — Use `sessionStorage` over `localStorage` for auth
+
+### OWASP Top 10 Coverage
+
+| Risk | Mitigation | Status |
+|------|------------|--------|
+| A01 Broken Access Control | CORS, auth checks | PASS |
+| A02 Cryptographic Failures | HTTPS, secure tokens | PASS |
+| A03 Injection | Input escaping, validation | PASS |
+| A04 Insecure Design | N/A (simple app) | PASS |
+| A05 Security Misconfiguration | Minimal config | PASS |
+| A06 Vulnerable Components | Zero dependencies | PASS |
+| A07 Auth Failures | PKCE, state param | PASS |
+| A08 Data Integrity | Validation | PASS |
+| A09 Logging Failures | Safe error logs | PASS |
+| A10 SSRF | No server requests | N/A |
+
+---
+
+## Performance Patterns
+
+### Non-Blocking Sync
+
+The app renders immediately with cached data, then syncs in background:
+
+```javascript
+async function initApp() {
+  // Show UI with cached data immediately
+  const cachedData = await loadFromIndexedDB();
+  renderUI(cachedData);
+
+  // Sync in background
+  syncFromDrive().then(freshData => {
+    if (hasChanges(cachedData, freshData)) {
+      updateUI(freshData);
+    }
+  }).catch(console.warn);
+}
+```
+
+Benefits:
+- UI available in <500ms
+- Sync happens invisibly
+- No loading spinners for cached users
+
+### Pagination
+
+Large datasets use client-side pagination:
+
+```javascript
+const PAGE_SIZE = 50;
+
+async function loadInventoryPage(page = 0) {
+  const offset = page * PAGE_SIZE;
+  const items = await getAllInventory();
+  const pageItems = items.slice(offset, offset + PAGE_SIZE);
+
+  renderTable(pageItems);
+  updatePaginationControls(page, Math.ceil(items.length / PAGE_SIZE));
+}
+```
+
+### Caching Strategies
+
+**Reference data caching:**
+```javascript
+let brandCache = null;
+
+async function getBrands() {
+  if (brandCache) return brandCache;
+
+  const response = await fetch('/data/brands-clothing-shoes.json');
+  brandCache = await response.json();
+  return brandCache;
+}
+```
+
+**Query caching with TTL:**
+```javascript
+const statsCache = {
+  data: null,
+  timestamp: 0,
+  TTL: 60000  // 1 minute
+};
+
+async function getInventoryStats() {
+  const now = Date.now();
+  if (statsCache.data && (now - statsCache.timestamp) < statsCache.TTL) {
+    return statsCache.data;
+  }
+
+  const stats = await computeStats();
+  statsCache.data = stats;
+  statsCache.timestamp = now;
+  return stats;
+}
+```
+
+### DOM Optimization
+
+**Batch updates with DocumentFragment:**
+```javascript
+const fragment = document.createDocumentFragment();
+items.forEach(item => {
+  fragment.appendChild(createItemElement(item));
+});
+container.appendChild(fragment);  // Single reflow
+```
+
+**Event delegation:**
+```javascript
+container.addEventListener('click', (e) => {
+  const item = e.target.closest('.item');
+  if (item) handleClick(item);
+});
+```
+
+**Debounced operations:**
+```javascript
+let persistStateTimer = null;
+
+function persistState() {
+  if (persistStateTimer) clearTimeout(persistStateTimer);
+  persistStateTimer = setTimeout(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    persistStateTimer = null;
+  }, 500);
+}
+```
+
+### Streaming Response Handling
+
+Cache element reference during streaming to avoid repeated DOM lookups:
+
+```javascript
+let streamingBubbleCache = { msgId: null, bubble: null };
+
+function updateStreamingMessage(msgId, text) {
+  if (streamingBubbleCache.msgId !== msgId) {
+    const msgEl = document.querySelector(`[data-id="${msgId}"]`);
+    streamingBubbleCache = { msgId, bubble: msgEl?.querySelector('.chat-bubble') };
+  }
+
+  if (streamingBubbleCache.bubble) {
+    streamingBubbleCache.bubble.textContent = text;
+    debouncedScrollToBottom();  // Debounced, not every chunk
+  }
+}
+```
+
+---
+
+## Data Integrity Patterns
+
+### Schema Validation
+
+All records are validated before writes:
+
+```javascript
+function validateMessage(msg) {
+  if (!msg || typeof msg !== 'object') return null;
+  if (typeof msg.id !== 'string' || !msg.id) return null;
+  if (!['user', 'assistant', 'system'].includes(msg.role)) return null;
+  if (typeof msg.content !== 'string') return null;
+  if (typeof msg.timestamp !== 'number') return null;
+
+  // Sanitize lengths
+  return {
+    id: msg.id.slice(0, 100),
+    role: msg.role,
+    content: msg.content.slice(0, 10000),
+    timestamp: msg.timestamp
+  };
+}
+```
+
+### Transaction Safety
+
+IndexedDB transactions are atomic—no partial writes:
+
+```javascript
+async function createInventoryItem(data) {
+  const db = await openDatabase();
+  const tx = db.transaction('inventory', 'readwrite');
+  const store = tx.objectStore('inventory');
+
+  await store.add(item);
+  await tx.complete;  // Commits or rolls back atomically
+}
+```
+
+### Sync Conflict Resolution
+
+Uses **last-write-wins** with an unsynced flag:
+
+```javascript
+async function mergeInventoryData(local, remote) {
+  // Local changes take priority if modified since last sync
+  if (local.metadata.sync.unsynced) {
+    return local;
+  }
+  // Otherwise, remote wins
+  if (remote.metadata.sync.synced_at > local.metadata.sync.synced_at) {
+    return remote;
+  }
+  return local;
+}
+```
+
+| Local State | Remote State | Resolution |
+|-------------|--------------|------------|
+| Unsynced changes | Newer remote | Local wins (user intent) |
+| Synced | Newer remote | Remote wins |
+| Synced | Older remote | Local wins |
+| Deleted locally | Exists remote | Deletion wins |
+
+### ID Generation
+
+IDs are unique, sortable, and human-readable:
+
+```javascript
+function generateItemId() {
+  const date = new Date().toISOString().split('T')[0];
+  const sequence = String(nextSequence++).padStart(3, '0');
+  return `item-${date}-${sequence}`;
+}
+// Example: item-2025-01-21-001
+```
 
 ---
 

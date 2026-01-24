@@ -118,9 +118,11 @@ When you arrive at a store:
 
 1. Tap the **Chat** tab
 2. Tap **Start Trip**
-3. Allow location access if prompted
+3. Allow location access if prompted (or tap **Skip location** for faster start)
 4. Select the store from the list (or search for it)
 5. Tap **Confirm Store**
+
+**Tip:** If GPS is slow, tap **Skip location** to start immediately. The store search continues in background, or you can manually select your store right away.
 
 The advisor now knows where you are and can:
 - Track items you log during this trip
@@ -147,6 +149,19 @@ The advisor will:
 - Parse the details (brand, category, price, condition)
 - Suggest a resale price range
 - Log it to your inventory
+
+### Undo a Logged Item
+
+Made a mistake? After logging an item, you have **10 seconds** to undo:
+
+1. Look for the **Undo** button in the confirmation message
+2. Tap it to remove the item from inventory
+3. The button disappears after 10 seconds
+
+This is useful when you:
+- Accidentally logged the wrong item
+- Decided not to buy something you just logged
+- Need to correct a major error (easier to undo and re-log)
 
 ### Corrections
 
@@ -179,7 +194,10 @@ The advisor will show how many items you logged and your total spend.
 If you lose internet connection:
 - Messages are queued and sent when you reconnect
 - You can still log items (they save locally)
-- A yellow banner shows "X messages queued"
+- A connection indicator shows your status (green = online, yellow = offline)
+- Queued messages show a count badge so you know how many are pending
+
+When you reconnect, queued messages are automatically sent in order.
 
 ---
 
