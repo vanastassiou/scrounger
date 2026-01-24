@@ -5073,3 +5073,21 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
+
+
+/* =============================================================================
+   PAGINATION - LOAD MORE
+   ============================================================================= */
+
+.load-more-container {
+  text-align: center;
+  padding: var(--space-md) 0;
+}
+
+.load-more-btn {
+  min-width: 200px;
+}
+
+.load-more-container .text-muted {
+  font-size: var(--font-size-sm);
+}

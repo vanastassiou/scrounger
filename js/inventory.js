@@ -4,7 +4,7 @@
 
 import { state } from './state.js';
 import { getAllInventory, getInventoryStats, getSellingAnalytics, getInventoryItem, createInventoryItem, updateInventoryItem, deleteInventoryItem } from './db/inventory.js';
-import { createAttachment, getAttachmentsByItem } from './db/attachments.js';
+import { createAttachment, getAttachmentsByItem, getAttachmentsByItems } from './db/attachments.js';
 import { getAllTrips, getTripsByDate } from './db/trips.js';
 import { showToast, createModalController } from './ui.js';
 import {
@@ -100,7 +100,12 @@ async function loadInventory() {
   const collectionItems = inventoryData.filter(item =>
     !isInPipeline(item.metadata?.status) && item.metadata?.status !== 'sold'
   );
-  // Calculate prices and photo status in parallel
+
+  // Bulk fetch all attachments for collection items (avoids N+1 queries)
+  const collectionItemIds = collectionItems.map(item => item.id);
+  const attachmentsMap = await getAttachmentsByItems(collectionItemIds);
+
+  // Calculate prices and photo status
   await Promise.all(collectionItems.map(async (item) => {
     // Use existing estimated_resale_value if set
     if (item.pricing?.estimated_resale_value) {
@@ -117,9 +122,9 @@ async function loadInventory() {
       }
     }
 
-    // Pre-compute photo status
+    // Pre-compute photo status using bulk-fetched attachments
     try {
-      const attachments = await getAttachmentsByItem(item.id);
+      const attachments = attachmentsMap.get(item.id) || [];
       item._photoStatus = getPhotoStatusSync(item, attachments);
     } catch (err) {
       // Silently fail - photo indicator won't show

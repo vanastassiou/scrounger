@@ -137,3 +137,39 @@ export async function getAllAttachments() {
     return handleError(err, 'Failed to get all attachments', []);
   }
 }
+
+/**
+ * Bulk fetch attachments for multiple items at once.
+ * Returns a Map of itemId -> attachments array.
+ * Much more efficient than calling getAttachmentsByItem() for each item (N+1 problem).
+ * @param {string[]} itemIds - Array of item IDs
+ * @returns {Promise<Map<string, Array>>}
+ */
+export async function getAttachmentsByItems(itemIds) {
+  try {
+    if (!itemIds || itemIds.length === 0) {
+      return new Map();
+    }
+
+    // Get all attachments once and group by itemId
+    const allAttachments = await getAllFromStore('attachments');
+    const itemIdSet = new Set(itemIds);
+    const result = new Map();
+
+    // Initialize map with empty arrays for all requested items
+    for (const id of itemIds) {
+      result.set(id, []);
+    }
+
+    // Group attachments by itemId
+    for (const attachment of allAttachments) {
+      if (itemIdSet.has(attachment.itemId)) {
+        result.get(attachment.itemId).push(attachment);
+      }
+    }
+
+    return result;
+  } catch (err) {
+    return handleError(err, 'Failed to bulk fetch attachments', new Map());
+  }
+}

@@ -123,6 +123,11 @@ export async function initChat() {
   if (PLACES_WORKER_URL) {
     setPlacesWorkerUrl(PLACES_WORKER_URL);
   }
+
+  // Ensure state is persisted on page unload (bypass debounce)
+  window.addEventListener('beforeunload', () => {
+    persistStateImmediate();
+  });
 }
 
 // =============================================================================
@@ -365,6 +370,16 @@ function scrollToBottom() {
   }
 }
 
+// Debounced scroll for streaming - prevents layout thrashing
+let scrollTimeout = null;
+function debouncedScrollToBottom() {
+  if (scrollTimeout) return;
+  scrollTimeout = setTimeout(() => {
+    scrollToBottom();
+    scrollTimeout = null;
+  }, 50); // Scroll at most every 50ms during streaming
+}
+
 // =============================================================================
 // MOCK RESPONSE GENERATION
 // =============================================================================
@@ -525,40 +540,45 @@ async function sendToAdvisor(userMessage) {
     let buffer = '';
     let consecutiveParseFailures = 0;
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      buffer += decoder.decode(value, { stream: true });
+        buffer += decoder.decode(value, { stream: true });
 
-      // Parse SSE events from buffer
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || ''; // Keep incomplete line in buffer
+        // Parse SSE events from buffer
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || ''; // Keep incomplete line in buffer
 
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const data = line.slice(6);
-          if (data === '[DONE]') continue;
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
 
-          try {
-            const parsed = JSON.parse(data);
-            consecutiveParseFailures = 0; // Reset on successful parse
+            try {
+              const parsed = JSON.parse(data);
+              consecutiveParseFailures = 0; // Reset on successful parse
 
-            if (parsed.delta?.text) {
-              fullText += parsed.delta.text;
-              updateStreamingMessage(msgId, fullText);
-            } else if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
-              fullText += parsed.delta.text;
-              updateStreamingMessage(msgId, fullText);
-            }
-          } catch {
-            consecutiveParseFailures++;
-            if (consecutiveParseFailures > 3) {
-              console.warn('Stream degraded: multiple consecutive parse failures');
+              if (parsed.delta?.text) {
+                fullText += parsed.delta.text;
+                updateStreamingMessage(msgId, fullText);
+              } else if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
+                fullText += parsed.delta.text;
+                updateStreamingMessage(msgId, fullText);
+              }
+            } catch {
+              consecutiveParseFailures++;
+              if (consecutiveParseFailures > 3) {
+                console.warn('Stream degraded: multiple consecutive parse failures');
+              }
             }
           }
         }
       }
+    } finally {
+      // Ensure reader is properly released to prevent memory leaks
+      reader.releaseLock();
     }
 
     // Finalize the message
@@ -1279,10 +1299,19 @@ function addStreamingMessage(msg) {
 
 /**
  * Update a streaming message's content
+ * Uses cached element reference to avoid DOM thrashing
  */
+let streamingBubbleCache = { msgId: null, bubble: null };
+
 function updateStreamingMessage(msgId, text) {
-  const msgEl = document.querySelector(`.chat-message[data-id="${msgId}"]`);
-  const bubble = msgEl?.querySelector('.chat-bubble');
+  // Cache element reference to avoid DOM query on every chunk
+  let bubble = streamingBubbleCache.bubble;
+  if (streamingBubbleCache.msgId !== msgId) {
+    const msgEl = document.querySelector(`.chat-message[data-id="${msgId}"]`);
+    bubble = msgEl?.querySelector('.chat-bubble');
+    streamingBubbleCache = { msgId, bubble };
+  }
+
   if (bubble) {
     // Try to extract just the message if it's JSON
     let displayText = text;
@@ -1293,7 +1322,7 @@ function updateStreamingMessage(msgId, text) {
       // Not valid JSON yet, show as-is
     }
     bubble.textContent = displayText;
-    scrollToBottom();
+    debouncedScrollToBottom(); // Use debounced scroll to prevent layout thrashing
   }
 }
 
@@ -1301,6 +1330,9 @@ function updateStreamingMessage(msgId, text) {
  * Finalize a streaming message
  */
 function finalizeStreamingMessage(msgId, finalText) {
+  // Clear streaming cache to prevent memory leaks
+  streamingBubbleCache = { msgId: null, bubble: null };
+
   const msgEl = document.querySelector(`.chat-message[data-id="${msgId}"]`);
   if (msgEl) {
     msgEl.classList.remove('chat-message--streaming');
@@ -1320,6 +1352,9 @@ function finalizeStreamingMessage(msgId, finalText) {
     msg.content = displayText;
     persistState();
   }
+
+  // Do a final scroll after streaming completes
+  scrollToBottom();
 }
 
 // =============================================================================
@@ -1550,6 +1585,8 @@ function showSearchMoreButton() {
 /**
  * Show manual store entry field
  */
+let manualInputHandlerAttached = false;
+
 function showManualEntry() {
   const manualEntry = document.getElementById('location-manual');
   const manualBtn = document.getElementById('location-manual-btn');
@@ -1561,16 +1598,19 @@ function showManualEntry() {
   const input = document.getElementById('manual-store-name');
   if (input) {
     input.focus();
-    // Enable confirm on input
-    input.addEventListener('input', () => {
-      const confirmBtn = document.getElementById('location-confirm-btn');
-      if (confirmBtn) {
-        confirmBtn.disabled = !input.value.trim();
-      }
-      // Clear store selection since user is typing manually
-      state.selectedStore = null;
-      state.selectedStoreIsNew = true;
-    });
+    // Only add listener once to prevent accumulation
+    if (!manualInputHandlerAttached) {
+      manualInputHandlerAttached = true;
+      input.addEventListener('input', () => {
+        const confirmBtn = document.getElementById('location-confirm-btn');
+        if (confirmBtn) {
+          confirmBtn.disabled = !input.value.trim();
+        }
+        // Clear store selection since user is typing manually
+        state.selectedStore = null;
+        state.selectedStoreIsNew = true;
+      });
+    }
   }
 }
 
@@ -1936,7 +1976,15 @@ function processMessageQueue() {
 
 const STORAGE_KEY = 'chatState';
 
-function persistState() {
+/**
+ * Debounce timer for state persistence
+ */
+let persistStateTimer = null;
+
+/**
+ * Persist state immediately (for critical saves like page unload)
+ */
+function persistStateImmediate() {
   try {
     const data = {
       messages: state.messages.slice(-50), // Keep last 50
@@ -1954,6 +2002,20 @@ function persistState() {
   } catch (e) {
     console.warn('Failed to persist chat state:', e);
   }
+}
+
+/**
+ * Debounced state persistence - avoids excessive localStorage writes
+ * during streaming or rapid message sequences
+ */
+function persistState() {
+  if (persistStateTimer) {
+    clearTimeout(persistStateTimer);
+  }
+  persistStateTimer = setTimeout(() => {
+    persistStateImmediate();
+    persistStateTimer = null;
+  }, 500); // Debounce by 500ms
 }
 
 /**

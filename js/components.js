@@ -93,6 +93,10 @@ export function createTableController(config) {
   let sortDirection = config.defaultSort?.direction || 'asc';
   let sortHandler = null;
 
+  // Pagination state
+  const pageSize = config.pageSize || 25; // Default page size
+  let displayedCount = pageSize;
+
   function render() {
     const tbody = $(config.tbodySelector);
     if (!tbody) return [];
@@ -109,11 +113,16 @@ export function createTableController(config) {
       sortData(data, sortColumn, sortDirection, config.getColumnValue);
     }
 
+    // Paginate - only render up to displayedCount rows
+    const totalCount = data.length;
+    const paginatedData = data.slice(0, displayedCount);
+    const hasMore = totalCount > displayedCount;
+
     // Render
     if (data.length === 0) {
       tbody.innerHTML = emptyStateRow(config.emptyState);
     } else {
-      tbody.innerHTML = data.map(config.createRow).join('');
+      tbody.innerHTML = paginatedData.map(config.createRow).join('');
     }
 
     // Update sort indicators
@@ -128,16 +137,50 @@ export function createTableController(config) {
       if (countEl) {
         const template = config.countTemplate || '{count} item{s}';
         const text = template
-          .replace('{count}', data.length)
-          .replace('{s}', data.length !== 1 ? 's' : '');
+          .replace('{count}', totalCount)
+          .replace('{s}', totalCount !== 1 ? 's' : '');
         countEl.textContent = text;
       }
     }
 
-    // Callback
-    if (config.onRender) config.onRender(data);
+    // Handle "Load more" button
+    updateLoadMoreButton(hasMore, totalCount, paginatedData.length);
 
-    return data;
+    // Callback
+    if (config.onRender) config.onRender(paginatedData);
+
+    return paginatedData;
+  }
+
+  function updateLoadMoreButton(hasMore, totalCount, showingCount) {
+    const table = $(config.tableSelector);
+    if (!table) return;
+
+    // Find or create load more container after table
+    let loadMoreContainer = table.nextElementSibling;
+    if (!loadMoreContainer?.classList.contains('load-more-container')) {
+      loadMoreContainer = document.createElement('div');
+      loadMoreContainer.className = 'load-more-container';
+      table.parentNode.insertBefore(loadMoreContainer, table.nextSibling);
+    }
+
+    if (hasMore) {
+      const remaining = totalCount - showingCount;
+      loadMoreContainer.innerHTML = `
+        <button class="btn btn--ghost load-more-btn">
+          Load more (${remaining} remaining)
+        </button>
+      `;
+      loadMoreContainer.querySelector('.load-more-btn').addEventListener('click', () => {
+        displayedCount += pageSize;
+        render();
+      });
+    } else if (totalCount > pageSize) {
+      // Show "showing all" message if we loaded more than initial page
+      loadMoreContainer.innerHTML = `<span class="text-muted">Showing all ${totalCount}</span>`;
+    } else {
+      loadMoreContainer.innerHTML = '';
+    }
   }
 
   function setupEventHandlers() {
@@ -147,6 +190,7 @@ export function createTableController(config) {
       if (searchInput) {
         searchInput.addEventListener('input', (e) => {
           searchTerm = e.target.value.toLowerCase();
+          displayedCount = pageSize; // Reset pagination when search changes
           render();
         });
       }
@@ -160,6 +204,7 @@ export function createTableController(config) {
           dataAttr: fb.dataAttr,
           onFilter: (value) => {
             filters[fb.key] = value;
+            displayedCount = pageSize; // Reset pagination when filter changes
             render();
           }
         });
@@ -175,6 +220,7 @@ export function createTableController(config) {
           select.addEventListener('change', (e) => {
             const value = e.target.value;
             filters[fs.key] = value === allValue ? null : value;
+            displayedCount = pageSize; // Reset pagination when filter changes
             render();
           });
         }

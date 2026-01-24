@@ -77,20 +77,27 @@ async function init() {
   // Item picker modal event handlers
   initSelectItemDialog();
 
-  // Sync on app open
+  // Sync on app open (non-blocking - app is usable immediately)
   if (isConnected() && isFolderConfigured()) {
-    await syncOnOpen();
-    // Reload stores after sync
-    await loadStores();
-    await renderDashboardStats();
-  }
-
-  // Handle online/offline
-  window.addEventListener('online', async () => {
-    if (isConnected() && isFolderConfigured()) {
-      await syncOnOpen();
+    // Run sync in background, reload data when complete
+    syncOnOpen().then(async () => {
+      // Reload stores and stats after sync completes
       await loadStores();
       await renderDashboardStats();
+    }).catch(err => {
+      console.error('Background sync failed:', err);
+    });
+  }
+
+  // Handle online/offline (non-blocking sync)
+  window.addEventListener('online', () => {
+    if (isConnected() && isFolderConfigured()) {
+      syncOnOpen().then(async () => {
+        await loadStores();
+        await renderDashboardStats();
+      }).catch(err => {
+        console.error('Background sync on reconnect failed:', err);
+      });
     }
   });
 }

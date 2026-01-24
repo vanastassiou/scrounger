@@ -80,9 +80,28 @@ export async function importBaselineInventory(items, version) {
 }
 
 /**
+ * Visits cache to avoid redundant computation.
+ * Invalidated on inventory create/update/delete.
+ */
+let visitsCache = null;
+
+/**
+ * Invalidate the visits cache. Called when inventory changes.
+ */
+export function invalidateVisitsCache() {
+  visitsCache = null;
+}
+
+/**
  * Compute visits dynamically from inventory items.
+ * Results are cached until inventory changes.
  */
 export async function computeVisitsFromInventory() {
+  // Return cached result if available
+  if (visitsCache !== null) {
+    return visitsCache;
+  }
+
   try {
     const items = await getAllFromStore('inventory');
     const visitsMap = new Map();
@@ -113,8 +132,10 @@ export async function computeVisitsFromInventory() {
       });
     }
 
-    return Array.from(visitsMap.values())
+    visitsCache = Array.from(visitsMap.values())
       .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    return visitsCache;
   } catch (err) {
     return handleError(err, 'Failed to compute visits from inventory', []);
   }
@@ -153,6 +174,7 @@ export async function createInventoryItem(data) {
       metadata
     };
     await addRecord('inventory', item);
+    invalidateVisitsCache(); // Invalidate cache on create
     return item;
   } catch (err) {
     console.error('Failed to create inventory item:', err);
@@ -215,6 +237,7 @@ export async function updateInventoryItem(id, updates) {
       size: mergedSize
     };
     await promisify(store.put(updated));
+    invalidateVisitsCache(); // Invalidate cache on update
     return updated;
   } catch (err) {
     console.error('Failed to update inventory item:', err);
@@ -260,6 +283,7 @@ export async function deleteInventoryItem(id, force = false) {
       }
     }
     await deleteRecord('inventory', id);
+    invalidateVisitsCache(); // Invalidate cache on delete
   } catch (err) {
     console.error('Failed to delete inventory item:', err);
     showToast(err.message.startsWith('Cannot delete') ? err.message : 'Failed to delete item');
@@ -347,12 +371,20 @@ export async function getInventoryStats() {
 
 export async function getInventoryInPipeline() {
   try {
-    const items = await getAllFromStore('inventory');
+    // Use status index to fetch each pipeline status separately (avoids full table scan)
     const pipelineStatuses = [
       'needs_photo', 'unlisted', 'listed', 'sold', 'packaged', 'shipped', 'confirmed_received'
     ];
 
-    return items.filter(item => pipelineStatuses.includes(item.metadata?.status))
+    const store = await getStore('inventory');
+    const statusIndex = store.index('metadata.status');
+
+    // Query each status in parallel using the index
+    const queries = pipelineStatuses.map(status => promisify(statusIndex.getAll(status)));
+    const results = await Promise.all(queries);
+
+    // Flatten and sort by created date
+    return results.flat()
       .sort((a, b) => new Date(b.metadata?.created || 0) - new Date(a.metadata?.created || 0));
   } catch (err) {
     return handleError(err, 'Failed to get pipeline inventory', []);
@@ -474,10 +506,12 @@ export async function markItemAsSold(itemId, soldData) {
 
 export async function getInventoryByPlatform(platform) {
   try {
-    const items = await getAllFromStore('inventory');
-    return items.filter(item =>
-      item.metadata?.status === 'sold' && item.listing_status?.sold_platform === platform
-    );
+    // Use status index to get 'sold' items, then filter by platform (avoids full table scan)
+    const store = await getStore('inventory');
+    const statusIndex = store.index('metadata.status');
+    const soldItems = await promisify(statusIndex.getAll('sold'));
+
+    return soldItems.filter(item => item.listing_status?.sold_platform === platform);
   } catch (err) {
     return handleError(err, `Failed to get inventory by platform ${platform}`, []);
   }
@@ -485,10 +519,12 @@ export async function getInventoryByPlatform(platform) {
 
 export async function getInventoryForVisit(storeId, date) {
   try {
-    const items = await getAllFromStore('inventory');
-    return items.filter(item =>
-      item.metadata?.acquisition?.store_id === storeId && item.metadata?.acquisition?.date === date
-    );
+    // Use store_id index first, then filter by date (avoids full table scan)
+    const store = await getStore('inventory');
+    const storeIndex = store.index('metadata.acquisition.store_id');
+    const storeItems = await promisify(storeIndex.getAll(storeId));
+
+    return storeItems.filter(item => item.metadata?.acquisition?.date === date);
   } catch (err) {
     return handleError(err, `Failed to get inventory for visit`, []);
   }
