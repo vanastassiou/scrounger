@@ -26,13 +26,55 @@ import {
 import { getItemsNotInPipeline } from './db/inventory.js';
 import { migrateRemoveTitle } from './db/core.js';
 import { getItemTitle } from './utils.js';
+import { initWebVitals } from './core/web-vitals.js';
 import './seed.js'; // Registers window.seedDatabase and window.clearAllData
+
+// =============================================================================
+// STORAGE QUOTA MONITORING
+// =============================================================================
+
+/**
+ * Check storage usage and warn user if approaching quota
+ * Uses Storage API to estimate usage vs quota
+ */
+async function checkStorageQuota() {
+  try {
+    if (!navigator.storage?.estimate) {
+      return; // Storage API not supported
+    }
+
+    const estimate = await navigator.storage.estimate();
+    const usage = estimate.usage || 0;
+    const quota = estimate.quota || 0;
+
+    if (quota === 0) return;
+
+    const percentUsed = (usage / quota) * 100;
+
+    if (percentUsed > 80) {
+      const usedMB = (usage / (1024 * 1024)).toFixed(1);
+      const quotaMB = (quota / (1024 * 1024)).toFixed(1);
+      console.warn(`[Storage] High usage: ${usedMB}MB / ${quotaMB}MB (${percentUsed.toFixed(1)}%)`);
+      showToast(`Storage ${percentUsed.toFixed(0)}% full. Consider syncing and clearing old data.`);
+    } else {
+      console.log(`[Storage] Usage: ${(usage / (1024 * 1024)).toFixed(1)}MB / ${(quota / (1024 * 1024)).toFixed(1)}MB (${percentUsed.toFixed(1)}%)`);
+    }
+  } catch (err) {
+    console.warn('[Storage] Failed to check quota:', err);
+  }
+}
 
 // =============================================================================
 // INITIALIZATION
 // =============================================================================
 
 async function init() {
+  // Initialize web vitals monitoring (logs to console in dev)
+  initWebVitals();
+
+  // Check storage quota (warn if usage > 80%)
+  await checkStorageQuota();
+
   // Initialize sync module first (needed to check setup status)
   await initSync();
 
@@ -309,10 +351,41 @@ function renderItemPickerList(searchTerm) {
 // =============================================================================
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch(err => {
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register('sw.js');
+
+      // Register for periodic sync if supported (1 hour interval)
+      if ('periodicSync' in registration) {
+        try {
+          const status = await navigator.permissions.query({
+            name: 'periodic-background-sync'
+          });
+          if (status.state === 'granted') {
+            registration.active?.postMessage({
+              type: 'REGISTER_PERIODIC_SYNC',
+              interval: 60 * 60 * 1000 // 1 hour
+            });
+          }
+        } catch (e) {
+          // Periodic sync permission check failed, continue without it
+          console.log('Periodic sync not available:', e.message);
+        }
+      }
+
+      // Listen for sync requests from service worker
+      navigator.serviceWorker.addEventListener('message', async (event) => {
+        if (event.data?.type === 'SYNC_REQUESTED' || event.data?.type === 'PERIODIC_SYNC_REQUESTED') {
+          if (isConnected() && isFolderConfigured()) {
+            syncOnOpen().catch(err => {
+              console.error('Service worker triggered sync failed:', err);
+            });
+          }
+        }
+      });
+    } catch (err) {
       console.error('Service worker registration failed:', err);
-    });
+    }
   });
 }
 

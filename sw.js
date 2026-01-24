@@ -2,7 +2,7 @@
 // SERVICE WORKER
 // =============================================================================
 
-const CACHE_NAME = 'thrift-inventory-v7';
+const CACHE_NAME = 'thrift-inventory-v8';
 const ASSETS = [
   // Core
   '/',
@@ -64,6 +64,8 @@ const ASSETS = [
   '/js/core/google-drive.js',
   '/js/core/google-picker.js',
   '/js/core/sync-engine.js',
+  '/js/core/web-vitals.js',
+  '/js/core/checksum.js',
 
   // Reference data (read-only)
   '/data/stores.json',
@@ -154,11 +156,20 @@ self.addEventListener('fetch', (event) => {
 // =============================================================================
 
 const SYNC_TAG = 'thrift-sync';
+const PERIODIC_SYNC_TAG = 'thrift-periodic-sync';
+const PERIODIC_SYNC_MIN_INTERVAL = 60 * 60 * 1000; // 1 hour in ms
 
 // Handle background sync event
 self.addEventListener('sync', (event) => {
   if (event.tag === SYNC_TAG) {
     event.waitUntil(doBackgroundSync());
+  }
+});
+
+// Handle periodic background sync event
+self.addEventListener('periodicsync', (event) => {
+  if (event.tag === PERIODIC_SYNC_TAG) {
+    event.waitUntil(doPeriodicSync());
   }
 });
 
@@ -176,6 +187,56 @@ async function doBackgroundSync() {
   }
 }
 
+// Perform periodic sync
+async function doPeriodicSync() {
+  try {
+    // Check battery and data-saver status before syncing
+    const shouldSync = await checkSyncConditions();
+    if (!shouldSync) {
+      console.log('Periodic sync skipped due to battery/data-saver constraints');
+      return;
+    }
+
+    // Notify clients to perform sync
+    const clients = await self.clients.matchAll();
+    if (clients.length > 0) {
+      // App is open - let it handle the sync
+      for (const client of clients) {
+        client.postMessage({ type: 'PERIODIC_SYNC_REQUESTED' });
+      }
+    } else {
+      // App is closed - can't sync without access token
+      console.log('Periodic sync: app closed, will sync on next open');
+    }
+  } catch (err) {
+    console.error('Periodic sync failed:', err);
+    // Don't throw - periodic sync failures shouldn't cause retries
+  }
+}
+
+// Check if sync conditions are favorable
+async function checkSyncConditions() {
+  // Check battery status if available
+  if ('getBattery' in navigator) {
+    try {
+      const battery = await navigator.getBattery();
+      // Skip if battery is low and not charging
+      if (battery.level < 0.2 && !battery.charging) {
+        return false;
+      }
+    } catch {
+      // Battery API not available, continue
+    }
+  }
+
+  // Check data-saver mode if available
+  if ('connection' in navigator && navigator.connection.saveData) {
+    return false;
+  }
+
+  return true;
+}
+
 // Listen for messages from main thread
 self.addEventListener('message', (event) => {
   if (event.data?.type === 'REGISTER_SYNC') {
@@ -183,6 +244,17 @@ self.addEventListener('message', (event) => {
     if (self.registration.sync) {
       self.registration.sync.register(SYNC_TAG).catch((err) => {
         console.warn('Background sync registration failed:', err);
+      });
+    }
+  }
+
+  if (event.data?.type === 'REGISTER_PERIODIC_SYNC') {
+    // Register for periodic sync if supported
+    if (self.registration.periodicSync) {
+      self.registration.periodicSync.register(PERIODIC_SYNC_TAG, {
+        minInterval: event.data.interval || PERIODIC_SYNC_MIN_INTERVAL
+      }).catch((err) => {
+        console.warn('Periodic sync registration failed:', err);
       });
     }
   }

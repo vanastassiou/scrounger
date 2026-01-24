@@ -10,9 +10,11 @@
     "start:tailscale": "tailscale serve https / http://localhost:8080",
     "certs:generate": "mkcert -install && mkcert -cert-file .certs/localhost.pem -key-file .certs/localhost-key.pem localhost 127.0.0.1 ::1",
     "test": "node js/tests/run-node-tests.mjs",
-    "test:all": "node js/tests/run-node-tests.mjs --all"
+    "test:all": "node js/tests/run-node-tests.mjs --all",
+    "test:coverage": "c8 --reporter=text --reporter=html node js/tests/run-node-tests.mjs --all"
   },
   "devDependencies": {
+    "c8": "^10.1.2",
     "fake-indexeddb": "^6.2.5",
     "puppeteer": "^24.35.0"
   }

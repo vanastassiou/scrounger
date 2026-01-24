@@ -3,6 +3,8 @@
  * Ported from seneschal core
  */
 
+import { validatePayloadChecksum, computeChecksum } from './checksum.js';
+
 /**
  * Sync status enum
  */
@@ -115,6 +117,15 @@ export function createSyncEngine(config) {
       const remoteResult = await provider.fetch();
       const remoteData = remoteResult.data;
 
+      // Validate checksum if present (backward compatible)
+      if (remoteData?._checksum) {
+        const checksumResult = await validatePayloadChecksum(remoteData, `remote-${domain}`);
+        if (!checksumResult.valid) {
+          console.warn(`[Sync] Checksum mismatch for ${domain} - remote data may be corrupted`);
+          // Continue anyway for backward compatibility
+        }
+      }
+
       // Merge
       const merged = mergeData(localData, remoteData, lastSync);
 
@@ -125,8 +136,12 @@ export function createSyncEngine(config) {
       // Push to remote if there were local changes
       if (merged.hasLocalChanges) {
         try {
+          // Add checksum to pushed data
+          const pushData = { ...merged.local };
+          pushData._checksum = await computeChecksum(merged.local);
+
           await provider.push({
-            data: merged.local,
+            data: pushData,
             lastModified: new Date().toISOString()
           });
         } catch (pushErr) {

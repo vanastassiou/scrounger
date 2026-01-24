@@ -431,6 +431,63 @@ const API_TIMEOUT_MS = 30000; // 30 seconds
 const MAX_RETRIES = 3;
 const RETRY_BASE_DELAY_MS = 1000;
 
+// Request deduplication - prevents duplicate API calls from rapid clicks
+let pendingRequest = null;
+
+// Response caching for common queries
+const responseCache = new Map();
+const CACHE_TTL_MS = 300000; // 5 minutes
+const MAX_CACHE_SIZE = 50;
+
+/**
+ * Generate a cache key from the last message and trip state
+ * @param {string} message - The user's message
+ * @param {boolean} isOnTrip - Whether a trip is active
+ * @returns {string} Cache key
+ */
+function getCacheKey(message, isOnTrip) {
+  return JSON.stringify({
+    msg: message.toLowerCase().trim(),
+    trip: isOnTrip
+  });
+}
+
+/**
+ * Get a cached response if available and not expired
+ * @param {string} key - Cache key
+ * @returns {string|null} Cached response or null
+ */
+function getCachedResponse(key) {
+  const cached = responseCache.get(key);
+  if (!cached) return null;
+
+  // Check if expired
+  if (Date.now() - cached.timestamp > CACHE_TTL_MS) {
+    responseCache.delete(key);
+    return null;
+  }
+
+  return cached.response;
+}
+
+/**
+ * Store a response in the cache
+ * @param {string} key - Cache key
+ * @param {string} response - Response to cache
+ */
+function setCachedResponse(key, response) {
+  // Enforce max cache size (LRU-style: delete oldest entries)
+  if (responseCache.size >= MAX_CACHE_SIZE) {
+    const oldestKey = responseCache.keys().next().value;
+    responseCache.delete(oldestKey);
+  }
+
+  responseCache.set(key, {
+    response,
+    timestamp: Date.now()
+  });
+}
+
 /**
  * Fetch with timeout using AbortController
  * @param {string} url - URL to fetch
@@ -492,14 +549,38 @@ async function fetchWithRetry(url, options, maxRetries = MAX_RETRIES) {
 
 /**
  * Send message to Claude API proxy and handle streaming response
+ * Includes request deduplication to prevent duplicate calls from rapid clicks
  * @param {string} userMessage - The user's message
+ * @returns {Promise<void>}
  */
 async function sendToAdvisor(userMessage) {
+  // Request deduplication - return existing promise if request in progress
+  if (pendingRequest) {
+    console.warn('Request already in progress, returning existing promise');
+    return pendingRequest;
+  }
+
+  // Check cache for common queries (skip caching for trip-specific actions)
+  const cacheKey = getCacheKey(userMessage, state.isOnTrip);
+  const cachedResponse = getCachedResponse(cacheKey);
+  if (cachedResponse && !looksLikeItemLog(userMessage)) {
+    // Return cached response immediately
+    addMessage({
+      id: generateId(),
+      role: 'assistant',
+      content: cachedResponse,
+      timestamp: Date.now()
+    });
+    return;
+  }
+
   state.isStreaming = true;
   showTypingIndicator();
 
-  try {
-    const context = await buildContext(userMessage);
+  // Create the actual request promise
+  pendingRequest = (async () => {
+    try {
+      const context = await buildContext(userMessage);
 
     // Build messages for API (last 10 messages for context)
     const apiMessages = state.messages
@@ -592,33 +673,54 @@ async function sendToAdvisor(userMessage) {
     // Try to parse JSON response for actions
     tryParseAdvisorResponse(fullText);
 
-  } catch (error) {
-    console.error('Advisor error:', error);
-    hideTypingIndicator();
+    // Cache the response for similar future queries (skip if contains actions)
+    try {
+      const parsed = JSON.parse(fullText);
+      // Don't cache responses with actions or knowledge updates
+      if (!parsed.actions && !parsed.knowledgeUpdate) {
+        setCachedResponse(cacheKey, parsed.message || fullText);
+      }
+    } catch {
+      // Plain text response - cache it
+      if (fullText.length > 0 && fullText.length < 5000) {
+        setCachedResponse(cacheKey, fullText);
+      }
+    }
 
-    // Show user-friendly error message
-    const userMessage = userFriendlyError(error);
+    } catch (error) {
+      console.error('Advisor error:', error);
+      hideTypingIndicator();
 
-    // Fall back to mock response with error context
-    const mockResponse = generateMockResponse(userMessage);
-    addMessage({
-      id: generateId(),
-      role: 'assistant',
-      content: mockResponse,
-      timestamp: Date.now()
-    });
+      // Show user-friendly error message
+      const errorMsg = userFriendlyError(error);
 
-    // Add system message about the error if it was a rate limit or timeout
-    if (error.message.includes('Rate limited') || error.message.includes('timed out')) {
+      // Fall back to mock response with error context
+      const mockResponse = generateMockResponse(userMessage);
       addMessage({
         id: generateId(),
-        role: 'system',
-        content: userMessage,
+        role: 'assistant',
+        content: mockResponse,
         timestamp: Date.now()
       });
+
+      // Add system message about the error if it was a rate limit or timeout
+      if (error.message.includes('Rate limited') || error.message.includes('timed out')) {
+        addMessage({
+          id: generateId(),
+          role: 'system',
+          content: errorMsg,
+          timestamp: Date.now()
+        });
+      }
+    } finally {
+      state.isStreaming = false;
     }
+  })();
+
+  try {
+    await pendingRequest;
   } finally {
-    state.isStreaming = false;
+    pendingRequest = null;
   }
 }
 

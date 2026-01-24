@@ -20,6 +20,11 @@ import { showToast } from '../ui.js';
 // SETTINGS HELPERS
 // =============================================================================
 
+/**
+ * Get a setting value from the settings store
+ * @param {string} key - Setting key
+ * @returns {Promise<{id: string, value: any, updated_at: string}|null>} Setting record or null
+ */
 export async function getSetting(key) {
   try {
     return await getByKey('settings', key);
@@ -28,6 +33,13 @@ export async function getSetting(key) {
   }
 }
 
+/**
+ * Set a setting value in the settings store
+ * @param {string} key - Setting key
+ * @param {any} value - Setting value
+ * @returns {Promise<{id: string, value: any, updated_at: string}>} Created/updated setting record
+ * @throws {Error} If setting cannot be saved
+ */
 export async function setSetting(key, value) {
   try {
     const record = { id: key, value, updated_at: nowISO() };
@@ -145,6 +157,17 @@ export async function computeVisitsFromInventory() {
 // INVENTORY CRUD
 // =============================================================================
 
+/**
+ * Create a new inventory item
+ * @param {Object} data - Item data
+ * @param {string} [data.brand] - Brand name
+ * @param {Object} [data.category] - Category info {primary, secondary}
+ * @param {Object} [data.colour] - Color info {primary, secondary}
+ * @param {Object} [data.material] - Material info {primary, secondary}
+ * @param {Object} [data.metadata] - Metadata including acquisition info
+ * @returns {Promise<Object>} Created item with generated ID
+ * @throws {Error} If item cannot be created
+ */
 export async function createInventoryItem(data) {
   try {
     const now = nowISO();
@@ -183,6 +206,14 @@ export async function createInventoryItem(data) {
   }
 }
 
+/**
+ * Update an existing inventory item
+ * Merges updates with existing data, preserving nested structures
+ * @param {string} id - Item ID
+ * @param {Object} updates - Partial item data to merge
+ * @returns {Promise<Object>} Updated item
+ * @throws {Error} If item not found or update fails
+ */
 export async function updateInventoryItem(id, updates) {
   try {
     const store = await getStore('inventory', 'readwrite');
@@ -272,6 +303,13 @@ export async function canDeleteItem(id) {
   }
 }
 
+/**
+ * Delete an inventory item
+ * By default, checks for linked attachments/expenses and prevents deletion
+ * @param {string} id - Item ID
+ * @param {boolean} [force=false] - Force deletion even with linked records
+ * @throws {Error} If item has dependents and force is false
+ */
 export async function deleteInventoryItem(id, force = false) {
   try {
     if (!force) {
@@ -291,6 +329,11 @@ export async function deleteInventoryItem(id, force = false) {
   }
 }
 
+/**
+ * Get a single inventory item by ID
+ * @param {string} id - Item ID
+ * @returns {Promise<Object|null>} Item or null if not found
+ */
 export async function getInventoryItem(id) {
   try {
     return await getByKey('inventory', id);
@@ -299,6 +342,10 @@ export async function getInventoryItem(id) {
   }
 }
 
+/**
+ * Get all inventory items sorted by creation date (newest first)
+ * @returns {Promise<Object[]>} Array of inventory items
+ */
 export async function getAllInventory() {
   try {
     const items = await getAllFromStore('inventory');

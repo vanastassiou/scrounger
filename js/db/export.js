@@ -9,6 +9,7 @@ import {
   getByKey
 } from './core.js';
 import { nowISO } from '../utils.js';
+import { computeChecksum, validatePayloadChecksum } from '../core/checksum.js';
 
 // =============================================================================
 // SCHEMA MIGRATION HELPER (for import)
@@ -125,7 +126,7 @@ export async function exportAllData() {
     const expenses = await getAllFromStore('expenses');
     const knowledge = await getByKey('knowledge', 'knowledge-base');
 
-    return {
+    const data = {
       version: 2,
       exported_at: nowISO(),
       inventory,
@@ -135,6 +136,18 @@ export async function exportAllData() {
       expenses,
       knowledge
     };
+
+    // Add integrity checksum
+    data._checksum = await computeChecksum({
+      inventory,
+      stores,
+      archive,
+      trips,
+      expenses,
+      knowledge
+    });
+
+    return data;
   } catch (err) {
     console.error('Failed to export data:', err);
     throw err;
@@ -144,6 +157,26 @@ export async function exportAllData() {
 export async function importData(data, merge = false) {
   if (!data.inventory && !data.stores) {
     throw new Error('Invalid import file - no inventory or stores found');
+  }
+
+  // Validate checksum if present (backward compatible with old exports)
+  if (data._checksum) {
+    const dataToVerify = {
+      inventory: data.inventory,
+      stores: data.stores,
+      archive: data.archive,
+      trips: data.trips,
+      expenses: data.expenses,
+      knowledge: data.knowledge
+    };
+    const result = await validatePayloadChecksum(
+      { ...dataToVerify, _checksum: data._checksum },
+      'import'
+    );
+    if (!result.valid) {
+      console.warn('[Import] Checksum mismatch - data may be corrupted');
+      // Continue anyway for backward compatibility, but warn the user
+    }
   }
 
   try {
