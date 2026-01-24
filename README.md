@@ -103,7 +103,6 @@ The `/data/` folder contains:
 
 - [Developer's Guide](docs/developers-guide.md) — Architecture and contribution guide
 - `CLAUDE.md` — Quick reference for AI assistants
-- `features.md` — Full feature specification
 
 ## License
 
