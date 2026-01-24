@@ -2066,29 +2066,130 @@ function queueMessage(text) {
   persistState();
 }
 
-function processMessageQueue() {
+async function processMessageQueue() {
   if (state.messageQueue.length === 0) return;
 
-  // Process each queued message
-  for (const queued of state.messageQueue) {
-    // Generate response for each queued message
-    showTypingIndicator();
-    setTimeout(() => {
-      hideTypingIndicator();
-      const response = generateMockResponse(queued.content);
-      addMessage({
-        id: generateId(),
-        role: 'assistant',
-        content: response,
-        timestamp: Date.now()
-      });
-    }, 500 + Math.random() * 500);
-  }
-
-  // Clear queue
+  // Copy queue and clear it to prevent re-processing
+  const queuedMessages = [...state.messageQueue];
   state.messageQueue = [];
   updateUIState();
   persistState();
+
+  // Process each queued message sequentially
+  for (const queued of queuedMessages) {
+    // Try to use the Claude API proxy, fall back to mock responses
+    if (WORKER_URL) {
+      try {
+        await sendToAdvisor(queued.content);
+      } catch (err) {
+        console.warn('Failed to send queued message to API:', err);
+        // Fall back to mock with action parsing
+        await processQueuedMessageWithMock(queued.content);
+      }
+    } else {
+      // No API - use mock with action parsing
+      await processQueuedMessageWithMock(queued.content);
+    }
+  }
+}
+
+/**
+ * Process a queued message using mock response with action parsing
+ */
+async function processQueuedMessageWithMock(text) {
+  showTypingIndicator();
+
+  // Simulate network delay
+  await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
+
+  hideTypingIndicator();
+
+  // Generate mock response
+  const response = generateMockResponse(text);
+
+  // Check if this looks like an item logging request during a trip
+  if (state.isOnTrip && looksLikeItemLog(text)) {
+    // Try to parse and execute a log_item action from the text
+    const itemData = parseItemFromText(text);
+    if (itemData) {
+      await handleAdvisorAction({
+        type: 'log_item',
+        ...itemData
+      });
+      return; // Action handler adds confirmation message
+    }
+  }
+
+  // Regular mock response
+  addMessage({
+    id: generateId(),
+    role: 'assistant',
+    content: response,
+    timestamp: Date.now()
+  });
+}
+
+/**
+ * Check if text looks like an item logging request
+ */
+function looksLikeItemLog(text) {
+  const lower = text.toLowerCase();
+  return /found|got|picked up|buying|grabbed|see a|here's a|\$\d+/i.test(lower);
+}
+
+/**
+ * Parse item data from natural language text
+ */
+function parseItemFromText(text) {
+  const lower = text.toLowerCase();
+
+  // Try to extract price
+  const priceMatch = text.match(/\$(\d+(?:\.\d{2})?)/);
+  const purchaseCost = priceMatch ? parseFloat(priceMatch[1]) : null;
+
+  // Try to extract category
+  let category = null;
+  const categoryPatterns = {
+    'blazer': 'clothing', 'jacket': 'clothing', 'coat': 'clothing',
+    'dress': 'clothing', 'shirt': 'clothing', 'blouse': 'clothing',
+    'pants': 'clothing', 'skirt': 'clothing', 'sweater': 'clothing',
+    'shoes': 'shoes', 'boots': 'shoes', 'heels': 'shoes',
+    'bag': 'accessories', 'purse': 'accessories', 'handbag': 'accessories',
+    'necklace': 'jewelry', 'bracelet': 'jewelry', 'ring': 'jewelry', 'earrings': 'jewelry'
+  };
+
+  for (const [keyword, cat] of Object.entries(categoryPatterns)) {
+    if (lower.includes(keyword)) {
+      category = cat;
+      break;
+    }
+  }
+
+  // Try to extract brand (common thrift brands)
+  let brand = null;
+  const brandPatterns = [
+    'escada', 'st john', 'pendleton', 'burberry', 'coach', 'dooney',
+    'ralph lauren', 'brooks brothers', 'eileen fisher', 'chico\'s',
+    'talbots', 'ann taylor', 'banana republic', 'j crew', 'gap'
+  ];
+
+  for (const b of brandPatterns) {
+    if (lower.includes(b)) {
+      brand = b.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      break;
+    }
+  }
+
+  // Need at least a price or category to log
+  if (!purchaseCost && !category) {
+    return null;
+  }
+
+  return {
+    category: category || 'clothing', // Default to clothing
+    brand,
+    purchaseCost
+  };
 }
 
 // =============================================================================

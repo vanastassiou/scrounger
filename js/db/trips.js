@@ -36,8 +36,12 @@ function validateTripData(data) {
       throw new Error('Stores must be an array');
     }
     for (const store of data.stores) {
-      if (!store.storeId || typeof store.storeId !== 'string') {
-        throw new Error('Each store must have a valid storeId');
+      // storeId can be null for new/unknown stores, but storeName is required
+      if (store.storeId !== null && typeof store.storeId !== 'string') {
+        throw new Error('Store storeId must be a string or null');
+      }
+      if (!store.storeName || typeof store.storeName !== 'string') {
+        throw new Error('Each store must have a valid storeName');
       }
     }
   }
